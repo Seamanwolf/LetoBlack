@@ -20,21 +20,21 @@ def admin_dashboard():
             SELECT 
                 COUNT(*) as total_employees,
                 SUM(CASE WHEN status = 'Онлайн' THEN 1 ELSE 0 END) as active_employees,
-                SUM(CASE WHEN status = 'fired' THEN 1 ELSE 0 END) as fired_employees,
+                SUM(CASE WHEN fired = 1 THEN 1 ELSE 0 END) as fired_employees,
                 COUNT(DISTINCT department_id) as departments_count
             FROM User
         """)
         stats = cursor.fetchone()
         
-        # Получаем последние действия
+        # Получаем последние действия из таблицы UserActivity вместо UserActions
         cursor.execute("""
             SELECT 
                 u.full_name,
-                a.action,
-                a.timestamp
-            FROM UserActions a
+                a.action_type as action,
+                a.created_at as timestamp
+            FROM UserActivity a
             JOIN User u ON a.user_id = u.id
-            ORDER BY a.timestamp DESC
+            ORDER BY a.created_at DESC
             LIMIT 10
         """)
         recent_actions = cursor.fetchall()

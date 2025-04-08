@@ -1,571 +1,254 @@
 {% extends "base.html" %}
 
 {% block title %}Уволенные сотрудники{% endblock %}
-{% block page_title %}Уволенные сотрудники{% endblock %}
 
 {% block extra_css %}
 <style>
-  body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f8f9fa;
-    font-size: 0.85rem;
-  }
-  
-  /* Стили для карточек статистики */
-  .stat-card {
-    border-radius: 10px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-    padding: 20px;
-    margin-bottom: 20px;
-    background: white;
-    transition: transform 0.3s;
-    position: relative;
-    overflow: hidden;
-  }
-  
-  .stat-card:hover {
-    transform: translateY(-5px);
-  }
-  
-  .stat-card .stat-title {
-    font-size: 1rem;
-    color: #7f8c8d;
-    margin-bottom: 10px;
-  }
-  
-  .stat-card .stat-value {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #2c3e50;
-  }
-  
-  .stat-card .stat-icon {
-    position: absolute;
-    right: 20px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 2.5rem;
-    opacity: 0.2;
-    color: #e74c3c;
-  }
-  
-  /* Стили для навигационного меню */
-  .nav-menu {
-    background-color: white;
-    padding: 0 1.2rem;
-    border-radius: 12px;
-    display: flex;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-    margin-bottom: 2rem;
-    border-bottom: 2px solid #dee2e6;
-    align-items: center;
-  }
+    .sidebar {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 100;
+        padding: 48px 0 0;
+        box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+        width: 250px;
+    }
 
-  .nav-menu a {
-    color: #6c757d;
-    font-weight: 500;
-    padding: 1rem 1.2rem;
-    margin-right: 1.2rem;
-    display: flex;
-    align-items: center;
-    text-decoration: none;
-    transition: all 0.2s ease;
-  }
+    .sidebar-sticky {
+        position: relative;
+        top: 0;
+        height: calc(100vh - 48px);
+        padding-top: .5rem;
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
 
-  .nav-menu a:hover {
-    color: #e74c3c;
-    background-color: rgba(231, 76, 60, 0.05);
-  }
+    .sidebar .nav-link {
+        font-weight: 500;
+        color: #333;
+        padding: 0.5rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
 
-  .nav-menu a.active {
-    color: #e74c3c;
-    border-bottom: 3px solid #e74c3c;
-    font-weight: 600;
-  }
+    .sidebar .nav-link.active {
+        color: #007bff;
+    }
 
-  .nav-menu a i {
-    margin-right: 0.7rem;
-    font-size: 1.1rem;
-  }
-  
-  /* Таблица и иконки */
-  .department-section {
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-    margin-bottom: 20px;
-    overflow: hidden;
-    cursor: move;
-    position: relative;
-  }
-  
-  .department-section.dragging {
-    opacity: 0.5;
-  }
-  
-  .department-header {
-    background: #e74c3c;
-    color: white;
-    padding: 8px 15px;
-    font-size: 1rem;
-    font-weight: 600;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  
-  .department-header .badge {
-    background-color: white;
-    color: #e74c3c;
-    font-size: 0.8rem;
-    padding: 3px 8px;
-  }
-  
-  .table {
-    margin-bottom: 0;
-    font-size: 0.9rem;
-  }
-  
-  .table th {
-    font-weight: 600;
-    color: #7f8c8d;
-    background-color: #f8f9fa;
-    padding: 8px;
-  }
-  
-  .table td {
-    padding: 8px;
-    vertical-align: middle;
-  }
-  
-  .employee-row {
-    position: relative;
-    transition: background-color 0.3s;
-  }
-  
-  .employee-row:hover {
-    background-color: #f8f9fa;
-  }
-  
-  .rehire-icon, .delete-icon {
-    cursor: pointer;
-    font-size: 1rem;
-    margin-right: 5px;
-  }
-  
-  .rehire-icon {
-    color: #2ecc71;
-  }
-  
-  .delete-icon {
-    color: #e74c3c;
-  }
-  
-  /* Строка поиска и фильтры */
-  .search-box {
-    position: relative;
-    margin-bottom: 20px;
-  }
-  
-  .search-box input {
-    border-radius: 50px;
-    padding-left: 45px;
-    border: 1px solid #ddd;
-    background-color: white;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-  }
-  
-  .search-box i {
-    position: absolute;
-    left: 15px;
-    top: 12px;
-    color: #7f8c8d;
-  }
-  
-  /* Фильтры */
-  .filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-    margin-bottom: 20px;
-  }
-  
-  .filter-btn {
-    border: none;
-    background-color: white;
-    border-radius: 50px;
-    padding: 10px 20px;
-    font-size: 0.9rem;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-    transition: all 0.3s;
-  }
-  
-  .filter-btn:hover, .filter-btn.active {
-    background-color: #e74c3c;
-    color: white;
-  }
-  
-  /* Кнопки управления отделом */
-  .department-controls {
-    display: flex;
-    align-items: center;
-  }
-  
-  .department-controls i {
-    cursor: pointer;
-    margin-left: 10px;
-    font-size: 1rem;
-  }
-  
-  .department-controls .move-up, .department-controls .move-down {
-    color: white;
-  }
-  
-  .department-controls .toggle-department {
-    color: white;
-    margin-left: 15px;
-  }
-  
-  .department-content {
-    transition: max-height 0.3s ease-out;
-    overflow: hidden;
-    max-height: 1000px; /* Достаточно большое значение, чтобы вместить содержимое */
-  }
-  
-  .department-content.collapsed {
-    max-height: 0;
-  }
+    .sidebar .nav-link i {
+        margin-right: 0.5rem;
+        width: 20px;
+        text-align: center;
+    }
+
+    .main-content {
+        margin-left: 250px;
+        padding: 20px;
+    }
+
+    .stats-card {
+        background: #fff;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .stats-card h3 {
+        margin: 0;
+        font-size: 14px;
+        color: #666;
+    }
+
+    .stats-card .number {
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
+        margin: 10px 0;
+    }
+
+    .employee-row {
+        cursor: pointer;
+    }
+
+    .employee-row:hover {
+        background-color: #f8f9fa;
+    }
+
+    .manager-row {
+        background-color: #e9ecef;
+    }
+
+    .deputy-row {
+        background-color: #f8f9fa;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid">
-    <!-- Навигационное меню -->
-    <div class="nav-menu">
-        <a href="{{ url_for('admin.personnel') }}">
-            <i class="fas fa-users"></i>
-            Активные
-        </a>
-        <a href="{{ url_for('admin_routes.fired_employees') }}" class="active">
-            <i class="fas fa-user-times"></i>
-            Уволенные
-        </a>
-        <a href="{{ url_for('admin.personnel_dashboard') }}">
-            <i class="fas fa-chart-line"></i>
-            Дашборд
-        </a>
-    </div>
+    <div class="row">
+        <!-- Боковая панель -->
+        <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
+            <div class="sidebar-sticky">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin.personnel') }}">
+                            <i class="fas fa-users"></i>
+                            Сотрудники
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin.personnel_dashboard') }}">
+                            <i class="fas fa-chart-line"></i>
+                            Дашборд
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('admin.show_fired_employees') }}">
+                            <i class="fas fa-user-times"></i>
+                            Уволенные
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
 
-    <!-- Статистика -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="stat-card">
-                <div class="stat-title">Всего сотрудников</div>
-                <div class="stat-value">{{ total_employees }}</div>
-                <div class="stat-icon"><i class="fas fa-users"></i></div>
+        <!-- Основной контент -->
+        <main role="main" class="main-content">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Уволенные сотрудники</h1>
             </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stat-card">
-                <div class="stat-title">Активные сотрудники</div>
-                <div class="stat-value">{{ active_employees }}</div>
-                <div class="stat-icon"><i class="fas fa-user-check"></i></div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stat-card">
-                <div class="stat-title">Уволенные сотрудники</div>
-                <div class="stat-value">{{ fired_employees }}</div>
-                <div class="stat-icon"><i class="fas fa-user-times"></i></div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stat-card">
-                <div class="stat-title">Средний скоринг</div>
-                <div class="stat-value">{{ avg_score }}</div>
-                <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Поиск и фильтры -->
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="search-box">
-                <i class="fas fa-search"></i>
-                <input type="text" class="form-control" id="searchInput" placeholder="Поиск уволенных сотрудников...">
-            </div>
-        </div>
-        <div class="col-md-4">
-            <select class="form-control" id="departmentFilter">
-                <option value="">Все отделы</option>
-                {% for department in departments %}
-                <option value="{{ department.id }}">{{ department.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-4">
-            <div class="input-group">
-                <input type="date" class="form-control" id="dateFrom" placeholder="Дата от">
-                <input type="date" class="form-control" id="dateTo" placeholder="Дата до">
-                <button class="btn btn-primary" id="applyFilters">Применить</button>
-                <button class="btn btn-secondary" id="clearFilters">Очистить</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Список отделов и уволенных сотрудников -->
-    <div id="departments-container">
-        {% for department in departments %}
-        <div class="department-section" data-department-id="{{ department.id }}" data-order="{{ loop.index }}">
-            <div class="department-header">
-                <span>{{ department.name }}</span>
-                <div class="department-controls">
-                    <span class="badge">{{ employees_by_department[department.name]|length if department.name in employees_by_department else 0 }}</span>
-                    <i class="fas fa-arrow-up move-up" title="Переместить вверх"></i>
-                    <i class="fas fa-arrow-down move-down" title="Переместить вниз"></i>
-                    <i class="fas fa-chevron-down toggle-department" title="Свернуть/развернуть"></i>
+            <!-- Статистика -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <h3>Всего сотрудников</h3>
+                        <div class="number">{{ total_employees }}</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <h3>Активные сотрудники</h3>
+                        <div class="number">{{ active_employees }}</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <h3>Уволенные сотрудники</h3>
+                        <div class="number">{{ fired_employees }}</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <h3>Отделов</h3>
+                        <div class="number">{{ departments|length }}</div>
+                    </div>
                 </div>
             </div>
-            <div class="department-content">
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th style="width: 25%">ФИО</th>
-                                <th style="width: 25%">Должность</th>
-                                <th style="width: 20%">Дата увольнения</th>
-                                <th style="width: 15%">Роль</th>
-                                <th style="width: 15%">Действия</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% if department.name in employees_by_department %}
-                                {% for employee in employees_by_department[department.name] %}
-                                <tr class="employee-row" data-role="{{ employee.role }}">
-                                    <td>{{ employee.full_name }}</td>
-                                    <td>{{ employee.position or 'Не указана' }}</td>
-                                    <td>{{ employee.fire_date }}</td>
-                                    <td>{{ employee.role }}</td>
-                                    <td>
-                                        <i class="fas fa-user-plus rehire-icon action-icon" title="Восстановить" data-id="{{ employee.id }}"></i>
-                                        <i class="fas fa-trash delete-icon action-icon" title="Удалить" data-id="{{ employee.id }}"></i>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            {% else %}
-                                <tr>
-                                    <td colspan="5" class="text-center">Нет уволенных сотрудников в этом отделе</td>
-                                </tr>
-                            {% endif %}
-                        </tbody>
-                    </table>
-                </div>
+
+            <!-- Таблица уволенных сотрудников -->
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>ФИО</th>
+                            <th>Должность</th>
+                            <th>Корп. телефон</th>
+                            <th>Корп. почта</th>
+                            <th>Отдел</th>
+                            <th>Дата увольнения</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for employee in employees %}
+                        <tr class="employee-row {% if employee.role == 'leader' %}manager-row{% elif employee.role == 'user' %}deputy-row{% endif %}">
+                            <td>{{ employee.full_name }}</td>
+                            <td>{{ employee.position }}</td>
+                            <td>{{ employee.corp_phone }}</td>
+                            <td>{{ employee.corporate_email }}</td>
+                            <td>{{ employee.department_name }}</td>
+                            <td>{{ employee.fire_date.strftime('%d.%m.%Y') if employee.fire_date else '' }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-success rehire-employee" data-id="{{ employee.id }}">
+                                    <i class="fas fa-user-plus"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger delete-employee" data-id="{{ employee.id }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-        </div>
-        {% endfor %}
+        </main>
     </div>
 </div>
 {% endblock %}
 
-{% block scripts %}
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+{% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM полностью загружен');
-    
-    // Обработка поиска сотрудников
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-        console.log('Найдено поле поиска');
-        searchInput.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            console.log('Поисковый запрос:', searchTerm);
-            
-            const employeeRows = document.querySelectorAll('.employee-row');
-            console.log('Найдено сотрудников:', employeeRows.length);
-            
-            employeeRows.forEach(row => {
-                const fullName = row.querySelector('td:first-child').textContent.toLowerCase();
-                const position = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
-                
-                if (fullName.includes(searchTerm) || position.includes(searchTerm)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-        });
-    } else {
-        console.error('Поле поиска не найдено!');
-    }
-    
-    // Обработка фильтров по роли
-    const filterButtons = document.querySelectorAll('.filter-btn');
-    console.log('Найдено кнопок фильтров:', filterButtons.length);
-    
-    if (filterButtons.length > 0) {
-        filterButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                console.log('Клик по кнопке фильтра:', this.getAttribute('data-filter'));
-                
-                // Активация нажатой кнопки
-                filterButtons.forEach(btn => btn.classList.remove('active'));
-                this.classList.add('active');
-                
-                const filterValue = this.getAttribute('data-filter');
-                const employeeRows = document.querySelectorAll('.employee-row');
-                
-                employeeRows.forEach(row => {
-                    const rowRole = row.getAttribute('data-role');
-                    console.log(`Сотрудник с ролью ${rowRole}, сравниваем с ${filterValue}`);
-                    
-                    if (filterValue === 'all' || rowRole === filterValue) {
-                        row.style.display = '';
+    // Обработчик восстановления сотрудника
+    document.querySelectorAll('.rehire-employee').forEach(button => {
+        button.addEventListener('click', function() {
+            const employeeId = this.getAttribute('data-id');
+            if (confirm('Вы уверены, что хотите восстановить этого сотрудника?')) {
+                fetch('/admin/rehire_employee', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ id: employeeId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
                     } else {
-                        row.style.display = 'none';
+                        alert('Ошибка при восстановлении сотрудника: ' + data.message);
                     }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Произошла ошибка при восстановлении сотрудника');
                 });
-            });
+            }
         });
-    }
-    
-    // Инициализация обработчиков для кнопок перевода и удаления
-    const rehireButtons = document.querySelectorAll('.rehire-icon');
-    console.log('Найдено кнопок перевода:', rehireButtons.length);
-    
-    if (rehireButtons.length > 0) {
-        rehireButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const employeeId = this.getAttribute('data-id');
-                console.log('Клик по кнопке перевода, ID:', employeeId);
-                rehireEmployee(employeeId);
-            });
+    });
+
+    // Обработчик удаления сотрудника
+    document.querySelectorAll('.delete-employee').forEach(button => {
+        button.addEventListener('click', function() {
+            const employeeId = this.getAttribute('data-id');
+            if (confirm('Вы уверены, что хотите удалить этого сотрудника? Это действие нельзя отменить.')) {
+                fetch('/admin/delete_employee', {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ id: employeeId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Ошибка при удалении сотрудника: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Произошла ошибка при удалении сотрудника');
+                });
+            }
         });
-    } else {
-        console.error('Кнопки перевода не найдены!');
-    }
-    
-    const deleteButtons = document.querySelectorAll('.delete-icon');
-    console.log('Найдено кнопок удаления:', deleteButtons.length);
-    
-    if (deleteButtons.length > 0) {
-        deleteButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const employeeId = this.getAttribute('data-id');
-                console.log('Клик по кнопке удаления, ID:', employeeId);
-                deleteEmployee(employeeId);
-            });
-        });
-    } else {
-        console.error('Кнопки удаления не найдены!');
-    }
-    
-    // Добавляем отладочную информацию для всех кнопок на странице
-    console.log('Добавляем отладочную информацию для всех кнопок на странице');
-    document.querySelectorAll('button, .rehire-icon, .delete-icon').forEach(button => {
-        console.log('Найдена кнопка:', button.tagName, button.className, button.id);
     });
 });
-
-function rehireEmployee(employeeId) {
-    console.log('Вызов функции rehireEmployee с ID:', employeeId);
-    
-    if (confirm('Вы уверены, что хотите перевести этого сотрудника обратно в штат?')) {
-        console.log('Подтверждение получено, отправляем запрос на сервер');
-        
-        fetch('/api/rehire_employee', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ employee_id: employeeId }),
-        })
-        .then(response => {
-            console.log('Получен ответ:', response.status);
-            return response.json();
-        })
-        .then(data => {
-            console.log('Ответ сервера:', data);
-            if (data.success) {
-                alert('Сотрудник успешно переведен обратно в штат');
-                window.location.reload();
-            } else {
-                alert('Ошибка при переводе сотрудника: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Ошибка запроса:', error);
-            alert('Произошла ошибка при переводе сотрудника');
-        });
-    } else {
-        console.log('Операция отменена пользователем');
-    }
-}
-
-function deleteEmployee(employeeId) {
-    console.log('Вызов функции deleteEmployee с ID:', employeeId);
-    
-    if (confirm('Вы уверены, что хотите удалить этого сотрудника? Это действие нельзя отменить.')) {
-        console.log('Подтверждение получено, отправляем запрос на сервер');
-        
-        fetch('/api/delete_employee', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ employee_id: employeeId }),
-        })
-        .then(response => {
-            console.log('Получен ответ:', response.status);
-            return response.json();
-        })
-        .then(data => {
-            console.log('Ответ сервера:', data);
-            if (data.success) {
-                alert('Сотрудник успешно удален');
-                window.location.reload();
-            } else {
-                alert('Ошибка при удалении сотрудника: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Ошибка запроса:', error);
-            alert('Произошла ошибка при удалении сотрудника');
-        });
-    } else {
-        console.log('Операция отменена пользователем');
-    }
-}
-
-function updateDepartmentOrder() {
-    const departments = document.querySelectorAll('.department-section');
-    departments.forEach((dept, index) => {
-        const deptId = dept.getAttribute('data-department-id');
-        const newOrder = index + 1;
-        
-        // Отправляем запрос на сервер для обновления порядка
-        fetch('/api/update_department_order', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                id: deptId,
-                order: newOrder
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (!data.success) {
-                console.error('Ошибка при обновлении порядка отделов:', data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Ошибка при отправке запроса:', error);
-        });
-    });
-}
 </script>
 {% endblock %} 

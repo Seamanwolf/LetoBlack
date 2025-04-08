@@ -9,42 +9,43 @@
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f8f9fa;
     font-size: 0.85rem;
+    padding-left: 250px; /* Добавляем отступ слева для боковой панели */
   }
   
-  /* Стили для карточек статистики */
-  .stat-card {
-    border-radius: 10px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-    padding: 20px;
-    margin-bottom: 20px;
+  /* Стили для боковой панели */
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 250px;
     background: white;
-    transition: transform 0.3s;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    z-index: 1000;
   }
-  
-  .stat-card:hover {
-    transform: translateY(-5px);
+
+  .sidebar .nav-link {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    color: #6c757d;
+    text-decoration: none;
+    transition: all 0.3s;
   }
-  
-  .stat-card .stat-title {
-    font-size: 1rem;
-    color: #7f8c8d;
-    margin-bottom: 10px;
+
+  .sidebar .nav-link i {
+    font-size: 1.2rem;
+    margin-right: 10px;
   }
-  
-  .stat-card .stat-value {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #2c3e50;
-  }
-  
-  .stat-card .stat-icon {
-    float: right;
-    font-size: 2.5rem;
-    opacity: 0.2;
+
+  .sidebar .nav-link.active {
     color: #3498db;
+    background: rgba(52, 152, 219, 0.1);
+    border-radius: 8px;
   }
   
-  /* Стили для навигационного меню */
+  /* Стили для верхнего меню */
   .nav-menu {
     background-color: white;
     padding: 0 1.2rem;
@@ -83,7 +84,45 @@
     font-size: 1.1rem;
   }
   
-  /* Таблица и иконки */
+  /* Основной контент */
+  .main-content {
+    padding: 20px;
+  }
+  
+  /* Стили для карточек статистики */
+  .stat-card {
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    padding: 20px;
+    margin-bottom: 20px;
+    background: white;
+    transition: transform 0.3s;
+  }
+  
+  .stat-card:hover {
+    transform: translateY(-5px);
+  }
+  
+  .stat-card .stat-title {
+    font-size: 1rem;
+    color: #7f8c8d;
+    margin-bottom: 10px;
+  }
+  
+  .stat-card .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #2c3e50;
+  }
+  
+  .stat-card .stat-icon {
+    float: right;
+    font-size: 2.5rem;
+    opacity: 0.2;
+    color: #3498db;
+  }
+  
+  /* Стили для отделов */
   .department-section {
     background: white;
     border-radius: 10px;
@@ -100,6 +139,7 @@
     justify-content: space-between;
     align-items: center;
     font-weight: 600;
+    cursor: pointer;
   }
   
   .department-header .badge {
@@ -108,6 +148,45 @@
     padding: 5px 10px;
     border-radius: 50px;
     font-size: 0.8rem;
+  }
+  
+  .department-header .department-controls {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .department-header .department-controls i {
+    cursor: pointer;
+    color: #6c757d;
+    transition: color 0.3s;
+  }
+  
+  .department-header .department-controls i:hover {
+    color: #3498db;
+  }
+  
+  /* Таблица сотрудников */
+  .table th, .table td {
+    text-align: center;
+    vertical-align: middle;
+  }
+  
+  /* Узкие колонки для ID и Статус */
+  .table th:nth-child(1), .table td:nth-child(1) {
+    width: 5%;
+  }
+  
+  .table th:nth-child(2), .table td:nth-child(2) {
+    width: 5%;
+  }
+  
+  /* Остальные колонки с равной шириной */
+  .table th:nth-child(3), .table td:nth-child(3),
+  .table th:nth-child(4), .table td:nth-child(4),
+  .table th:nth-child(5), .table td:nth-child(5),
+  .table th:nth-child(6), .table td:nth-child(6),
+  .table th:nth-child(7), .table td:nth-child(7) {
+    width: 18%;
   }
   
   .employee-row {
@@ -217,7 +296,42 @@
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid">
+<!-- Боковая панель -->
+<div class="sidebar">
+    <div class="nav flex-column">
+        <a href="{{ url_for('admin.personnel') }}" class="nav-link active">
+            <i class="fas fa-users"></i>
+            Сотрудники
+        </a>
+        <a href="{{ url_for('admin.show_fired_employees') }}" class="nav-link">
+            <i class="fas fa-user-times"></i>
+            Уволенные
+        </a>
+        <a href="{{ url_for('admin.personnel_dashboard') }}" class="nav-link">
+            <i class="fas fa-chart-line"></i>
+            Дашборд
+        </a>
+    </div>
+</div>
+
+<!-- Основной контент -->
+<div class="main-content">
+    <!-- Навигационное меню -->
+    <div class="nav-menu">
+        <a href="{{ url_for('admin.personnel') }}" class="active">
+            <i class="fas fa-users"></i>
+            Активные
+        </a>
+        <a href="{{ url_for('admin.show_fired_employees') }}">
+            <i class="fas fa-user-times"></i>
+            Уволенные
+        </a>
+        <a href="{{ url_for('admin.personnel_dashboard') }}">
+            <i class="fas fa-chart-line"></i>
+            Дашборд
+        </a>
+    </div>
+
     <!-- Статистика -->
     <div class="row mb-4">
         <div class="col-md-3">
@@ -250,22 +364,6 @@
         </div>
     </div>
 
-    <!-- Навигационное меню -->
-    <div class="nav-menu">
-        <a href="{{ url_for('admin.personnel') }}" class="active">
-            <i class="fas fa-users"></i>
-            Активные
-        </a>
-        <a href="{{ url_for('admin_routes.fired_employees') }}">
-            <i class="fas fa-user-times"></i>
-            Уволенные
-        </a>
-        <a href="{{ url_for('admin.personnel_dashboard') }}">
-            <i class="fas fa-chart-line"></i>
-            Дашборд
-        </a>
-    </div>
-
     <!-- Поиск и фильтры -->
     <div class="row mb-4">
         <div class="col-md-6">
@@ -285,55 +383,63 @@
     </div>
 
     <!-- Список сотрудников по отделам -->
-        {% for department in departments %}
-    <div class="department-section">
+    <div id="departments-container">
+        {% for department in departments|sort(attribute='order') %}
+        <div class="department-section" data-department-id="{{ department.id }}">
             <div class="department-header">
                 <span>{{ department.name }}</span>
-            <span class="badge">{{ employees_by_department[department.name]|default(0) }}</span>
+                <div class="department-controls">
+                    <span class="badge">{{ employees_by_department[department.name]|default(0) }}</span>
+                    <i class="fas fa-chevron-up toggle-department" title="Свернуть/развернуть"></i>
+                    <i class="fas fa-arrow-up move-up" title="Переместить вверх" data-id="{{ department.id }}"></i>
+                    <i class="fas fa-arrow-down move-down" title="Переместить вниз" data-id="{{ department.id }}"></i>
+                </div>
             </div>
+            <div class="department-content">
                 <div class="table-responsive">
                     <table class="table">
                         <thead>
                             <tr>
-                        <th>ID</th>
-                        <th>ФИО</th>
-                        <th>Должность</th>
-                        <th>Корп. телефон</th>
-                        <th>Корп. почта</th>
-                        <th>Статус</th>
-                        <th>Действия</th>
+                                <th>ID</th>
+                                <th>Статус</th>
+                                <th>ФИО</th>
+                                <th>Должность</th>
+                                <th>Корп. телефон</th>
+                                <th>Корп. почта</th>
+                                <th>Действия</th>
                             </tr>
                         </thead>
                         <tbody>
-                    {% for employee in employees %}
-                    {% if employee.department_id == department.id %}
-                    <tr class="employee-row {% if employee.role == 'leader' %}manager-row{% elif employee.role == 'user' %}deputy-row{% endif %}">
-                        <td>{{ employee.id }}</td>
-                        <td>{{ employee.full_name }}</td>
-                        <td>{{ employee.position }}</td>
-                        <td>{{ employee.corp_phone }}</td>
-                        <td>{{ employee.corporate_email }}</td>
-                        <td>
-                            <span class="employee-status {% if employee.status == 'Онлайн' %}status-online{% else %}status-offline{% endif %}"></span>
-                            {{ employee.status }}
-                                    </td>
+                            {% for employee in employees|sort(attribute='role', reverse=true) %}
+                            {% if employee.department_id == department.id %}
+                            <tr class="employee-row {% if employee.role == 'leader' %}manager-row{% elif employee.role == 'deputy' %}deputy-row{% endif %}">
+                                <td>{{ employee.id }}</td>
                                     <td>
-                            <i class="fas fa-edit edit-icon" title="Редактировать" data-bs-toggle="modal" data-bs-target="#editEmployeeModal" data-id="{{ employee.id }}"></i>
-                            <i class="fas fa-user-slash fire-icon" title="Уволить" data-id="{{ employee.id }}"></i>
+                                        <span class="employee-status {% if employee.status == 'online' %}status-online{% else %}status-offline{% endif %}"></span>
+                                    </td>
+                                <td>{{ employee.full_name }}</td>
+                                <td>{{ employee.position }}</td>
+                                <td>{{ employee.corporate_number }}</td>
+                                <td>{{ employee.corporate_email }}</td>
+                                <td>
+                                    <i class="fas fa-edit edit-icon" title="Редактировать" data-bs-toggle="modal" data-bs-target="#editEmployeeModal" data-id="{{ employee.id }}"></i>
+                                    <i class="fas fa-user-slash fire-icon" title="Уволить" data-id="{{ employee.id }}"></i>
                                     </td>
                                 </tr>
-                    {% endif %}
-                                {% endfor %}
+                            {% endif %}
+                            {% endfor %}
                         </tbody>
                     </table>
+                </div>
             </div>
         </div>
         {% endfor %}
+    </div>
 </div>
 
-<!-- Модальное окно редактирования сотрудника -->
+<!-- Модальное окно для редактирования сотрудника -->
 <div class="modal fade" id="editEmployeeModal" tabindex="-1" aria-labelledby="editEmployeeModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="editEmployeeModalLabel">Редактировать сотрудника</h5>
@@ -342,29 +448,151 @@
             <div class="modal-body">
                 <form id="editEmployeeForm">
                     <input type="hidden" id="editEmployeeId" name="id">
-                    <div class="mb-3">
-                        <label for="editFullName" class="form-label">ФИО</label>
-                        <input type="text" class="form-control" id="editFullName" name="full_name" required>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <!-- Блок для фото с возможностью загрузки -->
+                            <div class="mb-3 text-center">
+                                <div id="photoContainer" class="mb-2" style="height: 200px; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center;">
+                                    <img id="employeePhotoPreview" src="" alt="Фото сотрудника" style="max-width: 100%; max-height: 100%; display: none;">
+                                    <span id="photoPlaceholder">Нет фото</span>
                         </div>
-                    <div class="mb-3">
-                        <label for="editPosition" class="form-label">Должность</label>
-                        <input type="text" class="form-control" id="editPosition" name="position" required>
+                                <input type="file" class="form-control form-control-sm" id="employeePhoto" name="employee_photo">
+                        </div>
+                            
+                            <!-- Основные данные -->
+                            <div class="mb-2">
+                                <label for="editFullName" class="form-label">ФИО</label>
+                                <input type="text" class="form-control" id="editFullName" name="full_name" required>
                     </div>
-                    <div class="mb-3">
-                        <label for="editCorpPhone" class="form-label">Корпоративный номер</label>
-                        <input type="text" class="form-control" id="editCorpPhone" name="corp_phone">
+                            <div class="mb-2">
+                                <label for="editDepartment" class="form-label">Отдел</label>
+                                <select class="form-select" id="editDepartment" name="department_id" required>
+                                {% for department in departments %}
+                                <option value="{{ department.id }}">{{ department.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                            <div class="mb-2">
+                                <label for="editPosition" class="form-label">Должность</label>
+                                <input type="text" class="form-control" id="editPosition" name="position" required>
                     </div>
-                    <div class="mb-3">
-                        <label for="editCorporateEmail" class="form-label">Корпоративная почта</label>
-                        <input type="email" class="form-control" id="editCorporateEmail" name="corporate_email">
+                            <div class="mb-2">
+                                <label for="editRole" class="form-label">Роль</label>
+                                <select class="form-select" id="editRole" name="role" required>
+                                <option value="user">Сотрудник</option>
+                                <option value="deputy">Заместитель</option>
+                                    <option value="leader">Руководитель</option>
+                                    <option value="admin">Администратор</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="editRole" class="form-label">Роль</label>
-                        <select class="form-select" id="editRole" name="role">
-                            <option value="user">Сотрудник</option>
-                            <option value="leader">Руководитель</option>
-                            <option value="admin">Администратор</option>
-                        </select>
+                        
+                        <div class="col-md-4">
+                            <!-- Контактная информация -->
+                            <div class="mb-2">
+                                <label for="editCorporateNumber" class="form-label">Корпоративный номер</label>
+                                <input type="text" class="form-control" id="editCorporateNumber" name="corporate_number">
+                            </div>
+                            <div class="mb-2">
+                                <label for="editPersonalPhone" class="form-label">Личный телефон</label>
+                                <input type="text" class="form-control" id="editPersonalPhone" name="phone">
+                            </div>
+                            <div class="mb-2">
+                                <label for="editPreviousNumber" class="form-label">Предыдущий номер</label>
+                                <input type="text" class="form-control" id="editPreviousNumber" name="previous_number">
+                            </div>
+                            <div class="mb-2">
+                                <label for="editCorporateEmail" class="form-label">Корпоративная почта</label>
+                                <input type="email" class="form-control" id="editCorporateEmail" name="corporate_email">
+                            </div>
+                            <div class="mb-2">
+                                <label for="editPersonalEmail" class="form-label">Личная почта</label>
+                                <input type="email" class="form-control" id="editPersonalEmail" name="personal_email">
+                            </div>
+                            <div class="mb-2">
+                                <label for="editLoginPC" class="form-label">Логин ПК</label>
+                                <input type="text" class="form-control" id="editLoginPC" name="pc_login">
+                            </div>
+                            <div class="mb-2">
+                                <label for="editPasswordPC" class="form-label">Пароль ПК</label>
+                                <input type="text" class="form-control" id="editPasswordPC" name="pc_password">
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <!-- Даты и дополнительная информация -->
+                            <div class="mb-2">
+                                <label for="editHireDate" class="form-label">Дата приема</label>
+                                <input type="date" class="form-control" id="editHireDate" name="hire_date">
+                            </div>
+                            <div class="mb-2 d-none">
+                                <label for="editTerminationDate" class="form-label">Дата увольнения</label>
+                                <input type="date" class="form-control" id="editTerminationDate" name="termination_date">
+                            </div>
+                            <div class="mb-2">
+                                <label for="editBirthDate" class="form-label">Дата рождения</label>
+                                <input type="date" class="form-control" id="editBirthDate" name="birth_date">
+                            </div>
+                            <div class="mb-2">
+                                <label for="editExperience" class="form-label">Стаж работы</label>
+                                <input type="text" class="form-control" id="editExperience" name="experience" readonly>
+                            </div>
+                            <div class="mb-2">
+                                <label for="editCRMId" class="form-label">CRM ID</label>
+                                <input type="text" class="form-control" id="editCRMId" name="crm_id">
+                            </div>
+                            
+                            <!-- Чекбоксы -->
+                            <div class="mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="editDocuments" name="documents">
+                                    <label class="form-check-label" for="editDocuments">Документы</label>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="editRR" name="rr">
+                                    <label class="form-check-label" for="editRR">RR</label>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="editSite" name="site">
+                                    <label class="form-check-label" for="editSite">Сайт</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Примечания -->
+                    <div class="mb-2">
+                        <label for="editNotes" class="form-label">Примечания</label>
+                        <textarea class="form-control" id="editNotes" name="notes" rows="3"></textarea>
+                    </div>
+
+                    <!-- История номеров -->
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            История номеров
+                        </div>
+                        <div class="card-body">
+                            <div id="numberHistory" style="max-height: 100px; overflow-y: auto;">
+                                <!-- Здесь будет отображаться история номеров -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- История изменений -->
+                    <div class="mt-3">
+                        <div class="history-toggle" style="background-color: #0d6efd; color: #fff; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                            История изменений ↓
+                        </div>
+                        <div class="history-section" id="historySection" style="display: none;">
+                            <input type="text" id="historyFilter" placeholder="Фильтровать по полю" class="form-control mb-2" style="font-size:0.75rem;">
+                            <div id="historyEntries" style="max-height: 200px; overflow-y: auto;">
+                                <!-- Здесь будут отображаться записи истории -->
+                            </div>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -409,55 +637,149 @@
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Обработчик открытия модального окна редактирования
-    const editModal = document.getElementById('editEmployeeModal');
-    editModal.addEventListener('show.bs.modal', function(event) {
-        const button = event.relatedTarget;
-        const employeeId = button.getAttribute('data-id');
-        const row = button.closest('tr');
-        
-        // Заполняем форму данными сотрудника
-        document.getElementById('editEmployeeId').value = employeeId;
-        document.getElementById('editFullName').value = row.cells[1].textContent;
-        document.getElementById('editPosition').value = row.cells[2].textContent;
-        document.getElementById('editCorpPhone').value = row.cells[3].textContent;
-        document.getElementById('editCorporateEmail').value = row.cells[4].textContent;
-        
-        // Определяем роль на основе класса строки
-        const roleSelect = document.getElementById('editRole');
-        if (row.classList.contains('manager-row')) {
-            roleSelect.value = 'leader';
-        } else if (row.classList.contains('deputy-row')) {
-            roleSelect.value = 'user';
+// Загрузка данных сотрудника при открытии модального окна редактирования
+document.querySelectorAll('.edit-icon').forEach(icon => {
+    icon.addEventListener('click', function() {
+        const employeeId = this.getAttribute('data-id');
+        fetch(`/admin/get_employee/${employeeId}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('editEmployeeId').value = data.id;
+                document.getElementById('editFullName').value = data.full_name;
+                document.getElementById('editPosition').value = data.position;
+                document.getElementById('editDepartment').value = data.department_id;
+                document.getElementById('editRole').value = data.role;
+                document.getElementById('editCorporateNumber').value = data.corporate_number;
+                document.getElementById('editCorporateEmail').value = data.corporate_email;
+                document.getElementById('editPersonalPhone').value = data.phone;
+                document.getElementById('editPersonalEmail').value = data.personal_email;
+                document.getElementById('editLoginPC').value = data.pc_login;
+                document.getElementById('editPasswordPC').value = data.pc_password;
+                document.getElementById('editHireDate').value = data.hire_date ? new Date(data.hire_date).toISOString().split('T')[0] : '';
+                document.getElementById('editBirthDate').value = data.birth_date ? new Date(data.birth_date).toISOString().split('T')[0] : '';
+                document.getElementById('editCRMId').value = data.crm_id || '';
+                document.getElementById('editPreviousNumber').value = data.previous_number || '';
+                document.getElementById('editNotes').value = data.notes || '';
+                
+                // Проверяем чекбоксы
+                document.getElementById('editDocuments').checked = data.documents === 1;
+                document.getElementById('editRR').checked = data.rr === 1;
+                document.getElementById('editSite').checked = data.site === 1;
+                
+                // Отображение фото если есть
+                if (data.photo_url) {
+                    document.getElementById('employeePhotoPreview').src = data.photo_url;
+                    document.getElementById('employeePhotoPreview').style.display = 'block';
+                    document.getElementById('photoPlaceholder').style.display = 'none';
                 } else {
-            roleSelect.value = 'user';
-        }
-    });
+                    document.getElementById('employeePhotoPreview').style.display = 'none';
+                    document.getElementById('photoPlaceholder').style.display = 'block';
+                }
+                
+                // Загрузка истории изменений
+                loadEmployeeHistory(employeeId);
+                // Загрузка истории номеров
+                loadNumberHistory(employeeId);
+            });
+            });
+        });
 
-    // Обработчик сохранения изменений
-    document.getElementById('saveEmployeeChanges').addEventListener('click', function() {
-        const form = document.getElementById('editEmployeeForm');
-        const formData = new FormData(form);
-        
-        fetch('/admin/update_employee', {
-                method: 'POST',
-            body: formData
-        })
+// Загрузка истории изменений
+function loadEmployeeHistory(employeeId) {
+    fetch(`/admin/get_employee_history/${employeeId}`)
         .then(response => response.json())
         .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Ошибка при обновлении данных сотрудника: ' + data.message);
+            const historyContainer = document.getElementById('historyEntries');
+            historyContainer.innerHTML = '';
+            
+            if (data.history && data.history.length > 0) {
+                data.history.forEach(entry => {
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'history-item p-2 border-bottom';
+                    historyItem.innerHTML = `
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">${new Date(entry.date).toLocaleString()}</small>
+                            <small class="text-muted">${entry.user}</small>
+                        </div>
+                        <div>${entry.field}: ${entry.old_value} → ${entry.new_value}</div>
+                    `;
+                    historyContainer.appendChild(historyItem);
+                });
+                    } else {
+                historyContainer.innerHTML = '<div class="p-2">История изменений отсутствует</div>';
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Произошла ошибка при обновлении данных сотрудника');
         });
-    });
-});
+}
+
+// Загрузка истории номеров
+function loadNumberHistory(employeeId) {
+    fetch(`/admin/get_number_history/${employeeId}`)
+        .then(response => response.json())
+        .then(data => {
+            const numberContainer = document.getElementById('numberHistory');
+            numberContainer.innerHTML = '';
+            
+            if (data.numbers && data.numbers.length > 0) {
+                data.numbers.forEach(number => {
+                    const numberItem = document.createElement('div');
+                    numberItem.className = 'number-item p-2 border-bottom';
+                    numberItem.innerHTML = `
+                        <div class="d-flex justify-content-between">
+                            <span>${number.number}</span>
+                            <small class="text-muted">${new Date(number.date).toLocaleDateString()}</small>
+                        </div>
+                    `;
+                    numberContainer.appendChild(numberItem);
+        });
+    } else {
+                numberContainer.innerHTML = '<div class="p-2">История номеров отсутствует</div>';
+            }
+        });
+}
+
+// Расчет стажа работы
+function calculateExperience(hireDate) {
+    if (!hireDate) return '';
+    
+    const hire = new Date(hireDate);
+    const now = new Date();
+    
+    const years = now.getFullYear() - hire.getFullYear();
+    const months = now.getMonth() - hire.getMonth();
+    
+    if (months < 0) {
+        years--;
+        months += 12;
+    }
+    
+    return `${years} г. ${months} мес.`;
+}
+
+// Форматирование даты для input
+function formatDateForInput(dateString) {
+    if (!dateString) return '';
+    return new Date(dateString).toISOString().split('T')[0];
+}
+
+// Сохранение изменений сотрудника
+document.getElementById('saveEmployeeChanges').addEventListener('click', function() {
+    const form = document.getElementById('editEmployeeForm');
+    const formData = new FormData(form);
+    const employeeId = formData.get('id');
+    
+    fetch(`/admin/update_employee/${employeeId}`, {
+                method: 'POST',
+        body: formData
+            })
+    .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+            location.reload();
+                } else {
+            alert('Ошибка при сохранении изменений');
+                }
+            });
+        });
 
 // Открытие модального окна увольнения
 document.querySelectorAll('.fire-icon').forEach(icon => {
@@ -476,31 +798,41 @@ document.getElementById('confirmFireEmployee').addEventListener('click', functio
     const employeeId = formData.get('id');
     
     fetch(`/admin/fire_employee/${employeeId}`, {
-        method: 'POST',
+                method: 'POST',
         body: formData
-    })
+            })
     .then(response => response.json())
-    .then(data => {
-        if (data.success) {
+            .then(data => {
+                if (data.success) {
             location.reload();
-    } else {
+                } else {
             alert('Ошибка при увольнении сотрудника');
-        }
-    });
-});
+                }
+            });
+        });
 
 // Поиск сотрудников
 document.getElementById('searchInput').addEventListener('input', function() {
     const searchText = this.value.toLowerCase();
-    document.querySelectorAll('.employee-row').forEach(row => {
-        const employeeName = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
-        const employeePosition = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+    const departments = document.querySelectorAll('.department-section');
+    
+    departments.forEach(department => {
+        const rows = department.querySelectorAll('.employee-row');
+        let hasVisibleEmployees = false;
         
-        if (employeeName.includes(searchText) || employeePosition.includes(searchText)) {
-            row.style.display = '';
-        } else {
-            row.style.display = 'none';
-        }
+        rows.forEach(row => {
+            const employeeName = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+            const employeePosition = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
+            
+            if (employeeName.includes(searchText) || employeePosition.includes(searchText)) {
+                row.style.display = '';
+                hasVisibleEmployees = true;
+                } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        department.style.display = hasVisibleEmployees ? '' : 'none';
     });
 });
 
@@ -520,10 +852,92 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
                 row.style.display = '';
             } else if (filter === 'Сотрудники' && !row.classList.contains('manager-row') && !row.classList.contains('deputy-row')) {
                 row.style.display = '';
-            } else {
+                } else {
                 row.style.display = 'none';
             }
         });
+    });
+});
+
+// Сворачивание/разворачивание отделов
+document.querySelectorAll('.toggle-department').forEach(icon => {
+    icon.addEventListener('click', function() {
+        const department = this.closest('.department-section');
+        const content = department.querySelector('.department-content');
+        const isCollapsed = content.style.display === 'none';
+        
+        content.style.display = isCollapsed ? '' : 'none';
+        this.classList.toggle('fa-chevron-up');
+        this.classList.toggle('fa-chevron-down');
+    });
+});
+
+// Перемещение отделов и сохранение позиции
+document.querySelectorAll('.move-up').forEach(icon => {
+    icon.addEventListener('click', function() {
+        const departmentId = this.getAttribute('data-id');
+        const department = this.closest('.department-section');
+        const prevDepartment = department.previousElementSibling;
+        
+        if (prevDepartment && prevDepartment.classList.contains('department-section')) {
+            department.parentNode.insertBefore(department, prevDepartment);
+            
+            // Сохраняем новую позицию в базе данных
+            fetch('/admin/update_department_order', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    department_id: departmentId,
+                    direction: 'up'
+                })
+            });
+        }
+    });
+});
+
+document.querySelectorAll('.move-down').forEach(icon => {
+    icon.addEventListener('click', function() {
+        const departmentId = this.getAttribute('data-id');
+        const department = this.closest('.department-section');
+        const nextDepartment = department.nextElementSibling;
+        
+        if (nextDepartment && nextDepartment.classList.contains('department-section')) {
+            department.parentNode.insertBefore(nextDepartment, department);
+            
+            // Сохраняем новую позицию в базе данных
+            fetch('/admin/update_department_order', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    department_id: departmentId,
+                    direction: 'down'
+                })
+            });
+        }
+    });
+});
+
+// Обработка истории изменений
+document.querySelector('.history-toggle').addEventListener('click', function() {
+    const historySection = document.getElementById('historySection');
+    const isHidden = historySection.style.display === 'none';
+    
+    historySection.style.display = isHidden ? 'block' : 'none';
+    this.textContent = isHidden ? 'История изменений ↑' : 'История изменений ↓';
+});
+
+// Фильтрация истории изменений
+document.getElementById('historyFilter').addEventListener('input', function() {
+    const filterText = this.value.toLowerCase();
+    const historyItems = document.querySelectorAll('.history-item');
+    
+    historyItems.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        item.style.display = text.includes(filterText) ? '' : 'none';
     });
 });
 </script>
