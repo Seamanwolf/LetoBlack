@@ -16,7 +16,7 @@ def roles_list():
     """
     Страница со списком ролей
     """
-    if not current_user.is_admin():
+    if current_user.role != 'admin':
         flash('У вас нет доступа к этой странице', 'danger')
         return redirect(url_for('userlist.dashboard'))
         
@@ -35,7 +35,7 @@ def role_create():
     """
     Страница создания новой роли
     """
-    if not current_user.is_admin():
+    if current_user.role != 'admin':
         flash('У вас нет доступа к этой странице', 'danger')
         return redirect(url_for('userlist.dashboard'))
     
@@ -80,7 +80,7 @@ def role_edit(role_id):
     """
     Страница редактирования роли
     """
-    if not current_user.is_admin():
+    if current_user.role != 'admin':
         flash('У вас нет доступа к этой странице', 'danger')
         return redirect(url_for('userlist.dashboard'))
     
@@ -138,10 +138,11 @@ def role_edit(role_id):
 @login_required
 def role_delete(role_id):
     """
-    Удаление роли
+    Обработчик удаления роли
     """
-    if not current_user.is_admin():
-        return jsonify({'success': False, 'message': 'У вас нет доступа к этой операции'})
+    if current_user.role != 'admin':
+        flash('У вас нет доступа к этой операции', 'danger')
+        return redirect(url_for('userlist.dashboard'))
     
     role_dao = get_role_dao()
     role = role_dao.get_role_by_id(role_id)
@@ -173,9 +174,9 @@ def role_delete(role_id):
 @login_required
 def role_users(role_id):
     """
-    Список пользователей с указанной ролью
+    Страница со списком пользователей с определенной ролью
     """
-    if not current_user.is_admin():
+    if current_user.role != 'admin':
         flash('У вас нет доступа к этой странице', 'danger')
         return redirect(url_for('userlist.dashboard'))
     

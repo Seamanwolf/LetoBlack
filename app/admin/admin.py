@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_file, send_from_directory, abort
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_file, send_from_directory, abort, current_app
 from app.admin import admin_bp
 from app.utils import create_db_connection, login_required, get_department_weekly_stats, get_notifications_count
 from functools import wraps
@@ -21,7 +21,7 @@ def admin_dashboard():
     if current_user.role != 'admin':
         flash('У вас нет доступа к этой странице', 'danger')
         return redirect(url_for('auth.login'))
-
+    
     # Dummy data - replace this with actual database query results
     data = [
         {"department": "Sales", "deals_count": 150, "total_commission": 12000},
@@ -550,7 +550,7 @@ def login():
             
             # Добавляем ukc_kc в сессию
             session['ukc_kc'] = user.get('ukc_kc')
-            app.logger.debug(f"User 'ukc_kc': {user.get('ukc_kc')}")
+            logger.debug(f"Пользователь 'ukc_kc': {user.get('ukc_kc')}")
 
             if user['role'] == 'operator':
                 # Записываем время входа оператора в сессию
@@ -632,10 +632,10 @@ def show_brokers():
 def update_broker():
     print("Function update_broker called")  # Отладка: функция вызвана
 
-    data = request.json
+        data = request.json
     print(f"Received data: {data}")  # Отладка: входные данные
 
-    if not data:
+        if not data:
         print("No data received!")  # Отладка: данные отсутствуют
         return jsonify({'success': False, 'message': 'No data received'}), 400
 
@@ -691,7 +691,7 @@ def update_broker():
         print(f"Error while updating broker: {e}")  # Отладка: ошибка
         return jsonify({'success': False, 'message': str(e)})
     finally:
-        cursor.close()
+            cursor.close()
         connection.close()
         print("Database connection closed")  # Отладка: соединение закрыто
 
@@ -699,7 +699,7 @@ def update_broker():
 @login_required
 def add_broker():
     """Добавление нового сотрудника"""
-    if not current_user.is_admin:
+    if current_user.role != 'admin':
         return jsonify({'success': False, 'message': 'Недостаточно прав'}), 403
 
     try:
@@ -720,10 +720,10 @@ def add_broker():
         # Проверяем обязательные поля
         if not all([login, password, full_name]):
             return jsonify({'success': False, 'message': 'Не заполнены обязательные поля'}), 400
-
+            
         conn = create_db_connection()
         cursor = conn.cursor(dictionary=True)
-
+        
         try:
             # Проверяем, существует ли пользователь с таким логином
             cursor.execute("SELECT id FROM User WHERE login = %s", (login,))
@@ -738,10 +738,13 @@ def add_broker():
                     cursor.execute("SELECT name FROM Department WHERE id = %s", (department_id,))
                     dept_result = cursor.fetchone()
                     if not dept_result:
-                        return jsonify({'success': False, 'message': 'Указанный отдел не найден'}), 404
+                        return jsonify({'success': False, 'message': 'Отдел не найден'}), 404
                     department = dept_result['name']
                 except ValueError:
-                    return jsonify({'success': False, 'message': 'Неверный формат ID отдела'}), 400
+                    return jsonify({'success': False, 'message': 'Неверный ID отдела'}), 400
+                except Exception as e:
+                    logger.error(f"Ошибка при получении отдела: {str(e)}")
+                    return jsonify({'success': False, 'message': f'Ошибка при получении отдела: {str(e)}'}), 500
 
             # Хешируем пароль
             hashed_password = generate_password_hash(password)
@@ -756,44 +759,26 @@ def add_broker():
                 return jsonify({'success': False, 'message': f'Неверный формат даты: {str(e)}'}), 400
 
             # Добавляем пользователя
-            insert_query = """
-            INSERT INTO User 
-            (login, password, full_name, Phone, department, role, hire_date, personal_email, 
-            pc_login, pc_password, birth_date, ukc_kc, position, department_id) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """
-            
-            cursor.execute(
-                insert_query, 
-                (login, hashed_password, full_name, phone, department, 'user', hire_date, 
-                 personal_email, pc_login, pc_password, birth_date, ukc_kc, position, department_id)
-            )
-            
-            user_id = cursor.lastrowid
-
-            # Регистрация события в истории
-            cursor.execute(
-                "INSERT INTO UserHistory (user_id, changed_field, old_value, new_value, changed_by, changed_at) VALUES (%s, %s, %s, %s, %s, NOW())",
-                (user_id, 'create_account', '', 'Аккаунт создан', current_user.id)
-            )
+            cursor.execute("""
+                INSERT INTO User (login, password, full_name, phone, department_id, position, 
+                                hire_date, personal_email, pc_login, pc_password, birth_date, ukc_kc)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (login, hashed_password, full_name, phone, department_id, position,
+                  hire_date, personal_email, pc_login, pc_password, birth_date, ukc_kc))
             
             conn.commit()
-            current_app.logger.info(f"Добавлен новый пользователь: {login}, id: {user_id}")
-            
-            return jsonify({'success': True, 'message': 'Пользователь успешно добавлен'})
-
+            return jsonify({'success': True, 'message': 'Сотрудник успешно добавлен'})
+    
     except Exception as e:
-            conn.rollback()
-            current_app.logger.error(f"Ошибка при добавлении пользователя: {str(e)}")
-            return jsonify({'success': False, 'message': f'Ошибка при добавлении пользователя: {str(e)}'}), 500
-
+            logger.error(f"Ошибка при добавлении сотрудника: {str(e)}")
+            return jsonify({'success': False, 'message': f'Ошибка при добавлении сотрудника: {str(e)}'}), 500
     finally:
-        cursor.close()
+            cursor.close()
             conn.close()
 
     except Exception as e:
-        current_app.logger.error(f"Критическая ошибка в методе add_broker: {str(e)}")
-        return jsonify({'success': False, 'message': f'Критическая ошибка: {str(e)}'}), 500
+        logger.error(f"Ошибка при обработке запроса: {str(e)}")
+        return jsonify({'success': False, 'message': f'Ошибка при обработке запроса: {str(e)}'}), 500
 
 @admin_bp.route('/api/delete_broker', methods=['POST'])
 @login_required
@@ -853,7 +838,7 @@ def fire_broker():
         print(f"Error firing broker: {err}")
         return jsonify({'success': False, 'message': str(err)})
     finally:
-        cursor.close()
+            cursor.close()
         connection.close()
 
 @admin_bp.route('/rehire_broker', methods=['POST'])
@@ -890,9 +875,9 @@ def show_fired_brokers():
         
         # Получаем уволенных сотрудников, объединяя данные из User и Candidates
         cursor.execute("""
-            SELECT 
-                u.id, 
-                u.full_name, 
+                    SELECT 
+                        u.id, 
+                        u.full_name, 
                 u.department, 
                 COALESCE(u.position, c.position) as position, 
                 u.Phone as phone, 
@@ -904,7 +889,7 @@ def show_fired_brokers():
                 c.birth_date, 
                 c.city,
                 c.referral
-            FROM User u
+                    FROM User u
             LEFT JOIN Candidates c ON u.login = c.login_pc
             WHERE u.fired = 1
             ORDER BY u.department, u.fire_date DESC
@@ -930,9 +915,9 @@ def show_fired_brokers():
             positions_rows = cursor.fetchall()
             positions = [row['position'] for row in positions_rows if row['position']]
         
-        cursor.close()
-        connection.close()
-        
+            cursor.close()
+            connection.close()
+
         # Преобразуем даты в строковый формат для отображения
         for employee in fired_employees:
             if employee['termination_date']:
@@ -1019,7 +1004,7 @@ def edit_user(id):
         cursor = connection.cursor(dictionary=True)
         cursor.execute("SELECT id, login, department, Phone FROM User WHERE id = %s", (id,))
         user = cursor.fetchone()
-        cursor.close()
+            cursor.close()
         connection.close()
         return render_template('edit_user.html', user=user)
 
@@ -1035,9 +1020,9 @@ def delete_employee_api():
     # Пробуем получить ID из разных источников, так как jQuery может отправлять данные по-разному
     employee_id = request.args.get('id') or request.form.get('id')
     logger.debug(f"Запрошено удаление сотрудника с ID: {employee_id}")
-    
-    if not employee_id:
-        logger.warning("ID сотрудника не указан в запросе")
+        
+        if not employee_id:
+            logger.warning("ID сотрудника не указан в запросе")
         return jsonify({'success': False, 'message': 'ID сотрудника не указан'})
     
     try:
@@ -1107,7 +1092,7 @@ def delete_employee_api():
         connection.commit()
         logger.info(f"Сотрудник {employee.get('full_name')} (ID={employee_id}) успешно удален")
         return jsonify({'success': True, 'message': 'Сотрудник успешно удален'})
-    
+        
     except Exception as e:
         logger.error(f"Ошибка при удалении сотрудника: {str(e)}")
         logger.error(traceback.format_exc())  # Добавляем вывод трейсбека для более подробной информации
@@ -1125,6 +1110,10 @@ def delete_employee_api():
 @admin_bp.route('/personnel_dashboard')
 @login_required
 def personnel_dashboard():
+    if current_user.role != 'admin':
+        flash('У вас нет доступа к этой странице', 'danger')
+        return redirect(url_for('main.index'))
+        
     connection = get_db_connection()
     cursor = connection.cursor(dictionary=True)
     
@@ -1211,3 +1200,69 @@ def personnel_dashboard():
                           department_counts=department_counts,
                           recent_hires=recent_hires,
                           recent_fires=recent_fires)
+
+@admin_bp.route('/admin/personnel')
+@login_required
+def personnel():
+    """Страница управления персоналом"""
+    if current_user.role != 'admin':
+        flash('У вас нет доступа к этой странице', 'danger')
+        return redirect(url_for('main.index'))
+        
+    try:
+        conn = create_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        # Получаем список всех отделов
+        cursor.execute("SELECT id, name FROM Department ORDER BY name")
+        departments = cursor.fetchall()
+        
+        # Получаем список всех сотрудников с дополнительными полями
+        cursor.execute("""
+            SELECT u.id, u.login, u.full_name, u.Phone, u.department_id, 
+                   u.position, u.hire_date, u.status, u.role, 
+                   u.corp_phone, u.corporate_email, u.personal_email,
+                   d.name as department_name
+            FROM User u
+            LEFT JOIN Department d ON u.department_id = d.id
+            WHERE u.role != 'admin'
+            ORDER BY u.full_name
+        """)
+        employees = cursor.fetchall()
+        
+        # Получаем статистику
+        cursor.execute("SELECT COUNT(*) as total FROM User WHERE role != 'admin'")
+        total_employees = cursor.fetchone()['total']
+        
+        cursor.execute("SELECT COUNT(*) as active FROM User WHERE status = 'Онлайн' AND role != 'admin'")
+        active_employees = cursor.fetchone()['active']
+        
+        cursor.execute("SELECT COUNT(*) as fired FROM User WHERE fired = 1 AND role != 'admin'")
+        fired_employees = cursor.fetchone()['fired']
+        
+        # Создаем словарь с количеством сотрудников по отделам
+        employees_by_department = {}
+        for department in departments:
+            cursor.execute("""
+                SELECT COUNT(*) as count
+                FROM User
+                WHERE department_id = %s AND role != 'admin'
+            """, (department['id'],))
+            result = cursor.fetchone()
+            employees_by_department[department['name']] = result['count']
+        
+            cursor.close()
+            conn.close()
+        
+        return render_template('admin/personnel.html',
+                             departments=departments,
+                             employees=employees,
+                             total_employees=total_employees,
+                             active_employees=active_employees,
+                             fired_employees=fired_employees,
+                             employees_by_department=employees_by_department)
+                             
+    except Exception as e:
+        logger.error(f"Ошибка при загрузке страницы персонала: {str(e)}")
+        flash('Произошла ошибка при загрузке данных', 'danger')
+        return redirect(url_for('main.index'))

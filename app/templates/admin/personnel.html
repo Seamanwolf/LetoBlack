@@ -256,7 +256,7 @@
             <i class="fas fa-users"></i>
             Активные
         </a>
-        <a href="{{ url_for('admin.fired_employees') }}">
+        <a href="{{ url_for('admin_routes.fired_employees') }}">
             <i class="fas fa-user-times"></i>
             Уволенные
         </a>
@@ -285,16 +285,16 @@
     </div>
 
     <!-- Список сотрудников по отделам -->
-    {% for department in departments %}
+        {% for department in departments %}
     <div class="department-section">
-        <div class="department-header">
-            <span>{{ department.name }}</span>
+            <div class="department-header">
+                <span>{{ department.name }}</span>
             <span class="badge">{{ employees_by_department[department.name]|default(0) }}</span>
-        </div>
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
-                    <tr>
+            </div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
                         <th>ID</th>
                         <th>ФИО</th>
                         <th>Должность</th>
@@ -302,38 +302,38 @@
                         <th>Корп. почта</th>
                         <th>Статус</th>
                         <th>Действия</th>
-                    </tr>
-                </thead>
-                <tbody>
+                            </tr>
+                        </thead>
+                        <tbody>
                     {% for employee in employees %}
                     {% if employee.department_id == department.id %}
-                    <tr class="employee-row {% if employee.role == 'leader' %}manager-row{% elif employee.role == 'deputy' %}deputy-row{% endif %}">
+                    <tr class="employee-row {% if employee.role == 'leader' %}manager-row{% elif employee.role == 'user' %}deputy-row{% endif %}">
                         <td>{{ employee.id }}</td>
                         <td>{{ employee.full_name }}</td>
                         <td>{{ employee.position }}</td>
-                        <td>{{ employee.corporate_number }}</td>
+                        <td>{{ employee.corp_phone }}</td>
                         <td>{{ employee.corporate_email }}</td>
                         <td>
-                            <span class="employee-status {% if employee.status == 'online' %}status-online{% else %}status-offline{% endif %}"></span>
+                            <span class="employee-status {% if employee.status == 'Онлайн' %}status-online{% else %}status-offline{% endif %}"></span>
                             {{ employee.status }}
-                        </td>
-                        <td>
+                                    </td>
+                                    <td>
                             <i class="fas fa-edit edit-icon" title="Редактировать" data-bs-toggle="modal" data-bs-target="#editEmployeeModal" data-id="{{ employee.id }}"></i>
                             <i class="fas fa-user-slash fire-icon" title="Уволить" data-id="{{ employee.id }}"></i>
-                        </td>
-                    </tr>
+                                    </td>
+                                </tr>
                     {% endif %}
-                    {% endfor %}
-                </tbody>
-            </table>
+                                {% endfor %}
+                        </tbody>
+                    </table>
+            </div>
         </div>
-    </div>
-    {% endfor %}
+        {% endfor %}
 </div>
 
-<!-- Модальное окно для редактирования сотрудника -->
+<!-- Модальное окно редактирования сотрудника -->
 <div class="modal fade" id="editEmployeeModal" tabindex="-1" aria-labelledby="editEmployeeModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="editEmployeeModalLabel">Редактировать сотрудника</h5>
@@ -342,54 +342,29 @@
             <div class="modal-body">
                 <form id="editEmployeeForm">
                     <input type="hidden" id="editEmployeeId" name="id">
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="editFullName" class="form-label">ФИО</label>
-                            <input type="text" class="form-control" id="editFullName" name="full_name" required>
+                    <div class="mb-3">
+                        <label for="editFullName" class="form-label">ФИО</label>
+                        <input type="text" class="form-control" id="editFullName" name="full_name" required>
                         </div>
-                        <div class="col-md-6">
-                            <label for="editPosition" class="form-label">Должность</label>
-                            <input type="text" class="form-control" id="editPosition" name="position" required>
-                        </div>
+                    <div class="mb-3">
+                        <label for="editPosition" class="form-label">Должность</label>
+                        <input type="text" class="form-control" id="editPosition" name="position" required>
                     </div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="editDepartment" class="form-label">Отдел</label>
-                            <select class="form-select" id="editDepartment" name="department_id" required>
-                                {% for department in departments %}
-                                <option value="{{ department.id }}">{{ department.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="editRole" class="form-label">Роль</label>
-                            <select class="form-select" id="editRole" name="role" required>
-                                <option value="employee">Сотрудник</option>
-                                <option value="deputy">Заместитель</option>
-                                <option value="leader">Руководитель</option>
-                                <option value="admin">Администратор</option>
-                            </select>
-                        </div>
+                    <div class="mb-3">
+                        <label for="editCorpPhone" class="form-label">Корпоративный номер</label>
+                        <input type="text" class="form-control" id="editCorpPhone" name="corp_phone">
                     </div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="editCorporateNumber" class="form-label">Корп. телефон</label>
-                            <input type="text" class="form-control" id="editCorporateNumber" name="corporate_number">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="editCorporateEmail" class="form-label">Корп. почта</label>
-                            <input type="email" class="form-control" id="editCorporateEmail" name="corporate_email">
-                        </div>
+                    <div class="mb-3">
+                        <label for="editCorporateEmail" class="form-label">Корпоративная почта</label>
+                        <input type="email" class="form-control" id="editCorporateEmail" name="corporate_email">
                     </div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="editPhone" class="form-label">Личный телефон</label>
-                            <input type="text" class="form-control" id="editPhone" name="phone">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="editPersonalEmail" class="form-label">Личная почта</label>
-                            <input type="email" class="form-control" id="editPersonalEmail" name="personal_email">
-                        </div>
+                    <div class="mb-3">
+                        <label for="editRole" class="form-label">Роль</label>
+                        <select class="form-select" id="editRole" name="role">
+                            <option value="user">Сотрудник</option>
+                            <option value="leader">Руководитель</option>
+                            <option value="admin">Администратор</option>
+                        </select>
                     </div>
                 </form>
             </div>
@@ -434,43 +409,53 @@
 
 {% block extra_js %}
 <script>
-// Загрузка данных сотрудника при открытии модального окна редактирования
-document.querySelectorAll('.edit-icon').forEach(icon => {
-    icon.addEventListener('click', function() {
-        const employeeId = this.getAttribute('data-id');
-        fetch(`/admin/get_employee/${employeeId}`)
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('editEmployeeId').value = data.id;
-                document.getElementById('editFullName').value = data.full_name;
-                document.getElementById('editPosition').value = data.position;
-                document.getElementById('editDepartment').value = data.department_id;
-                document.getElementById('editRole').value = data.role;
-                document.getElementById('editCorporateNumber').value = data.corporate_number;
-                document.getElementById('editCorporateEmail').value = data.corporate_email;
-                document.getElementById('editPhone').value = data.phone;
-                document.getElementById('editPersonalEmail').value = data.personal_email;
-            });
-    });
-});
-
-// Сохранение изменений сотрудника
-document.getElementById('saveEmployeeChanges').addEventListener('click', function() {
-    const form = document.getElementById('editEmployeeForm');
-    const formData = new FormData(form);
-    const employeeId = formData.get('id');
-    
-    fetch(`/admin/update_employee/${employeeId}`, {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert('Ошибка при сохранении изменений');
+document.addEventListener('DOMContentLoaded', function() {
+    // Обработчик открытия модального окна редактирования
+    const editModal = document.getElementById('editEmployeeModal');
+    editModal.addEventListener('show.bs.modal', function(event) {
+        const button = event.relatedTarget;
+        const employeeId = button.getAttribute('data-id');
+        const row = button.closest('tr');
+        
+        // Заполняем форму данными сотрудника
+        document.getElementById('editEmployeeId').value = employeeId;
+        document.getElementById('editFullName').value = row.cells[1].textContent;
+        document.getElementById('editPosition').value = row.cells[2].textContent;
+        document.getElementById('editCorpPhone').value = row.cells[3].textContent;
+        document.getElementById('editCorporateEmail').value = row.cells[4].textContent;
+        
+        // Определяем роль на основе класса строки
+        const roleSelect = document.getElementById('editRole');
+        if (row.classList.contains('manager-row')) {
+            roleSelect.value = 'leader';
+        } else if (row.classList.contains('deputy-row')) {
+            roleSelect.value = 'user';
+                } else {
+            roleSelect.value = 'user';
         }
+    });
+
+    // Обработчик сохранения изменений
+    document.getElementById('saveEmployeeChanges').addEventListener('click', function() {
+        const form = document.getElementById('editEmployeeForm');
+        const formData = new FormData(form);
+        
+        fetch('/admin/update_employee', {
+                method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Ошибка при обновлении данных сотрудника: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Произошла ошибка при обновлении данных сотрудника');
+        });
     });
 });
 
@@ -498,7 +483,7 @@ document.getElementById('confirmFireEmployee').addEventListener('click', functio
     .then(data => {
         if (data.success) {
             location.reload();
-        } else {
+    } else {
             alert('Ошибка при увольнении сотрудника');
         }
     });

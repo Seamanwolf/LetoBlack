@@ -22,7 +22,7 @@ def users_list():
     """
     Страница списка пользователей
     """
-    if not current_user.is_admin():
+    if current_user.role != 'admin':
         flash('У вас нет доступа к этой странице', 'danger')
         return redirect(url_for('userlist.dashboard'))
     
@@ -41,7 +41,7 @@ def user_edit(user_id):
     """
     Страница редактирования пользователя
     """
-    if not current_user.is_admin():
+    if current_user.role != 'admin':
         flash('У вас нет доступа к этой странице', 'danger')
         return redirect(url_for('userlist.dashboard'))
     
@@ -189,10 +189,11 @@ def user_add():
     """
     Страница добавления нового пользователя
     """
-    if not current_user.is_admin():
+    if current_user.role != 'admin':
         flash('У вас нет доступа к этой странице', 'danger')
         return redirect(url_for('userlist.dashboard'))
     
+    user_dao = get_user_dao()
     role_dao = get_role_dao()
     
     # Получаем списки всех ролей

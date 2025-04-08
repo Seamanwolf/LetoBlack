@@ -15,7 +15,7 @@ def settings():
     """
     Страница настроек системы
     """
-    if not current_user.is_admin():
+    if current_user.role != 'admin':
         flash('У вас нет доступа к этой странице', 'danger')
         return redirect(url_for('userlist.dashboard'))
     
@@ -31,7 +31,7 @@ def settings_roles():
     """
     Раздел настроек для управления ролями пользователей
     """
-    if not current_user.is_admin():
+    if current_user.role != 'admin':
         flash('У вас нет доступа к этой странице', 'danger')
         return redirect(url_for('userlist.dashboard'))
     
@@ -51,7 +51,7 @@ def add_role():
     """
     Обработчик для добавления новой роли
     """
-    if not current_user.is_admin():
+    if current_user.role != 'admin':
         flash('У вас нет доступа к этой операции', 'danger')
         return redirect(url_for('userlist.dashboard'))
     
@@ -95,7 +95,7 @@ def update_role():
     """
     Обработчик для обновления роли
     """
-    if not current_user.is_admin():
+    if current_user.role != 'admin':
         flash('У вас нет доступа к этой операции', 'danger')
         return redirect(url_for('userlist.dashboard'))
     
@@ -133,7 +133,7 @@ def delete_role():
     """
     Обработчик для удаления роли
     """
-    if not current_user.is_admin():
+    if current_user.role != 'admin':
         flash('У вас нет доступа к этой операции', 'danger')
         return redirect(url_for('userlist.dashboard'))
     
@@ -178,7 +178,7 @@ def get_modules():
     """
     API для получения списка всех модулей
     """
-    if not current_user.is_admin():
+    if current_user.role != 'admin':
         return jsonify({'success': False, 'message': 'Доступ запрещен'})
     
     role_dao = get_role_dao()
@@ -192,7 +192,7 @@ def get_role_permissions(role_id):
     """
     API для получения разрешений роли
     """
-    if not current_user.is_admin():
+    if current_user.role != 'admin':
         return jsonify({'success': False, 'message': 'Доступ запрещен'})
     
     role_dao = get_role_dao()
@@ -213,7 +213,7 @@ def update_role_permissions():
     """
     Обработчик для обновления разрешений роли
     """
-    if not current_user.is_admin():
+    if current_user.role != 'admin':
         flash('У вас нет доступа к этой операции', 'danger')
         return redirect(url_for('userlist.dashboard'))
     

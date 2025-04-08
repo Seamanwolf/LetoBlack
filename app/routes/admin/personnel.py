@@ -372,7 +372,7 @@ def fired_employees():
     except Exception as e:
         logger.error(f"Ошибка при загрузке страницы уволенных сотрудников: {e}")
         flash(f'Ошибка при получении данных: {str(e)}', 'danger')
-        return redirect(url_for('admin.admin_dashboard'))
+        return redirect(url_for('admin_routes.admin_dashboard'))
     
     finally:
         cursor.close()
