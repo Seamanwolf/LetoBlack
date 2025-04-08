@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if is_new %}Создание новой роли{% else %}Редактирование роли: {{ role.display_name }}{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2>{% if is_new %}Создание новой роли{% else %}Редактирование роли: {{ role.display_name }}{% endif %}</h2>
+                <a href="{{ url_for('admin.roles_list') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Назад к списку ролей
+                </a>
+            </div>
+            
+            <form method="POST" action="{{ url_for('admin.role_create') if is_new else url_for('admin.role_edit', role_id=role.id) }}">
+                <div class="row">
+                    <!-- Основная информация о роли -->
+                    <div class="col-md-4">
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">Основная информация</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group mb-3">
+                                    <label for="name">Системное имя</label>
+                                    <input type="text" class="form-control" id="name" name="name" value="{{ role.name if role else '' }}" {% if not is_new %}readonly{% endif %} required>
+                                    <small class="form-text text-muted">Используется в системе. Только латинские буквы, цифры и подчеркивания.</small>
+                                </div>
+                                
+                                <div class="form-group mb-3">
+                                    <label for="display_name">Отображаемое имя</label>
+                                    <input type="text" class="form-control" id="display_name" name="display_name" value="{{ role.display_name if role else '' }}" {% if role and role.is_system %}readonly{% endif %} required>
+                                </div>
+                                
+                                {% if is_new %}
+                                <div class="form-group mb-3">
+                                    <label for="role_type">Тип роли</label>
+                                    <select class="form-control" id="role_type" name="role_type">
+                                        <option value="custom">Обычная</option>
+                                        <option value="backoffice">Бэк-офис</option>
+                                    </select>
+                                </div>
+                                {% endif %}
+                                
+                                <div class="form-group mb-3">
+                                    <label for="description">Описание</label>
+                                    <textarea class="form-control" id="description" name="description" rows="3">{{ role.description if role else '' }}</textarea>
+                                </div>
+                                
+                                {% if role and role.is_system %}
+                                <div class="alert alert-warning" role="alert">
+                                    <i class="fas fa-exclamation-triangle"></i> Это системная роль. Вы можете изменить только ее описание.
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Права доступа к модулям -->
+                    <div class="col-md-8">
+                        <div class="card shadow">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">Права доступа к модулям</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>Модуль</th>
+                                                <th class="text-center">Просмотр</th>
+                                                <th class="text-center">Создание</th>
+                                                <th class="text-center">Редактирование</th>
+                                                <th class="text-center">Удаление</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% if not is_new and modules %}
+                                                {% for module in modules %}
+                                                <tr>
+                                                    <td>
+                                                        <strong>{{ module.display_name }}</strong>
+                                                        {% if module.description %}
+                                                        <br>
+                                                        <small class="text-muted">{{ module.description }}</small>
+                                                        {% endif %}
+                                                    </td>
+                                                    
+                                                    {% set module_permissions = permissions.get(module.name, {}) %}
+                                                    
+                                                    <td class="text-center">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" 
+                                                                   id="module_{{ module.id }}_view" 
+                                                                   name="module_{{ module.id }}_view"
+                                                                   {% if module_permissions.get('can_view', False) %}checked{% endif %}>
+                                                        </div>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" 
+                                                                   id="module_{{ module.id }}_create" 
+                                                                   name="module_{{ module.id }}_create"
+                                                                   {% if module_permissions.get('can_create', False) %}checked{% endif %}>
+                                                        </div>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" 
+                                                                   id="module_{{ module.id }}_edit" 
+                                                                   name="module_{{ module.id }}_edit"
+                                                                   {% if module_permissions.get('can_edit', False) %}checked{% endif %}>
+                                                        </div>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" 
+                                                                   id="module_{{ module.id }}_delete" 
+                                                                   name="module_{{ module.id }}_delete"
+                                                                   {% if module_permissions.get('can_delete', False) %}checked{% endif %}>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            {% else %}
+                                                <tr>
+                                                    <td colspan="5" class="text-center">
+                                                        Права доступа к модулям будут доступны после создания роли.
+                                                    </td>
+                                                </tr>
+                                            {% endif %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4 text-end">
+                    <a href="{{ url_for('admin.roles_list') }}" class="btn btn-secondary">Отмена</a>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Запрещаем использование пробелов и специальных символов в системном имени
+        $('#name').on('keypress', function(e) {
+            var regex = new RegExp("^[a-zA-Z0-9_]+$");
+            var key = String.fromCharCode(!e.charCode ? e.which : e.charCode);
+            if (!regex.test(key)) {
+                e.preventDefault();
+                return false;
+            }
+        });
+        
+        // Преобразуем отображаемое имя в системное при создании новой роли
+        $('#display_name').on('input', function() {
+            if ($('#name').val() === '' && !$('#name').prop('readonly')) {
+                var displayName = $(this).val().toLowerCase();
+                var systemName = displayName
+                    .replace(/[^a-z0-9\s_]/g, '') // Только латинские буквы, цифры, пробелы и подчеркивания
+                    .replace(/\s+/g, '_');        // Заменяем пробелы на подчеркивания
+                
+                $('#name').val(systemName);
+            }
+        });
+    });
+</script>
+{% endblock %} 

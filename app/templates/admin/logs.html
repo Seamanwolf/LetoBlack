@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Журнал событий{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Журнал событий</h1>
+    
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Дата и время</th>
+                            <th>Пользователь</th>
+                            <th>Действие</th>
+                            <th>Детали</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Здесь будет список событий -->
+                        <tr>
+                            <td colspan="4" class="text-center">Журнал событий пуст</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

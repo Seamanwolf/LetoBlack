@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Отчет КЦ</title>
+    <!-- Подключение стилей -->
+    <link rel="stylesheet" href="{{ url_for(\'static\', filename=\'css/common.css\') }}?v={{ range(1, 100000) | random }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Подключение стилей jQuery UI (если используется) -->
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+
+    <!-- Ваши стили -->
+    <style>
+        /* Подключение шрифта */
+        @import url('https://fonts.googleapis.com/css2?family=Trajan+Pro+3&display=swap');
+
+        /* Общие стили */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        /* Стили для боковой панели */
+        .sidebar {
+            background: rgba(22,28,38,1);
+            width: 50px;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            transition: width 0.3s;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 1100;
+        }
+
+            .sidebar:hover {
+                width: 250px;
+            }
+
+        .logo {
+            width: 40px;
+            height: 40px;
+            background-color: black;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: 'Trajan Pro 3', serif;
+            transition: width 0.3s;
+        }
+
+        .sidebar:hover .logo {
+            width: 100%;
+            font-size: 24px;
+            justify-content: flex-start;
+            padding-left: 20px;
+            color: white;
+            font-family: 'Trajan Pro 3', serif;
+        }
+
+        .menu {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            width: 100%;
+        }
+
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            color: white;
+            text-decoration: none;
+            padding: 10px;
+            background-color: rgba(22,28,38,1);
+            margin: 10px 0;
+            border-radius: 5px;
+            transition: background-color 0.3s, padding 0.3s;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+
+            .sidebar a:hover {
+                background-color: #dbdbdb;
+                color: black;
+            }
+
+            .sidebar a .icon {
+                display: inline-block;
+                width: 24px;
+                height: 24px;
+                margin-right: 10px;
+                color: white;
+                transition: color 0.3s;
+            }
+
+        .sidebar:hover a .icon {
+            color: white;
+        }
+
+        .sidebar a .text {
+            display: none;
+            color: white;
+        }
+
+        .sidebar:hover a .text {
+            display: inline-block;
+        }
+
+        /* Стили для верхней панели */
+        .topbar {
+            margin-left: 50px;
+            padding: 20px;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: calc(100% - 50px);
+            z-index: 1000;
+        }
+
+            .topbar .title {
+                font-size: 18px;
+                color: #333;
+                font-weight: bold;
+                margin-left: 60px;
+            }
+
+            .topbar .right-icons {
+                display: flex;
+                align-items: center;
+            }
+
+        .profile-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #7b7b7b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-left: 20px;
+            position: relative;
+        }
+
+            .profile-icon:hover {
+                background-color: #5b5b5b;
+            }
+
+        .profile-menu {
+            display: none;
+            position: absolute;
+            top: 50px;
+            right: 0;
+            width: 240px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 5px;
+            overflow: hidden;
+            z-index: 1100;
+            border: 1px solid black;
+        }
+
+            .profile-menu .profile-info {
+                padding: 10px;
+                background-color: #f5f5f5;
+                border-bottom: 1px solid #ddd;
+            }
+
+                .profile-menu .profile-info p {
+                    margin: 0;
+                }
+
+            .profile-menu a {
+                display: block;
+                width: calc(100% - 20px);
+                margin: 5px auto;
+                padding: 10px;
+                color: black;
+                text-decoration: none;
+                transition: background-color 0.3s;
+                background-color: #e0e0e0;
+                border: 1px solid black;
+                text-align: center;
+                border-radius: 5px;
+            }
+
+                .profile-menu a:hover {
+                    background-color: #c0c0c0;
+                }
+
+        .profile-icon:focus .profile-menu,
+        .profile-icon:focus-within .profile-menu {
+            display: block;
+        }
+
+        /* Основной контейнер */
+        .content {
+            margin-left: 50px;
+            padding: 70px 20px 20px 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            overflow-x: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+            /* Заголовок */
+            .content h1 {
+                margin-bottom: 20px;
+                color: #343a40;
+                text-align: center;
+            }
+
+        /* Строка поиска */
+        #search-input {
+            width: 100%;
+            max-width: 1500px;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border: 1px solid #ced4da;
+            font-size: 14px;
+        }
+
+        /* Таблица с записями */
+        .table {
+            width: 100%;
+            max-width: 1500px; /* Увеличенная ширина */
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background-color: white;
+            border: 2px solid #007bff;
+        }
+
+            .table th, .table td {
+                text-align: left;
+                padding: 8px 12px; /* Уменьшенный паддинг */
+                border: 1px solid #dee2e6;
+                vertical-align: middle;
+                height: 30px; /* Уменьшенная высота строк */
+            }
+
+            .table th {
+                background-color: #cccccc;
+                color: black;
+                position: sticky;
+                top: 0;
+                cursor: pointer;
+            }
+
+            .table tr {
+                background-color: white; /* Единый цвет фона */
+            }
+
+                .table tr:hover {
+                    background-color: #f5f5f5;
+                }
+
+        /* Стили для кнопок редактирования */
+        .edit-icon {
+            font-size: 16px;
+            color: black; /* Черный цвет иконки */
+            visibility: hidden; /* Скрыто по умолчанию */
+            transition: visibility 0.3s, opacity 0.3s;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .table tr:hover .edit-icon {
+            visibility: visible; /* Показать при наведении */
+            opacity: 1;
+        }
+
+        /* Стили для автодополнения */
+        .autocomplete-results {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            border: 1px solid #ced4da;
+            background-color: white;
+            max-height: 150px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            border-radius: 0 0 4px 4px;
+        }
+
+            .autocomplete-results li {
+                padding: 8px 12px;
+                cursor: pointer;
+            }
+
+                .autocomplete-results li:hover {
+                    background-color: #e9ecef;
+                }
+
+        /* Обеспечиваем, чтобы родительский контейнер был относительным для абсолютного позиционирования */
+        .mb-3 {
+            position: relative;
+        }
+
+        /* Адаптивность для мобильных устройств */
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+
+            .topbar {
+                width: 100%;
+                left: 0;
+            }
+
+            .content {
+                margin-left: 0;
+                margin-top: 80px;
+                padding: 20px 10px;
+            }
+
+            #search-input {
+                max-width: 100%;
+            }
+
+            .table {
+                font-size: 12px;
+                max-width: 1000px; /* Уменьшенная ширина для мобильных */
+            }
+
+            .edit-icon {
+                font-size: 14px;
+            }
+
+            /* Дополнительные стили для мобильных */
+            .table th, .table td {
+                padding: 4px 8px;
+            }
+        }
+
+        /* Выравнивание текста в полях формы по левому краю */
+        .modal-body .form-control {
+            text-align: left;
+        }
+
+        /* Стили для кнопок прокрутки */
+        #scrollTopBtn, #scrollBottomBtn {
+            position: fixed;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border: none;
+            outline: none;
+            background-color: rgba(0, 0, 0, 0.5); /* Полупрозрачный фон */
+            color: white;
+            cursor: pointer;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: background-color 0.3s;
+        }
+
+            #scrollTopBtn:hover, #scrollBottomBtn:hover {
+                background-color: rgba(0, 0, 0, 0.7);
+            }
+
+        #scrollTopBtn {
+            bottom: 80px; /* Расположить выше кнопки вниз */
+        }
+
+        #scrollBottomBtn {
+            bottom: 20px;
+        }
+
+        /* Стили для отображения количества записей */
+        .entry-count {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <!-- Боковая панель -->
+    <div class="sidebar">
+        <div class="logo">КЦ</div>
+        <div class="menu">
+            <a href="{{ url_for('callcenter.call_center_dashboard') }}">
+                <i class="fas fa-arrow-left icon"></i><span class="text">Назад</span>
+            </a>
+            <a href="{{ url_for('callcenter.report_by_day') }}" class="button">
+                <i class="fas fa-calendar-day icon"></i><span class="text">Отчет за день</span>
+            </a>
+            <a href="{{ url_for('callcenter.report_by_month') }}" class="button">
+                <i class="fas fa-calendar-alt icon"></i><span class="text">Отчет за месяц</span>
+            </a>
+            <a href="{{ url_for('callcenter.report_by_year') }}" class="button">
+                <i class="fas fa-calendar icon"></i><span class="text">Отчет за год</span>
+            </a>
+            <a href="#" class="button" data-bs-toggle="modal" data-bs-target="#customPeriodModal">
+                <i class="fas fa-calendar-plus icon"></i><span class="text">Произвольный период</span>
+            </a>
+            <!-- Кнопка экспорта в Excel -->
+            <a href="{% if report_type == 'custom' %}
+                        {{ url_for('callcenter.export_excel', report_type=report_type, start_date=start_date, end_date=end_date) }}
+                      {% else %}
+                        {{ url_for('callcenter.export_excel', report_type=report_type) }}
+                      {% endif %}" class="button">
+                <i class="fas fa-file-excel icon"></i><span class="text">Экспорт в Excel</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Верхняя панель -->
+    <div class="topbar">
+        <div class="title">{{ report_title }}</div>
+        <div class="right-icons">
+            <div class="profile-icon" tabindex="0">
+                <i class="fas fa-user"></i>
+                <div class="profile-menu">
+                    <div class="profile-info">
+                        <p>Администратор</p>
+                    </div>
+                    <a href="{{ url_for('userlist.logout') }}">Выход</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Контент -->
+    <div class="content">
+        <!-- Изменённый заголовок -->
+        <h1>{{ report_title }}</h1>
+
+        <!-- Строка поиска -->
+        <input type="text" id="search-input" class="form-control mb-3" placeholder="Поиск...">
+
+        <!-- Таблица с записями -->
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Дата</th>
+                    <th>Время</th>
+                    <th style="width: 250px;">Брокер</th> <!-- Увеличенная ширина -->
+                    <th>Отдел</th>
+                    <th style="width: 150px;">Группа</th>
+                    <th style="width: 300px;">Объект</th>
+                    <th style="width: 250px;">Источник</th> <!-- Увеличенная ширина -->
+                    <th style="width: 100px;">ID Клиента</th>
+                    <th>Оператор</th>
+                    <th style="width: 100px;">УКЦ/КЦ</th>
+                </tr>
+            </thead>
+            <tbody id="report-entries">
+                {% for entry in entries %}
+                <tr data-id="{{ entry.id }}" data-operator-id="{{ entry.operator_id }}">
+                    <td>{{ entry.date.strftime('%d.%m.%Y') }}</td>
+                    <td>{{ entry.time }}</td>
+                    <td>
+                        {{ entry.broker_name }}
+                        <i class="fas fa-pencil-alt edit-icon"></i> <!-- Иконка карандаша -->
+                    </td>
+                    <td>{{ entry.department_id }}</td>
+                    <td>{{ entry.floor_name }}</td>
+                    <td>{{ entry.object_name }}</td>
+                    <td>{{ entry.source_name }}</td>
+                    <td>{{ entry.client_id }}</td>
+                    <td>{{ entry.operator_name }}</td>
+                    <td>{{ entry.ukc_kc }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Отображение количества записей -->
+        <div class="entry-count">
+            Передано: {{ entries|length }}
+        </div>
+    </div>
+
+    <!-- Кнопки прокрутки вверх и вниз -->
+    <button id="scrollTopBtn" title="Вверх"><i class="fas fa-arrow-up"></i></button>
+    <button id="scrollBottomBtn" title="Вниз"><i class="fas fa-arrow-down"></i></button>
+
+    <!-- Модальное окно для выбора произвольного периода -->
+    <div class="modal fade" id="customPeriodModal" tabindex="-1" aria-labelledby="customPeriodModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Выберите произвольный период</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="{{ url_for('callcenter.report_custom') }}" method="POST">
+                        <div class="mb-3">
+                            <label for="startDate" class="form-label">Дата начала</label>
+                            <input type="date" class="form-control" id="startDate" name="start_date" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="endDate" class="form-label">Дата окончания</label>
+                            <input type="date" class="form-control" id="endDate" name="end_date" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Показать отчет</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для редактирования записи -->
+    <div class="modal fade" id="editEntryModal" tabindex="-1" aria-labelledby="editEntryModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Редактировать запись</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editEntryForm" method="POST" action="{{ url_for('callcenter.edit_entry') }}">
+                        <input type="hidden" id="editEntryId" name="entry_id">
+                        <!-- Поля для редактирования каждой колонки с Autocomplete -->
+                        <div class="mb-3">
+                            <label for="editBroker" class="form-label">Брокер</label>
+                            <input type="text" id="editBroker" class="form-control" name="broker_name" required autocomplete="off">
+                            <select name="broker_id" id="editBrokerList" style="display:none;">
+                                {% for broker in brokers %}
+                                <option value="{{ broker.id }}">{{ broker.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <ul id="editBrokerResults" class="autocomplete-results"></ul>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="editFloor" class="form-label">Группа</label>
+                            <input type="text" id="editFloor" class="form-control" name="floor_name" required autocomplete="off">
+                            <select name="floor_id" id="editFloorList" style="display:none;">
+                                {% for floor in floors %}
+                                <option value="{{ floor.id }}">{{ floor.category_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <ul id="editFloorResults" class="autocomplete-results"></ul>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="editObject" class="form-label">Объект</label>
+                            <input type="text" id="editObject" class="form-control" name="object_name" required autocomplete="off">
+                            <select name="object_id" id="editObjectList" style="display:none;">
+                                {% for object in objects %}
+                                <option value="{{ object.id }}">{{ object.object_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <ul id="editObjectResults" class="autocomplete-results"></ul>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="editSource" class="form-label">Источник</label>
+                            <input type="text" id="editSource" class="form-control" name="source_name" required autocomplete="off">
+                            <select name="source_id" id="editSourceList" style="display:none;">
+                                {% for source in sources %}
+                                <option value="{{ source.id }}">{{ source.source_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <ul id="editSourceResults" class="autocomplete-results"></ul>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="editClientId" class="form-label">ID Клиента</label>
+                            <input type="text" id="editClientId" class="form-control" name="client_id" required>
+                        </div>
+
+                        <!-- Новые поля для оператора -->
+                        <div class="mb-3">
+                            <label for="editOperator" class="form-label">Оператор</label>
+                            <input type="text" id="editOperator" class="form-control" name="operator_name" required autocomplete="off">
+                            <select name="operator_id" id="editOperatorList" style="display:none;">
+                                {% for operator in operators %}
+                                <option value="{{ operator.id }}" data-ukc_kc="{{ operator.ukc_kc }}">{{ operator.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <ul id="editOperatorResults" class="autocomplete-results"></ul>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="editUkcKc" class="form-label">УКЦ/КЦ</label>
+                            <input type="text" id="editUkcKc" class="form-control" name="ukc_kc" required readonly>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <button type="submit" class="btn btn-primary">Сохранить</button>
+                            <button type="button" class="btn btn-danger" id="deleteEntryButton">Удалить запись</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Подключение скриптов -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Подключение jQuery UI (если используется в других частях) -->
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Ваш JavaScript -->
+    <script>
+    // Функции прокрутки определены в глобальной области видимости
+    function scrollToTop() {
+        $('html, body').animate({ scrollTop: 0 }, 'slow');
+    }
+
+    function scrollToBottom() {
+        $('html, body').animate({ scrollTop: $(document).height() }, 'slow');
+    }
+
+    $(document).ready(function () {
+        // Сквозной поиск
+        $('#search-input').on('input', function () {
+            var searchTerm = $(this).val().toLowerCase();
+            $('#report-entries tr').each(function () {
+                var text = $(this).text().toLowerCase();
+                $(this).toggle(text.includes(searchTerm));
+            });
+
+            // Обновление счетчика записей
+            var visibleCount = $('#report-entries tr:visible').length;
+            $('.entry-count').text('Передано: ' + visibleCount);
+        });
+
+        // Инициализация счетчика при загрузке страницы
+        var initialCount = $('#report-entries tr:visible').length;
+        $('.entry-count').text('Передано: ' + initialCount);
+
+        // Функция настройки автодополнения
+        function setupAutocomplete(inputId, selectId, resultsId) {
+            $(inputId).on('input', function () {
+                var optionsList = $(selectId + ' option'); // Обновляем список опций при каждом вводе
+                var search = $(this).val().toLowerCase();
+                var results = $(resultsId);
+                results.empty();
+
+                if (search.length > 0) {
+                    optionsList.each(function () {
+                        var itemName = $(this).text().toLowerCase();
+                        if (itemName.includes(search)) {
+                            var itemId = $(this).val();
+                            var itemOption = $('<li>').addClass('list-group-item').text($(this).text()).attr('data-id', itemId);
+                            results.append(itemOption);
+                        }
+                    });
+                    if (results.children().length > 0) {
+                        results.show();
+                    } else {
+                        results.hide();
+                    }
+                } else {
+                    results.hide();
+                }
+            });
+
+            // Выбор элемента из списка
+            $(document).on('click', resultsId + ' li', function () {
+                var itemId = $(this).attr('data-id');
+                var itemName = $(this).text();
+                $(inputId).val(itemName);
+                $(selectId).val(itemId);
+                $(resultsId).hide();
+
+                // Обновление счетчика записей
+                updateEntryCount();
+            });
+
+            // Скрытие списка при клике вне
+            $(document).click(function (event) {
+                if (!$(event.target).closest(inputId).length) {
+                    if (!$(event.target).closest(resultsId).length) {
+                        $(resultsId).hide();
+                    }
+                }
+            });
+        }
+
+        // Функция настройки автодополнения для оператора с отображением УКЦ/КЦ
+        function setupAutocompleteOperator(inputId, selectId, resultsId, ukcKcId) {
+            $(inputId).on('input', function () {
+                var optionsList = $(selectId + ' option');
+                var search = $(this).val().toLowerCase();
+                var results = $(resultsId);
+                results.empty();
+
+                if (search.length > 0) {
+                    optionsList.each(function () {
+                        var itemName = $(this).text().toLowerCase();
+                        if (itemName.includes(search)) {
+                            var itemId = $(this).val();
+                            var itemUkcKc = $(this).data('ukc_kc');
+                            var itemOption = $('<li>')
+                                .addClass('list-group-item')
+                                .text($(this).text())
+                                .attr('data-id', itemId)
+                                .attr('data-ukc_kc', itemUkcKc);
+                            results.append(itemOption);
+                        }
+                    });
+                    if (results.children().length > 0) {
+                        results.show();
+                    } else {
+                        results.hide();
+                    }
+                } else {
+                    results.hide();
+                }
+            });
+
+            // Выбор элемента из списка
+            $(document).on('click', resultsId + ' li', function () {
+                var itemId = $(this).attr('data-id');
+                var itemName = $(this).text();
+                var itemUkcKc = $(this).attr('data-ukc_kc');
+                $(inputId).val(itemName);
+                $(selectId).val(itemId);
+                $(ukcKcId).val(itemUkcKc);
+                $(resultsId).hide();
+
+                // Обновление счетчика записей
+                updateEntryCount();
+            });
+
+            // Скрытие списка при клике вне
+            $(document).click(function (event) {
+                if (!$(event.target).closest(inputId).length) {
+                    if (!$(event.target).closest(resultsId).length) {
+                        $(resultsId).hide();
+                    }
+                }
+            });
+        }
+
+        // Функция обновления счетчика записей
+        function updateEntryCount() {
+            var visibleCount = $('#report-entries tr:visible').length;
+            $('.entry-count').text('Передано: ' + visibleCount);
+        }
+
+        // Инициализация автодополнения при открытии модального окна
+        $('#editEntryModal').on('shown.bs.modal', function () {
+            setupAutocomplete('#editBroker', '#editBrokerList', '#editBrokerResults');
+            setupAutocomplete('#editFloor', '#editFloorList', '#editFloorResults');
+            setupAutocomplete('#editObject', '#editObjectList', '#editObjectResults');
+            setupAutocomplete('#editSource', '#editSourceList', '#editSourceResults');
+            setupAutocompleteOperator('#editOperator', '#editOperatorList', '#editOperatorResults', '#editUkcKc');
+        });
+
+        $('.edit-icon').on('click', function () {
+            var entryRow = $(this).closest('tr');
+            var entryId = entryRow.data('id');
+            console.log('Selected Entry ID for Editing:', entryId);
+
+            // Заполнение формы данными
+            $('#editEntryId').val(entryId);
+            $('#editBroker').val(entryRow.find('td:nth-child(3)').text().trim());
+            $('#editFloor').val(entryRow.find('td:nth-child(5)').text().trim());
+            $('#editObject').val(entryRow.find('td:nth-child(6)').text().trim());
+            $('#editSource').val(entryRow.find('td:nth-child(7)').text().trim());
+            $('#editClientId').val(entryRow.find('td:nth-child(8)').text().trim());
+            $('#editOperator').val(entryRow.find('td:nth-child(9)').text().trim());
+            $('#editUkcKc').val(entryRow.find('td:nth-child(10)').text().trim());
+
+            // Обновление скрытых select'ов на основе текущих значений
+            updateHiddenSelect('#editBroker', '#editBrokerList');
+            updateHiddenSelect('#editFloor', '#editFloorList');
+            updateHiddenSelect('#editObject', '#editObjectList');
+            updateHiddenSelect('#editSource', '#editSourceList');
+            updateHiddenSelect('#editOperator', '#editOperatorList');
+
+            $('#editEntryModal').modal('show');
+
+            // Устанавливаем действие для кнопки удаления
+            $('#deleteEntryButton').off('click').on('click', function () {
+                if (confirm('Вы уверены, что хотите удалить эту запись?')) {
+                    var deleteUrl = "{{ url_for('callcenter.delete_entry', entry_id=0) }}".replace('0', entryId);
+
+                    $.post(deleteUrl, function (response) {
+                        if (response.status === 'success') {
+                            entryRow.remove();
+                            $('#editEntryModal').modal('hide');
+
+                            // Обновление счетчика записей
+                            updateEntryCount();
+                        } else {
+                            alert(response.message || 'Ошибка при удалении записи.');
+                        }
+                    }).fail(function () {
+                        console.error('Произошла ошибка при выполнении запроса.');
+                        alert('Произошла ошибка при выполнении запроса.');
+                    });
+                }
+            });
+        });
+
+        function updateHiddenSelect(inputId, selectId) {
+            var inputValue = $(inputId).val();
+
+            if (inputValue) {
+                inputValue = inputValue.toLowerCase();
+                var matchedOption = $(selectId + ' option').filter(function () {
+                    return $(this).text().toLowerCase() === inputValue;
+                }).first();
+
+                if (matchedOption.length) {
+                    $(selectId).val(matchedOption.val());
+                } else {
+                    $(selectId).val('');
+                }
+            } else {
+                $(selectId).val('');
+            }
+        }
+
+        // Инициализация счетчика при загрузке страницы
+        updateEntryCount();
+    });
+
+    // Привязка событий прокрутки после определения функций
+    $(document).ready(function () {
+        $('#scrollTopBtn').on('click', scrollToTop);
+        $('#scrollBottomBtn').on('click', scrollToBottom);
+    });
+    </script>
+</body>
+</html>

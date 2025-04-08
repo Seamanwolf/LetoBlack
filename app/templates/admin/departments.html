@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Управление отделами{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Управление отделами</h5>
+            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addDepartmentModal">
+                Добавить отдел
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Название</th>
+                            <th>Этаж</th>
+                            <th>Количество сотрудников</th>
+                            <th>Дата создания</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for department in departments %}
+                        <tr>
+                            <td>{{ department.id }}</td>
+                            <td>{{ department.name }}</td>
+                            <td>{{ department.floor.name }}</td>
+                            <td>{{ department.employees|length }}</td>
+                            <td>{{ department.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-warning edit-department" 
+                                        data-id="{{ department.id }}"
+                                        data-name="{{ department.name }}"
+                                        data-floor="{{ department.floor_id }}">
+                                    Изменить
+                                </button>
+                                <button class="btn btn-sm btn-danger delete-department" 
+                                        data-id="{{ department.id }}">
+                                    Удалить
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно добавления отдела -->
+<div class="modal fade" id="addDepartmentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Добавить отдел</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addDepartmentForm">
+                    <div class="mb-3">
+                        <label for="departmentName" class="form-label">Название отдела</label>
+                        <input type="text" class="form-control" id="departmentName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="departmentFloor" class="form-label">Этаж</label>
+                        <select class="form-select" id="departmentFloor" required>
+                            <option value="">Выберите этаж</option>
+                            {% for floor in floors %}
+                            <option value="{{ floor.id }}">{{ floor.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="saveDepartment">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно редактирования отдела -->
+<div class="modal fade" id="editDepartmentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Редактировать отдел</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editDepartmentForm">
+                    <input type="hidden" id="editDepartmentId">
+                    <div class="mb-3">
+                        <label for="editDepartmentName" class="form-label">Название отдела</label>
+                        <input type="text" class="form-control" id="editDepartmentName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editDepartmentFloor" class="form-label">Этаж</label>
+                        <select class="form-select" id="editDepartmentFloor" required>
+                            <option value="">Выберите этаж</option>
+                            {% for floor in floors %}
+                            <option value="{{ floor.id }}">{{ floor.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="updateDepartment">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Добавление отдела
+    document.getElementById('saveDepartment').addEventListener('click', function() {
+        const name = document.getElementById('departmentName').value;
+        const floorId = document.getElementById('departmentFloor').value;
+        
+        fetch('/admin/departments/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                name: name,
+                floor_id: floorId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Ошибка при добавлении отдела: ' + data.error);
+            }
+        });
+    });
+
+    // Редактирование отдела
+    document.querySelectorAll('.edit-department').forEach(button => {
+        button.addEventListener('click', function() {
+            const id = this.dataset.id;
+            const name = this.dataset.name;
+            const floor = this.dataset.floor;
+            
+            document.getElementById('editDepartmentId').value = id;
+            document.getElementById('editDepartmentName').value = name;
+            document.getElementById('editDepartmentFloor').value = floor;
+            
+            new bootstrap.Modal(document.getElementById('editDepartmentModal')).show();
+        });
+    });
+
+    document.getElementById('updateDepartment').addEventListener('click', function() {
+        const id = document.getElementById('editDepartmentId').value;
+        const name = document.getElementById('editDepartmentName').value;
+        const floorId = document.getElementById('editDepartmentFloor').value;
+        
+        fetch(`/admin/departments/edit/${id}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                name: name,
+                floor_id: floorId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Ошибка при редактировании отдела: ' + data.error);
+            }
+        });
+    });
+
+    // Удаление отдела
+    document.querySelectorAll('.delete-department').forEach(button => {
+        button.addEventListener('click', function() {
+            if (confirm('Вы уверены, что хотите удалить этот отдел?')) {
+                const id = this.dataset.id;
+                
+                fetch(`/admin/departments/delete/${id}`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Ошибка при удалении отдела: ' + data.error);
+                    }
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

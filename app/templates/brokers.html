@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Список брокеров</title>
+    <!-- Подключаем стили -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/common.css') }}?v={{ range(1, 100000) | random }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Подключаем скрипты Bootstrap/JS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Ваши стили (встроенные) -->
+    <style>
+        /* Оставляем только специфичные стили для этой страницы */
+        th .sort-arrow {
+            display: inline-block;
+            width: 0;
+            height: 0;
+            margin-left: 5px;
+            vertical-align: middle;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+        }
+        th .sort-arrow.asc {
+            border-bottom: 5px solid #333;
+        }
+        th .sort-arrow.desc {
+            border-top: 5px solid #333;
+        }
+
+        td:hover .edit-icon {
+            visibility: visible;
+        }
+
+        .edit-icon {
+            position: absolute;
+            right: 10px;
+            visibility: hidden;
+            cursor: pointer;
+        }
+
+        .action-btn {
+            background-color: #000;
+            color: white;
+            padding: 6px 10px;
+            margin: 2px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .action-btn:hover {
+            background-color: #333;
+        }
+
+        .delete-button {
+            background-color: #dc3545;
+            color: white;
+        }
+        .delete-button:hover {
+            background-color: #c82333;
+        }
+
+        .fire-button {
+            background-color: #ffcc00;
+            color: black;
+        }
+        .fire-button:hover {
+            background-color: #ff9900;
+        }
+
+        .back-button {
+            display: flex;
+            align-items: center;
+            background-color: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .back-button i {
+            margin-right: 8px;
+        }
+        .back-button:hover {
+            background-color: #5a6268;
+        }
+
+        .actions {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .search-input {
+            width: 100%;
+            max-width: 800px;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+        }
+
+        /* CSS для кнопки "глаз" */
+        #togglePassword {
+            border-left: none;
+            cursor: pointer;
+        }
+    </style>
+
+    <!-- Скрипт с логикой -->
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // ------------------------- Сквозной поиск -------------------------
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                const filter = searchInput.value.toLowerCase();
+                const rows = document.querySelectorAll('table tbody tr');
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(filter) ? '' : 'none';
+                });
+            });
+        }
+
+        // ------------------------- Показ/скрытие пароля -------------------------
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('editPassword');
+        if (togglePassword && passwordInput) {
+            togglePassword.addEventListener('click', function () {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                this.querySelector('i').classList.toggle('fa-eye');
+                this.querySelector('i').classList.toggle('fa-eye-slash');
+            });
+        }
+
+        // -------------------- Проверка уникальности логина (добавление) --------------------
+        const addLoginInput = document.getElementById('addLogin');
+        const loginError = document.getElementById('loginError');
+        if (addLoginInput) {
+            addLoginInput.addEventListener('input', function () {
+                const username = addLoginInput.value;
+                if (username.length > 0) {
+                    fetch('/admin/check_username', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: new URLSearchParams({
+                            'username': username
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.exists) {
+                            loginError.style.display = 'block';
+                        } else {
+                            loginError.style.display = 'none';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+                } else {
+                    loginError.style.display = 'none';
+                }
+            });
+        }
+
+        // -------------------- Отправка формы "Добавить брокера" --------------------
+        const addBrokerForm = document.getElementById('addBrokerForm');
+        if (addBrokerForm) {
+            addBrokerForm.addEventListener('submit', function (event) {
+                if (loginError && loginError.style.display === 'block') {
+                    event.preventDefault();
+                    alert('Логин уже используется, пожалуйста, выберите другой.');
+                } else {
+                    event.preventDefault();
+
+                    const login       = document.getElementById('addLogin').value;
+                    const fullName    = document.getElementById('addFullName').value;
+                    const phone       = document.getElementById('addPhone').value;
+                    const department  = document.getElementById('addDepartment').value;
+                    const hireDate    = document.getElementById('addHireDate').value;
+                    const password    = document.getElementById('addPassword').value;
+
+                    fetch('/admin/api/add_user', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            login: login,
+                            full_name: fullName,
+                            phone: phone,
+                            department: department,
+                            hire_date: hireDate,
+                            password: password
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert(data.message);
+                        }
+                    });
+                }
+            });
+        }
+
+        // -------------------- Логика редактирования брокера (открытие модалки) --------------------
+        document.querySelectorAll('.edit-icon').forEach(icon => {
+            icon.addEventListener('click', function () {
+                const brokerId = this.getAttribute('data-id'); // Получаем ID брокера
+                console.log("Clicked edit. brokerId =", brokerId);
+
+                // Делаем запрос на бэкенд, чтобы получить данные
+                fetch(`/admin/api/get_broker?id=${brokerId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Заполняем форму
+                            document.getElementById('editBrokerId').value = data.id;
+                            document.getElementById('editLogin').value = data.login;
+                            document.getElementById('editFullName').value = data.full_name;
+                            document.getElementById('editPhone').value = data.Phone;
+                            document.getElementById('editDepartment').value = data.department;
+                            document.getElementById('editHireDate').value = new Date(data.hire_date).toISOString().split('T')[0];
+                            document.getElementById('editRole').value = data.role || 'user';
+                            document.getElementById('editPassword').value = '';
+                        } else {
+                            alert('Не удалось получить данные брокера: ' + data.message);
+                        }
+                    })
+                    .catch(error => console.error('Ошибка при загрузке брокера:', error));
+            });
+        });
+
+        // -------------------- Сабмит формы "Редактировать брокера" --------------------
+        const editBrokerForm = document.getElementById('editBrokerForm');
+        if (editBrokerForm) {
+            editBrokerForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const brokerId   = document.getElementById('editBrokerId').value;
+                const login      = document.getElementById('editLogin').value;
+                const fullName   = document.getElementById('editFullName').value;
+                const phone      = document.getElementById('editPhone').value;
+                const department = document.getElementById('editDepartment').value;
+                const hireDate   = document.getElementById('editHireDate').value;
+                const password   = document.getElementById('editPassword').value;
+                const role       = document.getElementById('editRole').value;
+
+                const payload = {
+                    id: brokerId,
+                    login: login,
+                    full_name: fullName,
+                    Phone: phone,
+                    department: department,
+                    hire_date: hireDate,
+                    password: password,
+                    role: role
+                };
+
+                console.log("Sending payload:", payload); // Отладка отправляемых данных
+
+                fetch('/admin/api/update_broker', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Response from server:", data); // Отладка ответа сервера
+                    if (data.success) {
+                        alert('Данные успешно обновлены');
+                        location.reload();
+                    } else {
+                        alert('Ошибка: ' + data.message);
+                    }
+                })
+                .catch(error => console.error('Ошибка:', error));
+            });
+        }
+
+        // -------------------- Логика увольнения брокера --------------------
+        const fireButton = document.getElementById('fireButton');
+        if (fireButton) {
+            fireButton.addEventListener('click', function () {
+                const brokerId = document.getElementById('editBrokerId').value;
+                fetch(`/admin/api/fire_broker`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ id: brokerId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => console.error('Ошибка при увольнении брокера:', error));
+            });
+        }
+    });
+    </script>
+</head>
+
+<body>
+    <!-- Боковая панель -->
+    <div class="sidebar">
+        <div class="logo">Л</div>
+        <div class="menu">
+            <a href="{{ url_for('admin.admin_dashboard') }}">
+                <i class="fas fa-arrow-left icon"></i><span class="text">Назад</span>
+            </a>
+            <a href="#" class="button" data-bs-toggle="modal" data-bs-target="#addBrokerModal">
+                <i class="fas fa-user-plus icon"></i><span class="text">Добавить брокера</span>
+            </a>
+            <a href="{{ url_for('admin.show_fired_brokers') }}">
+                <i class="fas fa-user-minus icon"></i><span class="text">Уволенные</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Верхняя панель -->
+    <div class="topbar">
+        <div class="title">Брокеры</div>
+        <div class="right-icons">
+            <div class="profile-icon" tabindex="0">
+                <i class="fas fa-user"></i>
+                <div class="profile-menu">
+                    <div class="profile-info">
+                        <p>Администратор</p>
+                    </div>
+                    <a href="{{ url_for('userlist.logout') }}">Выход</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Основной контент -->
+    <div class="content">
+        <h2>Брокеры</h2>
+        <input type="text" id="search-input" class="search-input" placeholder="Поиск...">
+        <table>
+            <tr>
+                <th>Полное имя <span class="sort-arrow"></span></th>
+                <th>Отдел <span class="sort-arrow"></span></th>
+                <th>Телефон <span class="sort-arrow"></span></th>
+                <th>Дата приема <span class="sort-arrow"></span></th>
+            </tr>
+            {% for broker in brokers %}
+            <tr>
+                <td>
+                    {{ broker.full_name }}
+                    <i class="fas fa-pencil-alt edit-icon"
+                       data-bs-toggle="modal"
+                       data-bs-target="#editBrokerModal"
+                       data-id="{{ broker.id }}"></i>
+                </td>
+                <td>{{ broker.department }}</td>
+                <td>{{ broker.Phone }}</td>
+                <td>{{ broker.hire_date }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <!-- Модальное окно "Добавить брокера" -->
+    <div class="modal fade" id="addBrokerModal" tabindex="-1" aria-labelledby="addBrokerModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addBrokerModalLabel">Добавить брокера</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addBrokerForm">
+                        <div class="mb-3">
+                            <label for="addLogin" class="form-label">Логин</label>
+                            <input type="text" class="form-control" id="addLogin" name="login" required>
+                            <div id="loginError" class="form-text text-danger" style="display: none;">Логин уже используется.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="addFullName" class="form-label">Полное имя</label>
+                            <input type="text" class="form-control" id="addFullName" name="full_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="addPhone" class="form-label">Телефон</label>
+                            <input type="text" class="form-control" id="addPhone" name="phone" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="addDepartment" class="form-label">Отдел</label>
+                            <input type="text" class="form-control" id="addDepartment" name="department" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="addHireDate" class="form-label">Дата приема</label>
+                            <input type="date" class="form-control" id="addHireDate" name="hire_date" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="addPassword" class="form-label">Пароль</label>
+                            <input type="password" class="form-control" id="addPassword" name="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Добавить</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно "Редактировать брокера" -->
+    <div class="modal fade" id="editBrokerModal" tabindex="-1" aria-labelledby="editBrokerModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editBrokerModalLabel">Редактировать брокера</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editBrokerForm">
+                        <input type="hidden" id="editBrokerId" name="broker_id">
+
+                        <div class="mb-3">
+                            <label for="editLogin" class="form-label">Логин</label>
+                            <input type="text" class="form-control" id="editLogin" name="login" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editFullName" class="form-label">Полное имя</label>
+                            <input type="text" class="form-control" id="editFullName" name="full_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editPhone" class="form-label">Телефон</label>
+                            <input type="text" class="form-control" id="editPhone" name="phone" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editDepartment" class="form-label">Отдел</label>
+                            <input type="text" class="form-control" id="editDepartment" name="department" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editHireDate" class="form-label">Дата приема</label>
+                            <input type="date" class="form-control" id="editHireDate" name="hire_date" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editRole" class="form-label">Роль</label>
+                            <select class="form-control" id="editRole" name="role" required>
+                                <option value="admin">Администратор</option>
+                                <option value="leader">Руководитель</option>
+                                <option value="backoffice">Бэк-офис</option>
+                                <option value="user">Брокер</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editPassword" class="form-label">Пароль</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="editPassword" name="password">
+                                <button type="button" class="btn btn-outline-secondary" id="togglePassword">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between;">
+                            <button type="submit" class="btn save-button">Сохранить</button>
+                            <button type="button" class="btn fire-button" id="fireButton">Уволить</button>
+                        </div>
+                    </form>
+
+                    <!-- Скрытая форма для увольнения -->
+                    <form id="fireBrokerForm" style="display: none;">
+                        <input type="hidden" id="fireBrokerId" name="broker_id">
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

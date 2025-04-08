@@ -1,0 +1,1546 @@
+{% extends "base.html" %}
+
+{% block title %}Авито Про - {{ category }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/avito.css') }}">
+{% endblock %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <title>Авито Про - {{ category }}</title>
+    <link rel="stylesheet" href="{{ url_for(\'static\', filename=\'css/common.css\') }}?v={{ range(1, 100000) | random }}">
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <style>
+
+        .avito-content {
+            padding-top: 140px; /* Topbar (50px) + Category buttons (50px) + Search (40px) */
+            margin-left: 50px; /* Отступ для основного контента */
+            padding: 70px 20px 20px 20px; /* Отступы */
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            overflow-x: auto; /* Горизонтальная прокрутка */
+        }
+
+            /* Стили для кнопки "Добавить" */
+        .btn-add {
+            display: flex;
+            align-items: center;
+            color: white;
+            text-decoration: none;
+            padding: 10px;
+            background-color: rgba(22,28,38,1); /* То же самое, как у ссылки */
+            margin: 10px 0;
+            border-radius: 5px;
+            transition: background-color 0.3s, padding 0.3s;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+            border: none; /* Убираем границу у кнопки */
+        }
+
+            /* При наведении на панель (когда она развёрнута) показываем текст */
+        .sidebar:hover .btn-add .text {
+            color: white; /* Белый цвет текста */
+            display: inline-block; /* Текст появляется при наведении на панель */
+        }
+
+        /* Эффекты при наведении на кнопку "Добавить" */
+        .btn-add:hover {
+            background-color: #dbdbdb;
+            color: white;
+        }
+
+        .btn-add .icon {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            margin-right: 10px;
+            color: white;
+            transition: color 0.3s;
+        }
+
+        .btn-add:hover .icon {
+            color: white; /* Цвет значка при наведении */
+        }
+
+        .btn-add .text {
+            display: none;
+            color: white;
+        }
+
+        .btn-add:hover .text {
+            display: inline-block;
+        }
+
+        /* Закреплённый блок с поиском и заголовком */
+        .fixed-header {
+            position: fixed;
+            top: 135px; /* Topbar (50px) + Category buttons (50px) */
+            left: 0; /* Начинается с самого левого края */
+            right: 0; /* Заканчивается у самого правого края */
+            width: 100%;
+            z-index: 999;
+            background-color: #f5f5f5;
+            padding: 20px 20px 10px 20px;
+            border-bottom: 1px solid #ffffff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* стили для поля поиска */
+        #search-input {
+            margin-left: 65px;
+            width: calc(100% - 85px); /* Учитываем padding */
+            padding: 10px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+
+        /* Заголовок категории */
+        /* .category-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        } */
+
+        .employee-search {
+            /* Используем стандартный вид Bootstrap, можно убрать ненужные тени или границы */
+            border: 1px solid #ced4da;
+            border-radius: .25rem;
+        }
+
+        /* Стили для верхней панели с категориями */
+        .category-buttons {
+            position: fixed;
+            top: 50px; /* Высота верхней панели (topbar) */
+            width: 100%;
+            z-index: 1000;
+            background-color: #ffffff;
+            padding: 12px 0;
+            border-bottom: 1px solid #e0e0e0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* Внутренний контейнер для кнопок */
+        .category-buttons .buttons-container {
+            margin-left: 65px; /* Отступ от левого края */
+            display: flex;
+            gap: 15px;
+        }
+
+        /* Стили для кнопок категорий */
+        .category-buttons .button.active {
+            background-color: #28a745;
+            border: 2px solid #28a745;
+        }
+        .category-buttons .button.inactive {
+            background-color: #e6e6e6;
+            border: 2px solid #28a745;
+        }
+        .category-buttons .button.inactive:hover {
+            background-color: #47df47;
+            border: 2px solid #47df47;
+        }
+
+        .category-buttons .button.active .text {
+            color: white; /* текст остаётся белым при наведении */
+        }
+
+        .category-buttons .button .text {
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .category-buttons .button:hover .text {
+            color: white; /* текст остаётся белым при наведении */
+        }
+
+        /* Стили для таблицы */
+        table {
+            font-family: 'Arial', sans-serif;
+            font-size: 12px;
+            line-height: 1.5;
+            border: 2px solid #0a7e00 !important;
+            overflow: hidden;   /* Чтобы скругление работало корректно */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Легкая тень */
+        }
+
+        table tbody tr:nth-child(odd) {
+            background-color: #fafafa;
+        }
+
+        table tbody tr:nth-child(even) {
+            background-color: #ffffff;
+        }
+
+        table tbody tr:hover {
+            background-color: #a5eeaf;
+            transition: background-color 0.3s;
+        }
+
+        table th, table td {
+            border: 1px solid #3e5322;
+            padding: 5px 10px; /* уменьшение вертикальных отступов */
+            line-height: 1.2;  /* уменьшение межстрочного интервала */
+        }
+
+        table thead {
+            background-color: #f0f8ff; /* Например, светло-голубой фон */
+            color: #333;              /* Темный цвет текста */
+            font-weight: bold;
+            text-align: center;
+        }
+
+        table thead th {
+            padding: 12px;
+            border-bottom: 2px solid #0a7e00; /* Толстая нижняя линия */
+        }
+
+        /* Разделители между столбцами в шапке */
+        table thead th:not(:last-child) {
+            border-right: 2px solid #0a7e00;
+        }
+
+        table th:first-child,
+        table td:first-child {
+            width: 4%;              /* Заставляет столбец сжиматься под содержимое */
+            white-space: nowrap;    /* Запрещает перенос текста */
+        }
+
+        /* Новая таблица */
+        .tables-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            margin-top: 140px; /* Отступ для закреплённого блока */
+            padding: 20px;
+        }
+
+        .table-group {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .table-group[style*="display: none"] {
+            opacity: 0;
+            transform: scale(0.95);
+            pointer-events: none;
+        }
+
+        /* Сообщение "Ничего не найдено" */
+        .no-results {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            font-size: 1.2em;
+            color: #666;
+        }
+
+        .group-header {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+            padding: 10px;
+            background-color: #c9fadd;
+            border-radius: 5px;
+        }
+
+        /* Стили для результатов автозаполнения */
+
+        .employee-cell {
+            position: relative; /* Создаём локальный контекст */
+            z-index: 1;         /* Поднимаем над таблицей */
+        }
+
+        #global-autocomplete-container {
+            position: absolute;
+            z-index: 99999; /* Выше всех элементов */
+        }
+        
+        /* Автозаполнение - оригинальные стили БЕЗ ИЗМЕНЕНИЙ */
+        .autocomplete-results {
+            width: auto;
+            min-width: 100%;
+            position: absolute;  /* Абсолютно под input */
+            top: 100%;
+            left: 0;
+            z-index: 99999;      /* Достаточно большой, чтобы быть поверх таблицы */
+
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            max-height: 150px;
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: white;
+            font-family: 'Arial', sans-serif;
+            font-size: 12px;
+            line-height: 1.2;
+            overflow-y: auto;
+        }
+
+        .autocomplete-results li {
+            white-space: nowrap;
+            border-bottom: 1px solid #50804e;
+            padding: 5px 8px;
+            cursor: pointer;
+        }
+
+        .autocomplete-results li:last-child {
+            border-bottom: none;
+        }
+
+        .autocomplete-results:empty {
+            display: none;
+        }
+
+        /* Новые стили для позиционирования */
+        .autocomplete-container {
+            position: absolute;
+            z-index: 1050;
+        }
+
+        /* Поле отдела */
+        .department-text {
+            border: none;
+            background: transparent;
+            padding: 0;
+            font: inherit;
+        }
+
+        /* Строки таблицы */
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        /* Иконка редактирования */
+        .fa-pencil-alt {
+            color: #6c757d;
+            margin-left: 8px;
+            transition: color 0.2s;
+        }
+
+        .fa-pencil-alt:hover {
+            color: #007bff;
+        }
+
+        .cancel-edit {
+            margin-left: 10px;
+            padding: 5px 10px;
+            font-size: 0.875rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        th.sortable {
+            cursor: pointer;
+            position: relative;
+        }
+        
+        th.sortable:hover {
+            background-color: #f8f9fa;
+        }
+        
+        th.sortable::after {
+            content: "↕";
+            position: absolute;
+            right: 8px;
+            opacity: 0.5;
+        }
+        
+        .unblock-btn {
+            background-color: #28a745;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .block-btn {
+            background-color: #dc3545;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
+
+        /* Стили для кнопок действий */
+        .action-buttons {
+            display: flex;
+            flex-direction: row; /* Явно задаем горизонтальное расположение */
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .action-buttons form,
+        .action-buttons button {
+            display: inline-block;
+        }
+
+        .move-btn {
+            background-color: #ffc107;
+            color: black;
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .archive-btn {
+            background-color: #6c757d;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .restore-btn {
+            background-color: #17a2b8;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
+
+        /* Стили для выбора категории */
+        .category-select {
+            margin: 15px 0;
+        }
+
+        .category-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .category-options label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .category-options label:hover {
+            background-color: #f8f9fa;
+        }
+
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #ff9900;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .setup-block {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .setup-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem; 
+        }
+
+        #filterSpinner {
+            display: none !important; /* Скрыт по умолчанию */
+            justify-content: center;
+            align-items: center;
+            height: 60px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Боковая панель с кнопкой назад -->
+    <div class="sidebar">
+        <div class="logo">Л</div>
+        <div class="menu">
+            <!-- Ссылка на основную панель администратора -->
+            <a href="{{ url_for('admin.admin_dashboard') }}">
+                <i class="fas fa-arrow-left icon"></i><span class="text">Назад</span>
+            </a>
+
+            <!-- Кнопка "Добавить" перемещена сюда -->
+            {% if category not in ['Блок', 'Архив'] %}
+            <button id="addNumberBtn" type="button" class="btn-add" data-bs-toggle="modal" data-bs-target="#addNumberModal">
+                <i class="fas fa-plus icon"></i><span class="text">Добавить</span>
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Верхняя панель с кнопками категорий -->
+    <div class="topbar">
+        <div class="title">Авито Про</div>
+        <div class="right-icons">
+            <div class="profile-icon" tabindex="0">
+                <i class="fas fa-user"></i>
+                <div class="profile-menu">
+                    <div class="profile-info">
+                        <p>{{ current_user.full_name }}</p>
+                    </div>
+                    <a href="{{ url_for('userlist.logout') }}">Выход</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Кнопки категорий в верхней части -->
+    <div class="category-buttons">
+        <div class="buttons-container">
+            <a href="{{ url_for('avito.avito_category', category='Вторички') }}" 
+                class="button {% if category == 'Вторички' %}active{% else %}inactive{% endif %}">
+                <span class="text">Вторички</span>
+            </a>
+            <a href="{{ url_for('avito.avito_category', category='Загородная коммерция') }}" 
+                class="button {% if category == 'Загородная коммерция' %}active{% else %}inactive{% endif %}">
+                <span class="text">Загородная коммерция</span>
+            </a>
+            <a href="{{ url_for('avito.avito_category', category='HR') }}" 
+                class="button {% if category == 'HR' %}active{% else %}inactive{% endif %}">
+                <span class="text">HR</span>
+            </a>
+            <a href="{{ url_for('avito.avito_category', category='Резерв') }}" 
+                class="button {% if category == 'Резерв' %}active{% else %}inactive{% endif %}">
+                <span class="text">Резерв</span>
+            </a>
+            <a href="{{ url_for('avito.avito_category', category='Блок') }}" 
+                class="button {% if category == 'Блок' %}active{% else %}inactive{% endif %}">
+                <span class="text">Блок</span>
+            </a>
+            <a href="{{ url_for('avito.avito_category', category='Архив') }}" 
+                class="button {% if category == 'Архив' %}active{% else %}inactive{% endif %}">
+                <span class="text">Архив</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Контент страницы -->
+    <div class="avito-content">
+        <div class="fixed-header">
+            <!-- Поле поиска -->
+            <input type="text" id="search-input" placeholder="Поиск...">
+
+            <!-- <h1 class="category-title">{{ category }}</h1> -->
+        </div>
+
+        <!-- Кнопка добавления номера вручную -->
+        <!-- {% if category not in ['Блок', 'Архив'] %}
+        <button id="addNumberBtn" type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addNumberModal">
+          Добавить
+        </button>
+        {% endif %} -->
+
+
+        <!-- Таблица номеров -->
+        <!-- Вместо старой таблицы -->
+        <div class="tables-container">
+            {% for group, numbers in grouped_numbers.items() %}
+            <div class="table-group">
+                <h3 class="group-header">Группа: {{ group }}</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Группа</th>
+                            {% if category not in ['Резерв'] %}
+                                <th>Сотрудник</th>
+                                <th>Отдел</th>
+                            {% endif %}
+                            <th>Номер сим</th>
+                            <th>Почта</th>
+                            <th>Пароль</th>
+                            <th>Настройка</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for number in numbers %}
+                        <tr data-number-id="{{ number.id }}">
+                            <td>{{ number.account_group }}</td>
+                            {% if category not in ['Резерв'] %}
+                                <td>
+                                    <div class="employee-cell">
+                                        {% if number.employee_id %}
+                                            <span class="employee-name" data-employee-id="{{ number.employee_id }}">{{ number.employee_full_name }}</span>
+                                            <i class="fas fa-pencil-alt edit-employee" title="Изменить"></i>
+                                        {% else %}
+                                            <input type="text" class="employee-search" 
+                                                placeholder="Выберите сотрудника" 
+                                                data-number-id="{{ number.id }}"
+                                                autocomplete="off">
+                                            <ul class="autocomplete-results"></ul>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="department-text">{{ number.department or '' }}</span>
+                                </td>
+                            {% endif %}
+                            <td>{{ number.sim_number }}</td>
+                            <td>{{ number.email }}</td>
+                            <td>{{ number.password }}</td>
+                            <!-- Новый столбец: Настройка -->
+                            <td>
+                                <div class="setup-block">
+
+                                    <!-- 1) Блок Переадресация -->
+                                    <div class="setup-item">
+                                        <button type="button" class="btn btn-success btn-sm redirect-btn" data-number-id="{{ number.id }}" {% if not number.employee_id %}disabled{% endif %}>
+                                            Переадресация
+                                        </button>
+                                        <!-- Пример вывода статуса через Badge -->
+                                        {% if number.redirect_status == 'ok' %}
+                                            <span class="badge bg-success">OK</span>
+                                        {% elif number.redirect_status == 'error' %}
+                                            <span class="badge bg-warning text-dark">Ошибка</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Не настроено</span>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- 2) Блок Фильтр -->
+                                    <div class="setup-item">
+                                        <button type="button" class="btn btn-warning btn-sm filter-btn" data-number-id="{{ number.id }}" {% if not number.employee_id %}disabled{% endif %}>
+                                            Фильтр
+                                        </button>
+                                        {% if number.filter_status == 'ok' %}
+                                            <span class="badge bg-success">OK</span>
+                                        {% elif number.filter_status == 'error' %}
+                                            <span class="badge bg-warning text-dark">Ошибка</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Не настроено</span>
+                                        {% endif %}
+                                    </div>
+
+                                </div>
+                            </td>
+                            <!-- Конец нового столбца -->
+                            <td>
+                                <!-- Действия (остаются без изменений) -->
+                                {% if category == 'Архив' %}
+                                    <form method="POST" action="{{ url_for('avito.restore_number', number_id=number.id) }}">
+                                        <input type="hidden" name="current_category" value="{{ category }}">
+                                        <button type="submit" class="restore-btn">Восстановить</button>
+                                    </form>
+                                {% elif category == 'Блок' %}
+                                    <div class="action-buttons">
+                                        <form method="POST" action="{{ url_for('avito.unblock_number', number_id=number.id) }}">
+                                            <input type="hidden" name="current_category" value="{{ category }}">
+                                            <button type="submit" class="unblock-btn">Вернуть</button>
+                                        </form>
+                                        <form method="POST" action="{{ url_for('avito.archive_number', number_id=number.id) }}">
+                                            <input type="hidden" name="current_category" value="{{ category }}">
+                                            <button type="submit" class="archive-btn">В архив</button>
+                                        </form>
+                                    </div>
+                                {% else %}
+                                    <div class="action-buttons">
+                                        {% if category in ['Вторички', 'Загородная коммерция', 'HR', 'Резерв'] %}
+                                            <button class="move-btn" data-number-id="{{ number.id }}">Переместить</button>
+                                        {% endif %}
+                                        {% if category != 'Архив' %}
+                                            <form method="POST" action="{{ url_for('avito.archive_number', number_id=number.id) }}">
+                                                <input type="hidden" name="current_category" value="{{ category }}">
+                                                <button type="submit" class="archive-btn">В архив</button>
+                                            </form>
+                                        {% endif %}
+                                        <form method="POST" action="{{ url_for('avito.block_number', number_id=number.id) }}">
+                                            <input type="hidden" name="current_category" value="{{ category }}">
+                                            <button type="submit" class="block-btn">Заблокировать</button>
+                                        </form>
+                                    </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endfor %}
+            <div class="no-results">Совпадений не найдено</div>
+        </div>
+
+        <!-- Модальное окно для добавления номера -->
+        <div class="modal fade" id="addNumberModal" tabindex="-1" aria-labelledby="addNumberModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <!-- Шапка модального окна -->
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addNumberModalLabel">Добавить номер вручную</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                    </div>
+                    <!-- Тело модального окна -->
+                    <div class="modal-body">
+                        <!-- Форма для добавления номера вручную -->
+                        <form method="POST" action="{{ url_for('avito.add_avito_acc') }}">
+                            <input type="hidden" name="category" value="{{ category }}">
+                            <div class="mb-3">
+                                <label for="account_group" class="form-label">Группа номеров:</label>
+                                <input type="text" class="form-control" id="account_group" name="account_group" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="sim_number" class="form-label">Номер сим:</label>
+                                <input type="text" class="form-control" id="sim_number" name="sim_number" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Почта:</label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Пароль:</label>
+                                <input type="password" class="form-control" id="password" name="password" required>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">Добавить номер</button>
+                            </div>
+                        </form>
+                        <hr>
+                        <!-- Форма для массовой загрузки номеров -->
+                        <h5 class="mt-3">Массовая загрузка номеров</h5>
+                        <form method="POST" action="{{ url_for('avito.avito_bulk_upload') }}" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="bulkFile" class="form-label">Выберите файл:</label>
+                                <input type="file" class="form-control" id="bulkFile" name="file" required>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-success">Загрузить</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модальное окно для перемещения номера -->
+        <div class="modal fade" id="moveNumberModal" tabindex="-1" aria-labelledby="moveNumberModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="moveNumberModalLabel">Переместить номер</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                  <form id="moveNumberForm" method="POST">
+                    <input type="hidden" name="current_category" value="{{ category }}">
+                    <div class="mb-3 category-select">
+                      <label>Выберите целевую категорию:</label>
+                      <div class="category-options">
+                        <!-- Опции будут динамически вставляться -->
+                      </div>
+                    </div>
+                    <div class="d-grid">
+                      <button type="submit" class="btn btn-primary">Подтвердить</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+        </div>
+
+
+        <!-- Модальное окно для подтверждения блокировки/архивации -->
+        <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="confirmModalLabel">Подтверждение действия</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                  <p id="confirmModalMessage">Вы уверены, что хотите выполнить это действие?</p>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                  <button type="button" class="btn btn-danger" id="confirmModalBtn">Подтвердить</button>
+                </div>
+              </div>
+            </div>
+        </div>
+
+        <!-- Единый стиль для alert -->
+        <div class="toast-container position-fixed bottom-0 end-0 p-3">
+            <div id="alertToast" class="toast align-items-center text-white bg-warning border-0" role="alert" aria-live="assertive" aria-atomic="true">
+              <div class="d-flex">
+                <div class="toast-body" id="alertToastMessage">
+                  <!-- Сообщение для alert -->
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Закрыть"></button>
+              </div>
+            </div>
+        </div>
+
+        <!-- Новая модалка для Переадресации -->
+        <div class="modal fade" id="redirectConfirmModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Подтверждение переадресации</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <p id="redirectModalMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Нет</button>
+                <button type="button" class="btn btn-primary" id="redirectModalYes">Да</button>
+            </div>
+            </div>
+        </div>
+        </div>
+
+    <!-- Модальное окно для подтверждения фильтра -->
+    <div class="modal fade" id="filterConfirmModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Подтверждение фильтра</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="filterModalMessage"></p>
+                    <!-- Спиннер загрузки -->
+                    <div id="filterSpinner" class="d-flex justify-content-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Загрузка...</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Нет</button>
+                    <button type="button" class="btn btn-primary" id="filterModalYes">Да</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Скрипт -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+    /* =======================
+    1. Общие переменные
+    ========================== */
+    // Ищем поля для поиска, контейнер таблиц, группы таблиц
+    const searchInput = document.getElementById('search-input');
+    const tablesContainer = document.querySelector('.tables-container');
+    const tableGroups = tablesContainer ? tablesContainer.querySelectorAll('.table-group') : [];
+
+    /* =======================
+    2. Toasts (ошибки/успех)
+    ========================== */
+    // Ошибочные Toast
+    const errorToastEl = document.getElementById('errorToast');
+    const errorToast = errorToastEl ? new bootstrap.Toast(errorToastEl) : null;
+    const errorToastMessage = document.getElementById('errorToastMessage');
+
+    // Успешные Toast
+    const successToastEl = document.getElementById('successToast');
+    const successToast = successToastEl ? new bootstrap.Toast(successToastEl) : null;
+    const successToastMessage = document.getElementById('successToastMessage');
+
+    // Показывает Toast с сообщением ошибки (не автозакрывается)
+    function showErrorToast(message) {
+        if (!errorToast || !errorToastMessage) return;
+        errorToastMessage.textContent = message;
+        errorToast.show();
+    }
+
+    // Показывает Toast с сообщением успеха (не автозакрывается)
+    function showSuccessToast(message) {
+        if (!successToast || !successToastMessage) return;
+        successToastMessage.textContent = message;
+        successToast.show();
+    }
+
+    // Если нужно скрыть программно
+    function hideErrorToast() {
+        if (!errorToast) return;
+        errorToast.hide();
+    }
+
+    function hideSuccessToast() {
+        if (!successToast) return;
+        successToast.hide();
+    }
+
+    /* =======================
+    3. Поиск по таблице
+    ========================== */
+    function initTableSearch() {
+        // Создаём блок "Ничего не найдено"
+        const noResultsMessage = document.createElement('div');
+        noResultsMessage.className = 'no-results';
+        noResultsMessage.textContent = 'Совпадений не найдено';
+        tablesContainer.appendChild(noResultsMessage);
+
+        // Сразу проверяем, видны ли какие-то группы
+        let anyGroupVisible = false;
+        tableGroups.forEach(group => {
+            if (group.style.display !== 'none') {
+                anyGroupVisible = true;
+            }
+        });
+        noResultsMessage.style.display = anyGroupVisible ? 'none' : 'block';
+
+        // Навешиваем обработчик на поле поиска, если есть
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                const filter = searchInput.value.trim().toLowerCase();
+
+                let foundAtLeastOne = false; // флаг, чтобы определить, были ли матчи
+
+                tableGroups.forEach(group => {
+                    const rows = group.querySelectorAll('tbody tr');
+                    let hasMatch = false;
+
+                    rows.forEach(row => {
+                        const text = row.textContent.toLowerCase();
+                        if (text.includes(filter)) {
+                            row.style.display = '';
+                            hasMatch = true;
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+
+                    // Если в группе есть совпадения, показываем её, иначе скрываем
+                    group.style.display = hasMatch ? '' : 'none';
+                    if (hasMatch) {
+                        foundAtLeastOne = true;
+                    }
+                });
+
+                noResultsMessage.style.display = foundAtLeastOne ? 'none' : 'block';
+            });
+        }
+    }
+
+    /* =======================
+    4. Модальное окно перемещения
+    ========================== */
+    function initModalHandlers() {
+        const moveModalEl = document.getElementById("moveNumberModal");
+        if (!moveModalEl) return;
+
+        const moveModal = new bootstrap.Modal(moveModalEl);
+        const moveButtons = document.querySelectorAll('.move-btn');
+        const moveForm = document.getElementById("moveNumberForm");
+        let currentNumberId = null;
+
+        moveButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                currentNumberId = this.dataset.numberId;
+                const currentCategory = "{{ category }}";
+                const validCategories = {
+                    'Резерв': ['Вторички', 'Загородная коммерция', 'HR'],
+                    'Вторички': ['Загородная коммерция', 'HR', 'Резерв'],
+                    'Загородная коммерция': ['Вторички', 'HR', 'Резерв'],
+                    'HR': ['Вторички', 'Загородная коммерция', 'Резерв']
+                };
+
+                const targetCats = validCategories[currentCategory] || [];
+                const options = targetCats.map(cat => `
+                    <label>
+                        <input type="radio" name="new_category" value="${cat}" required> ${cat}
+                    </label>
+                `).join('');
+                
+                // Выводим опции
+                moveModalEl.querySelector('.category-options').innerHTML = options;
+                moveModal.show();
+            });
+        });
+
+        if (moveForm) {
+            moveForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                
+                fetch(`/avito/avito_pro/move_number/${currentNumberId}`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        alert('Ошибка при перемещении номера');
+                    }
+                });
+            });
+        }
+    }
+
+    // confirmModal + confirmModalBtn
+    function showConfirmationModal(message) {
+        return new Promise((resolve) => {
+            const modalEl = document.getElementById('confirmModal');
+            const confirmModalBtn = document.getElementById('confirmModalBtn');
+            const modalMessage = document.getElementById('confirmModalMessage');
+            if (!modalEl || !confirmModalBtn || !modalMessage) {
+                resolve(false);
+                return;
+            }
+            modalMessage.textContent = message;
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+
+            const handler = () => {
+                resolve(true);
+                confirmModalBtn.removeEventListener('click', handler);
+                modal.hide();
+            };
+
+            confirmModalBtn.addEventListener('click', handler);
+
+            modalEl.addEventListener('hidden.bs.modal', () => {
+                resolve(false);
+                confirmModalBtn.removeEventListener('click', handler);
+            }, { once: true });
+        });
+    }
+
+    /* =======================
+    5. Переадресация
+    ========================== */
+    const redirectConfirmModalEl = document.getElementById('redirectConfirmModal');
+    const redirectConfirmModal = redirectConfirmModalEl ? new bootstrap.Modal(redirectConfirmModalEl) : null;
+    const redirectModalMessage = document.getElementById('redirectModalMessage');
+    const redirectModalYes = document.getElementById('redirectModalYes');
+    let currentRedirectNumberId = null;
+    let currentRedirectButton = null;
+
+    // Включаем логику на кнопках "Переадресация"
+    document.querySelectorAll('.redirect-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            currentRedirectButton = button;
+            currentRedirectNumberId = button.dataset.numberId;
+
+            // Собираем данные для модалки
+            const row = button.closest('tr');
+            const employeeName = row.querySelector('.employee-name')?.textContent.trim() || '—';
+            const department = row.querySelector('.department-text')?.textContent.trim() || '';
+            const simNumber = row.querySelector('td:nth-child(4)')?.textContent.trim() || '';
+            const category = "{{ category }}";
+
+            // Заполняем текст:
+            if (redirectModalMessage) {
+                redirectModalMessage.textContent = `Настроить переадресацию для ${employeeName} (${department}) в категории "${category}" на номер SIM: ${simNumber}?`;
+            }
+
+            // Показываем модалку
+            if (redirectConfirmModal) {
+                redirectConfirmModal.show();
+            }
+        });
+    });
+
+    // При клике на "Да"
+    if (redirectModalYes) {
+        redirectModalYes.addEventListener('click', () => {
+            if (!currentRedirectNumberId) return;
+            if (!redirectConfirmModal) return;
+
+            fetch(`/avito/avito_pro/setup_redirect/${currentRedirectNumberId}`, {
+                method: 'POST'
+            })
+            .then(response => response.json().then(data => ({ status: response.status, data })))
+            .then(({ status, data }) => {
+                redirectConfirmModal.hide();
+
+                if (data.success) {
+                    // УСПЕХ: обновим бейдж и покажем Toast
+                    const row = document.querySelector(`tr[data-number-id="${currentRedirectNumberId}"]`);
+                    if (row) {
+                        const redirectBadge = row.querySelector('.setup-item:nth-child(1) .badge');
+                        if (redirectBadge) {
+                            redirectBadge.textContent = 'OK';
+                            redirectBadge.classList.remove('bg-danger', 'bg-warning', 'text-dark');
+                            redirectBadge.classList.add('bg-success');
+                        }
+                    }
+                    showSuccessToast('Переадресация успешно настроена!');
+                } else {
+                    // ОШИБКА: меняем бейдж, отключаем кнопку
+                    const errMsg = data.error || 'Неизвестная ошибка';
+                    showErrorToast(errMsg);
+
+                    const row = document.querySelector(`tr[data-number-id="${currentRedirectNumberId}"]`);
+                    if (row) {
+                        const redirectBadge = row.querySelector('.setup-item:nth-child(1) .badge');
+                        if (redirectBadge) {
+                            redirectBadge.textContent = 'Ошибка';
+                            redirectBadge.classList.remove('bg-danger', 'bg-success');
+                            redirectBadge.classList.add('bg-warning', 'text-dark');
+                        }
+                    }
+
+                    if (currentRedirectButton) {
+                        currentRedirectButton.disabled = true;
+                    }
+                }
+            })
+            .catch(err => {
+                redirectConfirmModal.hide();
+                showErrorToast(`Сетевая ошибка: ${err}`);
+
+                if (currentRedirectButton) {
+                    currentRedirectButton.disabled = true;
+                }
+            });
+        });
+    }
+
+
+    /* =======================
+    6. Фильтр
+    ========================== */
+    const filterConfirmModalEl = document.getElementById('filterConfirmModal');
+    const filterConfirmModal = filterConfirmModalEl ? new bootstrap.Modal(filterConfirmModalEl) : null;
+    const filterModalMessage = document.getElementById('filterModalMessage');
+    const filterModalYes = document.getElementById('filterModalYes');
+    const filterSpinner = document.getElementById('filterSpinner');
+    let currentFilterNumberId = null;
+    let currentFilterButton = null;
+
+    // Скрываем спиннер при открытии модалки
+    if (filterConfirmModalEl) {
+        filterConfirmModalEl.addEventListener('show.bs.modal', () => {
+            filterSpinner.style.display = 'none';
+        });
+    }
+
+    // Обработчики кнопок фильтра
+    document.querySelectorAll('.filter-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            currentFilterButton = button;
+            currentFilterNumberId = button.dataset.numberId;
+
+            const row = button.closest('tr');
+            const employeeName = row.querySelector('.employee-name')?.textContent.trim() || '—';
+            const department = row.querySelector('.department-text')?.textContent.trim() || '';
+            const simNumber = row.querySelector('td:nth-child(4)')?.textContent.trim() || '';
+            const category = "{{ category }}";
+
+            filterModalMessage.textContent = `Запустить фильтрацию для ${employeeName} (${department}) в категории "${category}" на номер SIM: ${simNumber}?`;
+
+            filterConfirmModal.show();
+        });
+    });
+
+    // Обработчик кнопки "Да"
+    if (filterModalYes) {
+        filterModalYes.addEventListener('click', () => {
+            if (!currentFilterNumberId) return;
+
+            // Показываем спиннер и блокируем кнопку
+            filterSpinner.style.display = 'flex';
+            filterModalYes.disabled = true;
+
+            fetch(`/avito/avito_pro/setup_filter/${currentFilterNumberId}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                filterSpinner.style.display = 'none';
+                filterModalYes.disabled = false;
+                filterConfirmModal.hide();
+
+                // Обработка успешного ответа
+                if (data.success) {
+                    const row = document.querySelector(`tr[data-number-id="${currentFilterNumberId}"]`);
+                    if (row) {
+                        const filterBadge = row.querySelector('.setup-item:nth-child(2) .badge');
+                        if (filterBadge) {
+                            filterBadge.textContent = 'OK';
+                            filterBadge.classList.remove('bg-danger', 'bg-warning', 'text-dark');
+                            filterBadge.classList.add('bg-success');
+                        }
+                    }
+                    showSuccessToast('Фильтрация успешно настроена!');
+                } else {
+                    const errMsg = data.error || 'Неизвестная ошибка';
+                    showErrorToast(errMsg);
+                    
+                    const row = document.querySelector(`tr[data-number-id="${currentFilterNumberId}"]`);
+                    if (row) {
+                        const filterBadge = row.querySelector('.setup-item:nth-child(2) .badge');
+                        if (filterBadge) {
+                            filterBadge.textContent = 'Ошибка';
+                            filterBadge.classList.remove('bg-danger', 'bg-success');
+                            filterBadge.classList.add('bg-warning', 'text-dark');
+                        }
+                    }
+                    if (currentFilterButton) {
+                        currentFilterButton.disabled = true;
+                    }
+                }
+            })
+            .catch(err => {
+                filterSpinner.style.display = 'none';
+                filterModalYes.disabled = false;
+                filterConfirmModal.hide();
+                showErrorToast(`Сетевая ошибка: ${err}`);
+                if (currentFilterButton) {
+                    currentFilterButton.disabled = true;
+                }
+            });
+        });
+    }
+
+
+
+    /* =======================
+    7. Редактирование сотрудника (карандаш)
+    ========================== */
+    function initEditHandlers() {
+        document.querySelectorAll('.edit-employee').forEach(icon => {
+            icon.removeEventListener('click', handleEdit);
+            icon.addEventListener('click', handleEdit);
+        });
+    }
+
+    function handleEdit(e) {
+        const row = e.target.closest('tr');
+        const cell = row.querySelector('.employee-cell');
+        const originalHTML = cell.innerHTML;
+        const numberId = row.dataset.numberId;
+
+        cell.innerHTML = `
+            <input type="text" class="employee-search"
+                data-number-id="${numberId}"
+                autocomplete="off">
+            <i class="fas fa-times cancel-edit"
+            style="cursor:pointer; margin-left:5px;"
+            title="Отмена"></i>
+            <button type="button" class="btn btn-sm btn-danger clear-employee"
+                    style="margin-left:5px; font-size: 12px;">Очистить</button>
+            <ul class="autocomplete-results"></ul>
+        `;
+
+        const input       = cell.querySelector('.employee-search');
+        const cancelIcon  = cell.querySelector('.cancel-edit');
+        const clearButton = cell.querySelector('.clear-employee');
+
+        initSearchHandlers(input);
+        input.focus();
+
+        cancelIcon.addEventListener('click', () => {
+            cell.innerHTML = originalHTML;
+            initEditHandlers();
+        });
+
+        clearButton.addEventListener('click', async () => {
+            const confirmed = await showConfirmationModal("Вы уверены, что хотите очистить ячейку?");
+            if (confirmed) {
+                unassignEmployee(numberId, cell, originalHTML);
+            }
+        });
+    }
+
+    /* =======================
+    8. Автозаполнение 
+    ========================== */
+    function debounce(func, delay) {
+        let timeoutId;
+        return function(...args) {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => func.apply(this, args), delay);
+        }
+    }
+
+    function initSearchHandlers(inputElement) {
+        const globalContainer = document.getElementById('global-autocomplete-container');
+        // Если передали конкретный input
+        const inputs = inputElement ? [inputElement] : document.querySelectorAll('.employee-search');
+
+        inputs.forEach(input => {
+            // Ищем <ul class="autocomplete-results">
+            let resultsUl = input.nextElementSibling;
+            // Пропускаем если это крестик или кнопка
+            if (resultsUl && (resultsUl.classList.contains('cancel-edit') || resultsUl.classList.contains('clear-employee'))) {
+                resultsUl = resultsUl.nextElementSibling;
+            }
+            if (resultsUl && resultsUl.tagName === 'BUTTON') {
+                resultsUl = resultsUl.nextElementSibling;
+            }
+
+            // Обработка Esc
+            input.addEventListener('keydown', (e) => {
+                if (e.key === "Escape") {
+                    input.value = "";
+                    globalContainer.innerHTML = "";
+                    input.blur();
+                }
+            });
+
+            // Обработка ввода (debounce)
+            input.addEventListener('input', debounce(() => {
+                const query = input.value.trim();
+                globalContainer.innerHTML = "";
+                if (query.length < 2) return;
+
+                // Спиннер
+                const spinner = document.createElement('div');
+                spinner.className = 'loading-spinner';
+                spinner.style.display = 'inline-block';
+                globalContainer.appendChild(spinner);
+                
+                fetch(`/avito/avito_pro/search_employee?query=${encodeURIComponent(query)}`)
+                    .then(resp => resp.json())
+                    .then(employees => {
+                        spinner.remove();
+                        const ul = document.createElement('ul');
+                        ul.className = 'autocomplete-results';
+
+                        employees.forEach(emp => {
+                            const li = document.createElement('li');
+                            li.textContent = `${emp.full_name} (${emp.department})`;
+                            li.addEventListener('click', () => {
+                                assignEmployee(emp, input);
+                                globalContainer.innerHTML = "";
+                            });
+                            ul.appendChild(li);
+                        });
+
+                        // Позиционирование списка
+                        const rect = input.getBoundingClientRect();
+                        globalContainer.style.top = `${rect.bottom + window.scrollY}px`;
+                        globalContainer.style.left = `${rect.left + window.scrollX}px`;
+                        globalContainer.appendChild(ul);
+                    })
+                    .catch(err => {
+                        spinner.remove();
+                        console.error("Ошибка автозаполнения:", err);
+                    });
+            }, 300));
+        });
+    }
+
+    /* =======================
+    9. Назначение сотрудника
+    ========================== */
+    function assignEmployee(employee, inputElement) {
+        const row = inputElement.closest('tr');
+        const cell = row.querySelector('.employee-cell');
+        const numberId = row.dataset.numberId || inputElement.dataset.numberId;
+
+        // Проверка, что сотрудник ещё не назначен
+        const existing = document.querySelector(`.employee-name[data-employee-id="${employee.id}"]`);
+        if (existing) {
+            alert(`Сотрудник "${employee.full_name}" уже назначен в этой таблице!`);
+            return;
+        }
+
+        fetch(`/avito/avito_pro/assign_number/${numberId}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({employee_id: employee.id})
+        })
+        .then(resp => resp.json())
+        .then(data => {
+            if (data.success) {
+                // Успешно назначили
+                cell.innerHTML = `
+                    <span class="employee-name" data-employee-id="${employee.id}">${data.employee_full_name}</span>
+                    <i class="fas fa-pencil-alt edit-employee" title="Изменить"></i>
+                `;
+
+                // Активируем кнопку Переадресации
+                const redirectButton = row.querySelector('.redirect-btn');
+                if (redirectButton) {
+                    redirectButton.disabled = false;  // Активируем кнопку
+                }
+
+                // Убираем классы активности фильтра
+                const filterButton = row.querySelector('.filter-btn');
+                if (filterButton) {
+                    filterButton.disabled = false;  // Активируем кнопку Фильтра
+                }
+
+                const deptSpan = row.querySelector('.department-text');
+                if (deptSpan) {
+                    deptSpan.textContent = data.department || "";
+                }
+                initEditHandlers(); 
+            } else {
+                alert(`Ошибка: ${data.error || 'Неизвестная ошибка'}`);
+            }
+        })
+        .catch(err => console.error("Ошибка назначения:", err));
+    }
+
+    /* =======================
+    10. Очистка ячейки (unassign)
+    ========================== */
+    function unassignEmployee(numberId, cell, originalHTML) {
+        fetch(`/avito/avito_pro/unassign_number/${numberId}`, {
+            method: 'POST'
+        })
+        .then(resp => resp.json())
+        .then(data => {
+            if (data.success) {
+                // Ячейка теперь пустая
+                cell.innerHTML = `
+                    <input type="text" class="employee-search" data-number-id="${numberId}" autocomplete="off">
+                    <ul class="autocomplete-results"></ul>
+                `;
+                initSearchHandlers(cell.querySelector('.employee-search'));
+            } else {
+                alert(`Ошибка очистки: ${data.error || 'Неизвестная ошибка'}`);
+                cell.innerHTML = originalHTML;
+                initEditHandlers();
+            }
+        })
+        .catch(err => {
+            console.error("Ошибка unassign:", err);
+            alert("Ошибка при очистке!");
+            cell.innerHTML = originalHTML;
+            initEditHandlers();
+        });
+    }
+
+    /* =======================
+    11. Сортировка
+    ========================== */
+    function initSortHandlers() {
+        document.querySelectorAll('th').forEach((th, index) => {
+            // Пример: сортируем столбцы с индексами 0,1,2 => Группа, Сотрудник, Отдел
+            const columnsToSort = [0, 1, 2];
+            if (!columnsToSort.includes(index)) return;
+            
+            th.classList.add('sortable');
+            th.addEventListener('click', () => {
+                const table = th.closest('table');
+                const tbody = table.querySelector('tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                
+                // Сохраняем группы
+                const groups = [...new Set(rows.map(r => r.children[0].textContent.trim()))].sort();
+                
+                const sortedRows = groups.flatMap(g => {
+                    const groupRows = rows.filter(r => r.children[0].textContent.trim() === g);
+                    return groupRows.sort((a, b) => {
+                        const aVal = a.children[index].textContent.trim();
+                        const bVal = b.children[index].textContent.trim();
+                        return aVal.localeCompare(bVal, 'ru');
+                    });
+                });
+
+                tbody.append(...sortedRows);
+            });
+        });
+    }
+
+    /* =======================
+    12. Блокировка номеров
+    ========================== */
+    function initBlockNumberHandlers() {
+        document.querySelectorAll('form[action*="block_number"]').forEach(form => {
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const confirmed = await showConfirmationModal('Вы уверены, что хотите заблокировать номер?');
+                if (confirmed) {
+                    this.submit();
+                }
+            });
+        });
+
+        // Подтверждение для архивации
+        document.querySelectorAll('.archive-btn').forEach(btn => {
+            btn.addEventListener('click', async function(e) {
+                e.preventDefault();
+                const confirmed = await showConfirmationModal('Вы уверены, что хотите переместить номер в архив?');
+                if (confirmed) {
+                    this.closest('form').submit();
+                }
+            });
+        });
+    }
+
+    /* =======================
+    13. Вызов инициализаций
+    ========================== */
+    initTableSearch();
+    initModalHandlers();
+    initEditHandlers();
+    initSearchHandlers();
+    initSortHandlers();
+    initBlockNumberHandlers();
+
+    // Клик вне автозаполнения => скрыть результаты
+    document.addEventListener('click', function(e) {
+        const globalContainer = document.getElementById('global-autocomplete-container');
+        if (!e.target.closest('.employee-search') && !e.target.closest('#global-autocomplete-container')) {
+            globalContainer.innerHTML = '';
+        }
+    });
+
+    });
+    </script>
+
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index:9999;">
+        <!-- Ошибочный Toast -->
+        <div 
+        id="errorToast" 
+        class="toast text-white bg-danger" 
+        role="alert" 
+        aria-live="assertive" 
+        aria-atomic="true"
+        data-bs-autohide="false"
+        >
+        <div class="d-flex">
+            <div class="toast-body" id="errorToastMessage"></div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+        </div>
+    
+        <!-- Новый Toast для успеха -->
+        <div 
+        id="successToast" 
+        class="toast text-white bg-success" 
+        role="alert" 
+        aria-live="assertive" 
+        aria-atomic="true"
+        data-bs-autohide="false"
+        >
+        <div class="d-flex">
+            <div class="toast-body" id="successToastMessage"></div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+        </div>
+    </div>
+
+    <div id="global-autocomplete-container" style="position:absolute; top:0; left:0; z-index:999999;"></div>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Список пользователей</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #dddddd; text-align: left; padding: 8px; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h2>Список пользователей</h2>
+    <a href="{{ url_for('add_user') }}">Добавить нового пользователя</a>
+    <table>
+        <tr>
+            <th>Логин</th>
+            <th>Отдел</th>
+            <th>Действия</th>
+        </tr>
+        {% for user in users %}
+        <tr>
+            <td>{{ user.login }}</td>
+            <td>{{ user.department }}</td>
+            <td>
+                <a href="{{ url_for('edit_user', id=user.id) }}">Редактировать</a> |
+                <a href="{{ url_for('change_user_password', id=user.id) }}" onclick="return confirm('Вы уверены, что хотите сменить пароль пользователя?');">Сменить пароль</a> |
+                <form action="{{ url_for('delete_user', id=user.id) }}" method="post" style="display: inline;">
+                    <input type="submit" value="Удалить" onclick="return confirm('Вы уверены, что хотите удалить этого пользователя?');">
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    <a href="{{ url_for('admin_dashboard') }}">Вернуться на дашборд</a>
+</body>
+</html>
+

@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Дашборд оператора</title>
+    <!-- Подключение Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Подключение FontAwesome для иконок -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Подключение шрифтов DM Sans и Lexend -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Lexend:wght@300;400;700&display=swap" rel="stylesheet">
+    <!-- Ваши стили -->
+    <style>
+        /* Основные стили */
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background-color: #F4F4F4;
+            margin: 0;
+            padding: 0;
+            font-size: 16px;
+            padding-top: 80px; /* Отступ для фиксированной navbar */
+        }
+
+        /* Navbar */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background-color: #FFFFFF;
+            box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 64px;
+            z-index: 1000;
+        }
+
+        .welcome {
+            font-family: 'Lexend', sans-serif;
+            font-weight: 300;
+            font-size: 32px;
+            color: #595959;
+            text-transform: uppercase;
+            margin: 0;
+        }
+
+        .logout-button {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 40px;
+            background: #1A91FF;
+            border-radius: 4px;
+            color: #FFFFFF;
+            font-weight: 700;
+            font-size: 12px;
+            text-transform: capitalize;
+            text-decoration: none;
+        }
+
+        .logout-button i {
+            font-size: 16px;
+        }
+
+        .changenumber_btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5.8px 24px;
+            background: #495058;
+            border-radius: 4px;
+            color: #FFFFFF;
+            font-weight: 700;
+            font-size: 12px;
+            text-transform: capitalize;
+            text-decoration: none;
+        }
+
+        .changenumber_btn i {
+            font-size: 16px;
+        }
+        /* Основной контейнер */
+        .category-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            padding: 32px 64px;
+            gap: 32px;
+            max-width: 1730px;
+            margin: 0 auto;
+            align-items: stretch;
+        }
+
+        /* Секции: Этажи, Группы, Черный список и Информация */
+        .section, .blacklist-container, .info-container {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            background: #FFFFFF;
+            box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            padding: 16px;
+            flex: 1 1 27%;
+            min-width: 220px;
+        }
+
+        /* Для "Черный список" и "Информация" */
+        .blacklist-container, .info-container {
+            flex: 1 1 18%;
+        }
+
+        .section-title, .info-header, .blacklist-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            font-size: 18px;
+            color: #595959;
+            text-transform: capitalize;
+        }
+
+        .section-title i, .info-header i, .blacklist-header i {
+            font-size: 20px;
+            color: #595959;
+        }
+
+        .info-header {
+            background-color: #28a745;
+            color: #FFFFFF;
+            padding: 10px;
+            border-radius: 4px 4px 0 0;
+        }
+
+        .blacklist-header {
+            background-color: #dc3545;
+            color: #FFFFFF;
+            padding: 10px;
+            border-radius: 4px 4px 0 0;
+        }
+
+        /* Отступ для "Черного списка" */
+        .category-container > .blacklist-container {
+            margin-left: 40px;
+        }
+
+        /* Изменение для карточек "Этажи" и "Группы" */
+        .cards-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 22px;
+            padding: 16px 0;
+            box-shadow: none;
+            width: 100%;
+        }
+
+        /* Карточки */
+        .card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px 20px;
+            gap: 8px;
+            width: calc(50% - 11px);
+            background: #D3EAFF;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s, box-shadow 0.3s;
+            min-height: 60px;
+        }
+
+        .card:hover {
+            background-color: #c0dfff;
+            box-shadow: 0px 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .card-title {
+            font-weight: 700;
+            font-size: 14px;
+            color: #595959;
+            text-align: center;
+            text-transform: capitalize;
+        }
+
+        .card-number {
+            font-weight: 500;
+            font-size: 12px;
+            color: #595959;
+            text-align: center;
+            text-transform: capitalize;
+        }
+
+        /* Черный список и Информация */
+        .info-entries, .blacklist-entries {
+            padding: 16px 0;
+            font-weight: 500;
+            font-size: 12px;
+            color: #595959;
+            text-transform: capitalize;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .info-entries p.new-message {
+            background-color: #D3EAFF;
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        /* Форма передачи клиента */
+        .form-entries-wrapper {
+            padding: 32px 64px;
+            max-width: 1600px;
+            margin: 0 auto 14px;
+            background: #FFFFFF;
+            box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+            border-radius: 10px;
+        }
+
+        .form-container {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            width: 100%;
+        }
+
+        .form-container h3 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            font-size: 18px;
+            color: #595959;
+            text-transform: capitalize;
+            margin-bottom: 14px;
+        }
+
+        .form-container form {
+            width: 100%;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            position: relative;
+            flex: 1 1 100%;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 0.5px solid #595959;
+            border-radius: 4px;
+            font-weight: 500;
+            font-size: 12px;
+            color: #A6A6A6;
+            text-transform: capitalize;
+        }
+
+        .form-group button {
+            padding: 8px 40px;
+            background: #1A91FF;
+            border-radius: 4px;
+            color: #FFFFFF;
+            font-weight: 700;
+            font-size: 12px;
+            border: none;
+            cursor: pointer;
+            text-transform: capitalize;
+            width: 100%;
+        }
+
+        .form-group button:hover {
+            background-color: #1473cc;
+        }
+
+        /* Автодополнение результаты */
+        .autocomplete-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #FFFFFF;
+            border: 1px solid #C6C6C6;
+            border-top: none;
+            max-height: 150px;
+            overflow-y: auto;
+            z-index: 1000;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            border-radius: 0 0 4px 4px; /* Скругленные нижние углы */
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Добавление тени */
+            font-size: 12px; /* Уменьшение размера шрифта */
+        }
+
+        .autocomplete-results li {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+
+        .autocomplete-results li:hover {
+            background-color: #f1f1f1;
+        }
+
+        /* Таблица последних переданных */
+        .recent-entries {
+            padding: 32px 64px 64px;
+            max-width: 1600px;
+            margin: 0 auto;
+            background: #FFFFFF;
+            box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+            border-radius: 10px;
+        }
+
+        .recent-entries h3 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            font-size: 18px;
+            color: #595959;
+            text-transform: capitalize;
+            margin-bottom: 14px;
+        }
+
+        /* Строка поиска */
+        .recent-search-container {
+            margin-bottom: 20px;
+        }
+
+        /* Таблица */
+        .table-responsive {
+            background: #FFFFFF;
+            box-shadow: none;
+            border-radius: 10px;
+            overflow-x: auto;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+
+        .table th, .table td {
+            padding: 16px 10px;
+            border-bottom: 0.5px solid #C6C6C6;
+            font-weight: 500;
+            font-size: 12px;
+            color: #595959;
+            text-align: center;
+            text-transform: capitalize;
+        }
+
+        .table th {
+            background: #D3EAFF;
+            font-weight: 700;
+        }
+
+        .table tbody tr:hover {
+            background: #f1f1f1;
+        }
+
+        /* Модальное окно */
+        .modal .form-control {
+            margin-bottom: 15px;
+        }
+
+        /* Toast уведомления */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1055;
+        }
+
+        .toast-container .toast {
+            margin-top: 10px;
+        }
+
+        /* Уведомление о смене номера */
+        .number-changed-notification {
+            position: fixed;
+            bottom: -100px; /* Начальное положение вне экрана */
+            right: 20px;
+            background-color: #31c554; /* Зеленый фон */
+            color: white;
+            padding: 15px 20px;
+            border-radius: 5px;
+            z-index: 9999;
+            display: none; /* Скрыто по умолчанию */
+            font-size: 16px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: bottom 0.5s ease-in-out;
+        }
+
+        /* Стрелочки прокрутки */
+        .toggle-scroll-button {
+            position: fixed;
+            right: 20px;
+            bottom: 80px;
+            width: 40px;
+            height: 40px;
+            border: none;
+            outline: none;
+            background-color: rgba(0, 123, 255, 0.5);
+            color: white;
+            cursor: pointer;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: background-color 0.3s;
+            flex-direction: column;
+            margin-bottom: 15px; /* Увеличенный отступ снизу */
+        }
+
+        .toggle-scroll-button:last-child {
+            margin-bottom: 0; /* Убираем нижний отступ у последней кнопки */
+        }
+
+        .toggle-scroll-button:hover {
+            background-color: rgba(0, 123, 255, 0.8);
+        }
+
+        /* Адаптивность для мобильных устройств */
+        @media (max-width: 1200px) {
+            .category-container {
+                gap: 15px;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .category-container {
+                flex-wrap: wrap;
+            }
+
+            .section, .blacklist-container, .info-container {
+                width: 100%;
+                flex: 1 1 100%;
+            }
+
+            .cards-container {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .category-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .section, .blacklist-container, .info-container {
+                width: 100%;
+                flex: 1 1 100%;
+            }
+
+            .cards-container {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+
+            .form-entries-wrapper {
+                padding: 15px;
+            }
+
+            .recent-entries {
+                padding: 15px;
+            }
+        }
+
+        /* Стили для иконок редактирования */
+        .edit-icon {
+            color: black;
+            cursor: pointer;
+            visibility: hidden;
+            margin-left: 10px;
+        }
+
+        /* Показать иконку редактирования при наведении на строку */
+        .recent-entries tr.editable:hover .edit-icon,
+        .previous-entries tr.editable:hover .edit-icon {
+            visibility: visible;
+        }
+
+        /* Дополнительные стили для кнопок */
+        .toggle-button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            background-color: #1A91FF;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            color: white;
+            font-weight: 500;
+            font-size: 14px;
+            margin-top: 14px;
+        }
+
+        .toggle-button:hover {
+            color: #FFFFFF;
+            background-color: #1473cc;
+            text-decoration: none;
+        }
+
+        /* Онлайн статусы */
+        .online-status {
+            padding: 16px 0;
+            font-weight: 500;
+            font-size: 12px;
+            color: #595959;
+            text-transform: capitalize;
+            overflow-y: auto;
+            flex: 1;
+            background: #FFFFFF;
+            box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .online-status h5 {
+            font-weight: 500;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .online-status-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .online-status-list li {
+            padding: 5px 10px;
+            border-bottom: 0.5px solid #C6C6C6;
+            display: flex;
+            align-items: center;
+        }
+
+        .online-status-list li:last-child {
+            border-bottom: none;
+        }
+
+        .online-status-list li .status-icon {
+            margin-right: 8px;
+        }
+
+        .online-status-list li.online .status-icon {
+            color: #28a745;
+        }
+
+        .online-status-list li.offline .status-icon {
+            color: #dc3545;
+        }
+
+        @keyframes pulsate {
+            0% { background-color: #D3EAFF; }
+            50% { background-color: #A6D8FF; }
+            100% { background-color: #D3EAFF; }
+        }
+
+        .pulsate {
+            animation: pulsate 2s ease-in-out;
+        }
+
+        .previous-entries h3 {
+             margin-bottom: 20px; /* Увеличенный отступ */
+             display: flex;
+             align-items: center;
+             gap: 8px;
+             font-weight: 500;
+             font-size: 18px;
+             color: #595959;
+             text-transform: capitalize;
+         }
+    </style>
+    <!-- Подключение jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Подключение Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Подключение Socket.IO клиента -->
+    <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
+</head>
+<body>
+    <!-- Navbar -->
+    <div class="navbar">
+    <h1 class="welcome">Добро пожаловать, {{ full_name }}</h1>
+    <div class="navbar-buttons" style="display: flex; gap: 10px; align-items: center;">
+        <button id="changeNumberButton" class="changenumber_btn">Сменить номер</button>
+        <a href="{{ url_for('userlist.logout') }}" class="logout-button">
+            <span>Выход</span>
+            <i class="fas fa-sign-out-alt"></i>
+        </a>
+    </div>
+</div>
+
+
+    <!-- Модальное окно для выбора группы -->
+<div class="modal fade" id="changeNumberModal" tabindex="-1" aria-labelledby="changeNumberModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="changeNumberModalLabel">Какой хотите изменить?</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+      </div>
+      <div class="modal-body">
+        <button type="button" class="btn btn-primary change-number-option" data-group="Лето">НеЛето</button>
+        <button type="button" class="btn btn-primary change-number-option" data-group="Не лето">Лето</button>
+      </div>
+    </div>
+  </div>
+</div>
+    <!-- Основной контейнер -->
+    <div class="category-container">
+        <!-- Секция Этажи -->
+        <div class="section">
+            <div class="section-title">
+                <i class="fas fa-home"></i>
+                <span>Этажи</span>
+            </div>
+            <div class="cards-container">
+                {% for category in categories_order[:4] %}
+                <div class="card copy-number" data-number="{{ calls_data[category][0].number if calls_data[category] else '' }}">
+                    <div class="card-title">{{ category }}</div>
+                    {% if calls_data[category] %}
+                    <div class="card-number">{{ calls_data[category][0].number }}</div>
+                    {% else %}
+                    <div class="card-number">Нет данных</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Секция Группы -->
+        <div class="section">
+            <div class="section-title">
+                <i class="fas fa-users"></i>
+                <span>Группы</span>
+            </div>
+            <div class="cards-container">
+                {% for category in categories_order[4:] %}
+                <div class="card copy-number" data-number="{{ calls_data[category][0].number if calls_data[category] else '' }}">
+                    <div class="card-title">{{ category }}</div>
+                    {% if calls_data[category] %}
+                    <div class="card-number">{{ calls_data[category][0].number }}</div>
+                    {% else %}
+                    <div class="card-number">Нет данных</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Черный список -->
+        <div class="blacklist-container">
+            <div class="blacklist-header">
+                <i class="fas fa-ban"></i>
+                <span>Черный список</span>
+            </div>
+            <div class="blacklist-entries">
+                {% if blacklist %}
+                {% for entry in blacklist %}
+                <p>{{ entry.full_name }}</p>
+                {% endfor %}
+                {% else %}
+                <p class="text-muted">Нет брокеров в черном списке.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Информация -->
+        <div class="info-container">
+            <div class="info-header">
+                <i class="fas fa-info-circle"></i>
+                <span>Информация</span>
+            </div>
+            <div class="info-entries">
+                {% if notifications %}
+                {% for notification in notifications %}
+                <p class="{{ 'new-message' if not notification.is_read else '' }}">{{ notification.message }}</p>
+                {% endfor %}
+                {% else %}
+                <p class="text-muted">Нет новых уведомлений.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Контейнер для "Передача клиента" -->
+    <div class="form-entries-wrapper">
+        <!-- Форма передачи клиента -->
+        <div class="form-container">
+            <form action="{{ url_for('callcenter.submit_data') }}" method="POST">
+                <h3>
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>Передача клиента</span>
+                </h3>
+                <div class="row g-3">
+                    <div class="col-md-2">
+                        <!-- Поле "Брокер" -->
+                        <div class="form-group">
+                            <input type="text" id="broker-search" placeholder="Брокер" required autocomplete="off" class="form-control">
+                            <select name="broker" id="broker-list" style="display:none;">
+                                {% for broker in brokers %}
+                                <option value="{{ broker.id }}">{{ broker.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <ul id="broker-results" class="autocomplete-results"></ul>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <!-- Поле "Группа" -->
+                        <div class="form-group">
+                            <input type="text" id="floor-search" placeholder="Группа" required autocomplete="off" class="form-control">
+                            <select name="floor" id="floor-list" style="display:none;">
+                                {% for floor in floors %}
+                                <option value="{{ floor.id }}">{{ floor.category_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <ul id="floor-results" class="autocomplete-results"></ul>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <!-- Поле "Объект" -->
+                        <div class="form-group">
+                            <input type="text" id="object-search" placeholder="Объект" required autocomplete="off" class="form-control">
+                            <select name="object" id="object-list" style="display:none;">
+                                {% for object in objects %}
+                                <option value="{{ object.id }}">{{ object.object_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <ul id="object-results" class="autocomplete-results"></ul>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <!-- Поле "Источник" -->
+                        <div class="form-group">
+                            <input type="text" id="source-search" placeholder="Источник" required autocomplete="off" class="form-control">
+                            <select name="source" id="source-list" style="display:none;">
+                                {% for source in sources %}
+                                <option value="{{ source.id }}">{{ source.source_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <ul id="source-results" class="autocomplete-results"></ul>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <!-- Поле "ID клиента" -->
+                        <div class="form-group">
+                            <input type="text" name="client_id" placeholder="ID клиента" required class="form-control">
+                        </div>
+                    </div>
+                    <input type="hidden" name="operator_id" value="{{ session.get('id') }}">
+                    <div class="col-md-2 d-flex align-items-end">
+                        <!-- Кнопка отправки -->
+                        <div class="form-group w-100">
+                            <button type="submit" class="btn btn-primary w-100">Отправить</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Таблица последних записей -->
+    <div class="recent-entries">
+        <h3>
+            <i class="fas fa-history"></i>
+            <span>Последние переданные</span>
+        </h3>
+        <!-- Строка поиска -->
+        <div class="recent-search-container mb-3">
+            <input type="text" id="recent-search-input" class="recent-search-input form-control" placeholder="Поиск...">
+        </div>
+        <!-- Таблица с переданными записями -->
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered" id="recent-entries-table">
+                <thead>
+                    <tr>
+                        <th>Дата</th>
+                        <th>Время</th>
+                        <th>Брокер</th>
+                        <th>Отдел</th>
+                        <th>Группа</th>
+                        <th>Объект</th>
+                        <th>Источник</th>
+                        <th>ID Клиента</th>
+                        <th>Оператор</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in entries %}
+                    <tr class="{% if entry.operator_id == session.get('id') %}editable{% endif %}" data-id="{{ entry.scoring_id }}" data-operator-id="{{ entry.operator_id }}">
+                        <td>{{ entry.date.strftime('%d.%m.%Y') }}</td>
+                        <td>{{ entry.time }}</td>
+                        <td>
+                            {{ entry.broker_name }}
+                            {% if entry.operator_id == session.get('id') %}
+                                <i class="fas fa-pencil-alt edit-icon" data-entry-id="{{ entry.scoring_id }}"></i>
+                            {% endif %}
+                        </td>
+                        <td>{{ entry.department_id }}</td>
+                        <td>{{ entry.floor_name }}</td>
+                        <td>{{ entry.object_name }}</td>
+                        <td>{{ entry.source_name }}</td>
+                        <td>{{ entry.client_id }}</td>
+                        <td>{{ entry.operator }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Отображение количества записей -->
+        <div class="entry-count">
+            Передано: {{ entries|length + previous_entries|length }}
+        </div>
+        <!-- Кнопка для развертывания предыдущего дня -->
+        <button class="toggle-button btn btn-primary" id="togglePreviousDay">
+            <i class="fas fa-chevron-down"></i> Показать предыдущий день
+        </button>
+        <!-- Дополнительные стрелочки для прокрутки (появляются при развертывании) -->
+        <div class="d-flex flex-column align-items-center">
+            <button id="toggleScrollUpBtn" class="toggle-scroll-button" title="Вверх" style="display: none;">
+                <i class="fas fa-arrow-up"></i>
+            </button>
+            <button id="toggleScrollDownBtn" class="toggle-scroll-button" title="Вниз" style="display: none;">
+                <i class="fas fa-arrow-down"></i>
+            </button>
+        </div>
+        <!-- Секция для предыдущего дня -->
+        <div class="previous-entries" id="previous-entries" style="display: none;">
+            <h3>
+                <i class="fas fa-history"></i>
+                <span>Предыдущие переданные</span>
+            </h3> <!-- Изменённый заголовок -->
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered" id="previous-entries-table">
+                    <thead>
+                        <tr>
+                            <th>Дата</th>
+                            <th>Время</th>
+                            <th>Брокер</th>
+                            <th>Отдел</th>
+                            <th>Группа</th>
+                            <th>Объект</th>
+                            <th>Источник</th>
+                            <th>ID Клиента</th>
+                            <th>Оператор</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in previous_entries %}
+                        <tr class="{% if entry.operator_id == session.get('id') and entry.ukc_kc == 'КЦ' %}editable{% endif %}" data-id="{{ entry.scoring_id }}" data-operator-id="{{ entry.operator_id }}" data-ukc-kc="{{ entry.ukc_kc }}">
+                            <td>{{ entry.date.strftime('%d.%m.%Y') }}</td>
+                            <td>{{ entry.time }}</td>
+                            <td>
+                                {{ entry.broker_name }}
+                                {% if entry.operator_id == session.get('id') and entry.ukc_kc == 'КЦ' %}
+                                <i class="fas fa-pencil-alt edit-icon" data-entry-id="{{ entry.scoring_id }}"></i>
+                                {% endif %}
+                            </td>
+                            <td>{{ entry.department_id }}</td>
+                            <td>{{ entry.floor_name }}</td>
+                            <td>{{ entry.object_name }}</td>
+                            <td>{{ entry.source_name }}</td>
+                            <td>{{ entry.client_id }}</td>
+                            <td>{{ entry.operator }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Контейнер для уведомлений "Номер изменен" -->
+    <div class="number-changed-notification" id="numberChangedNotification">
+        Номер изменен
+    </div>
+    <!-- Аудио для уведомлений о смене номера и новых записях -->
+    <audio id="numberChangeSound" preload="auto">
+        <source src="{{ url_for('static', filename='sound/ping.mp3') }}" type="audio/mpeg">
+        <source src="{{ url_for('static', filename='sound/ping.ogg') }}" type="audio/ogg">
+        Ваш браузер не поддерживает аудио элемент.
+    </audio>
+    <audio id="newEntrySound" preload="auto">
+        <source src="{{ url_for('static', filename='sound/new_entry.mp3') }}" type="audio/mpeg">
+        <source src="{{ url_for('static', filename='sound/new_entry.ogg') }}" type="audio/ogg">
+        Ваш браузер не поддерживает аудио элемент.
+    </audio>
+
+    <!-- Контейнер для Toast уведомлений -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="copyToast" class="toast align-items-center text-bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    Номер скопирован.
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Закрыть"></button>
+            </div>
+        </div>
+        <!-- Toast для новых записей -->
+        <div id="newEntryToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    Новая запись добавлена.
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Закрыть"></button>
+            </div>
+        </div>
+    </div>
+
+        <div id="changeNumberToast" class="toast align-items-center text-bg-info border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body">
+                Номер изменен.
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Закрыть"></button>
+        </div>
+    </div>
+</div>
+
+    <!-- Модальное окно для редактирования записи -->
+    <div class="modal fade" id="editEntryModal" tabindex="-1" aria-labelledby="editEntryModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="editEntryForm" method="POST" action="{{ url_for('callcenter.edit_entry') }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editEntryModalLabel">Редактировать запись</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="editEntryId" name="entry_id">
+                        <input type="hidden" id="editUkcKc" name="ukc_kc">
+                        <!-- Поля для редактирования каждой колонки с Autocomplete -->
+                        <div class="form-group mb-3">
+                            <label for="editBroker" class="form-label">Брокер</label>
+                            <input type="text" id="editBroker" class="form-control" name="broker_name" required autocomplete="off">
+                            <select name="broker_id" id="editBrokerList" style="display:none;">
+                                {% for broker in brokers %}
+                                <option value="{{ broker.id }}">{{ broker.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <ul id="editBrokerResults" class="autocomplete-results"></ul>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="editFloor" class="form-label">Группа</label>
+                            <input type="text" id="editFloor" class="form-control" name="floor_name" required autocomplete="off">
+                            <select name="floor_id" id="editFloorList" style="display:none;">
+                                {% for floor in floors %}
+                                <option value="{{ floor.id }}">{{ floor.category_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <ul id="editFloorResults" class="autocomplete-results"></ul>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="editObject" class="form-label">Объект</label>
+                            <input type="text" id="editObject" class="form-control" name="object_name" required autocomplete="off">
+                            <select name="object_id" id="editObjectList" style="display:none;">
+                                {% for object in objects %}
+                                <option value="{{ object.id }}">{{ object.object_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <ul id="editObjectResults" class="autocomplete-results"></ul>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="editSource" class="form-label">Источник</label>
+                            <input type="text" id="editSource" class="form-control" name="source_name" required autocomplete="off">
+                            <select name="source_id" id="editSourceList" style="display:none;">
+                                {% for source in sources %}
+                                <option value="{{ source.id }}">{{ source.source_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <ul id="editSourceResults" class="autocomplete-results"></ul>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="editClientId" class="form-label">ID Клиента</label>
+                            <input type="text" id="editClientId" class="form-control" name="client_id" required>
+                        </div>
+
+                        <!-- Поля для оператора (только для чтения) -->
+                        <div class="form-group mb-3">
+                            <label for="editOperator" class="form-label">Оператор</label>
+                            <input type="text" id="editOperator" class="form-control" name="operator_name" required autocomplete="off" readonly>
+                            <select name="operator_id" id="editOperatorList" style="display:none;">
+                                {% for operator in operators %}
+                                <option value="{{ operator.id }}" data-ukc_kc="{{ operator.ukc_kc }}">{{ operator.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <ul id="editOperatorResults" class="autocomplete-results"></ul>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+  <!-- JavaScript для функциональности -->
+<script>
+$(document).ready(function () {
+    // Инициализация флага для отслеживания состояния звука
+    var isPlayingNumberChangeSound = false;
+
+    // Получаем элементы аудио
+    var numberChangeSound = document.getElementById('numberChangeSound');
+    var newEntrySound = document.getElementById('newEntrySound');
+
+    // Обработчик события 'play' для установки флага
+    numberChangeSound.addEventListener('play', function() {
+        isPlayingNumberChangeSound = true;
+    });
+
+    // Обработчик события 'ended' для сброса флага
+    numberChangeSound.addEventListener('ended', function() {
+        isPlayingNumberChangeSound = false;
+    });
+
+    // Получаем роль пользователя и тип УКЦ/КЦ из Flask
+    var sessionId = {{ session.get('id') }};
+    var userRole = "{{ role }}";
+    var ukcKc = "{{ ukc_kc }}";
+    console.log(`User role: ${userRole}`);
+    console.log(`УКЦ/КЦ: ${ukcKc}`);
+
+    // Подключаемся к пространству имен '/call_center'
+    var socket = io('/call_center');
+    console.log("Подключение к Socket.IO на '/call_center'");
+
+    socket.on('connect', function() {
+        console.log('Подключено к серверу Socket.IO в пространстве имен /call_center.');
+        // Если сервер не обрабатывает 'join_room', удалите эту строчку
+        socket.emit('join_room', { room: ukcKc });
+    });
+
+    socket.on('disconnect', function() {
+        console.log('Отключено от сервера Socket.IO.');
+    });
+
+    // Обработчик события 'joined_room' для подтверждения присоединения
+    socket.on('joined_room', function(data) {
+        console.log(`Присоединился к комнате: ${data.room}`);
+    });
+
+    // Обработка события 'number_changed'
+    socket.on('number_changed', function(data) {
+        console.log('Получено событие number_changed:', data);
+        if (data.operator_name && data.new_number) {
+            showNumberChangedNotification(data);
+        } else {
+            console.warn('Некорректные данные в событии number_changed:', data);
+        }
+    });
+
+    // Обработка события 'client_transferred'
+    socket.on('client_transferred', function(data) {
+        console.log('Получено событие client_transferred:', data);
+        if (data.client) {
+            addNewEntryToTable(data.client);
+            playNewEntrySound();
+            showNewEntryToast();
+            // triggerPulsatingEffect(); // Удаляем этот вызов
+        }
+    });
+
+    // Функция для добавления новой записи в таблицу с пульсацией
+    function addNewEntryToTable(entry) {
+        var editableClass = (entry.operator_id === sessionId && entry.operator_ukc_kc === 'КЦ') ? 'editable' : '';
+
+        var newRow = `<tr class="${editableClass}" data-id="${entry.scoring_id}" data-operator-id="${entry.operator_id}" data-ukc-kc="${entry.operator_ukc_kc}">
+            <td>${entry.date}</td>
+            <td>${entry.time}</td>
+            <td>
+                ${entry.broker_name}
+                ${editableClass ? '<i class="fas fa-pencil-alt edit-icon" data-entry-id="' + entry.scoring_id + '"></i>' : ''}
+            </td>
+            <td>${entry.department_id}</td>
+            <td>${entry.floor_name}</td>
+            <td>${entry.object_name || 'Нет данных'}</td>
+            <td>${entry.source_name || 'Нет данных'}</td>
+            <td>${entry.client_id}</td>
+            <td>${entry.operator}</td>
+        </tr>`;
+        
+        // Добавляем новую строку в начало таблицы
+        $('#recent-entries-table tbody').prepend(newRow);
+        updateEntryCount();
+
+        // Находим только что добавленную строку
+        var $newRow = $('#recent-entries-table tbody tr').first();
+
+        // Добавляем класс для пульсации
+        $newRow.addClass('pulsate');
+
+        // Удаляем класс через 30 секунд
+        setTimeout(function() {
+            $newRow.removeClass('pulsate');
+        }, 30000);
+    }
+
+    // Функция для форматирования даты
+    function formatDate(dateString) {
+        var options = { year: 'numeric', month: '2-digit', day: '2-digit' };
+        var date = new Date(dateString);
+        return date.toLocaleDateString('ru-RU', options);
+    }
+
+    // Настройка автодополнения
+    function setupSearch(inputId, selectId, resultsId) {
+        var optionsList = $(selectId + ' option');
+
+        $(inputId).on('input', function () {
+            var search = $(this).val().toLowerCase();
+            var results = $(resultsId);
+            results.empty();
+
+            if (search.length > 0) {
+                optionsList.each(function () {
+                    var itemName = $(this).text().toLowerCase();
+                    if (itemName.includes(search)) {
+                        var itemOption = $('<li>').addClass('list-group-item').text($(this).text()).attr('data-id', $(this).val());
+                        results.append(itemOption);
+                    }
+                });
+                if (results.children().length > 0) {
+                    results.show();
+                } else {
+                    results.hide();
+                }
+            } else {
+                results.hide();
+            }
+        });
+
+        // Выбор элемента из списка
+        $(document).on('click', resultsId + ' li', function () {
+            var itemId = $(this).attr('data-id');
+            var itemName = $(this).text();
+            $(inputId).val(itemName);
+            $(selectId).val(itemId);
+            $(resultsId).hide();
+        });
+
+        // Скрытие списка при клике вне
+        $(document).click(function (event) {
+            if (!$(event.target).closest(inputId).length) {
+                if (!$(event.target).closest(resultsId).length) {
+                    $(resultsId).hide();
+                }
+            }
+        });
+    }
+
+    // Настройка автодополнения для всех полей основной формы
+    setupSearch('#floor-search', '#floor-list', '#floor-results');
+    setupSearch('#broker-search', '#broker-list', '#broker-results');
+    setupSearch('#object-search', '#object-list', '#object-results');
+    setupSearch('#source-search', '#source-list', '#source-results');
+
+    // Настройка автодополнения для всех полей модального окна
+    setupSearch('#editFloor', '#editFloorList', '#editFloorResults');
+    setupSearch('#editBroker', '#editBrokerList', '#editBrokerResults');
+    setupSearch('#editObject', '#editObjectList', '#editObjectResults');
+    setupSearch('#editSource', '#editSourceList', '#editSourceResults');
+    setupSearch('#editOperator', '#editOperatorList', '#editOperatorResults');
+
+    // Периодическое обновление уведомлений
+    setInterval(function() {
+        $.ajax({
+            url: '{{ url_for("callcenter.get_notifications") }}',
+            method: 'GET',
+            success: function(data) {
+                var infoEntries = $('.info-entries');
+                infoEntries.empty();
+
+                if (data.notifications.length > 0) {
+                    data.notifications.forEach(function(notification) {
+                        var p = $('<p>').text(notification.message);
+                        if (!notification.is_read) {
+                            p.addClass('new-message');
+                        }
+                        infoEntries.append(p);
+                    });
+                } else {
+                    infoEntries.append('<p class="text-muted">Нет новых уведомлений.</p>');
+                }
+            },
+            error: function(error) {
+                console.log('Ошибка при обновлении уведомлений:', error);
+            }
+        });
+    }, 60000); // Каждые 60 секунд
+
+    // Добавляем heartbeat
+    setInterval(function () {
+        $.ajax({
+            url: '{{ url_for("callcenter.heartbeat") }}',
+            method: 'POST',
+            success: function (data) {
+                console.log('Heartbeat sent successfully');
+            },
+            error: function (error) {
+                console.log('Ошибка при отправке heartbeat:', error);
+            }
+        });
+    }, 60000); // Каждые 60 секунд
+
+    // Инициализация Bootstrap Toast
+    var copyToastEl = document.getElementById('copyToast');
+    var copyToast = new bootstrap.Toast(copyToastEl);
+
+    var newEntryToastEl = document.getElementById('newEntryToast');
+    var newEntryToast = new bootstrap.Toast(newEntryToastEl);
+
+    // Функция для копирования текста в буфер обмена
+    function copyToClipboard(text) {
+        console.log('Копирование номера:', text);
+        if (!navigator.clipboard) {
+            // Альтернативный метод
+            var textarea = document.createElement("textarea");
+            textarea.value = text;
+            textarea.style.position = "fixed";  // Не отображается на экране
+            textarea.style.top = "-1000px";
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+
+            try {
+                var successful = document.execCommand('copy');
+                if (successful) {
+                    $('#copyToast .toast-body').text('Номер "' + text + '" скопирован.');
+                    copyToast.show();
+                    console.log('Номер успешно скопирован через fallback и Toast показан.');
+                } else {
+                    console.error('Не удалось скопировать номер через fallback.');
+                }
+            } catch (err) {
+                console.error('Ошибка при копировании через fallback: ', err);
+            }
+
+            document.body.removeChild(textarea);
+            return;
+        }
+
+        navigator.clipboard.writeText(text).then(function() {
+            // Обновляем текст в Toast
+            $('#copyToast .toast-body').text('Номер "' + text + '" скопирован.');
+            copyToast.show();
+            console.log('Номер успешно скопирован и Toast показан.');
+        }, function(err) {
+            console.error('Ошибка копирования: ', err);
+        });
+    }
+
+    // Обработчик клика по элементам с классом .copy-number
+    $(document).on('click', '.copy-number', function() {
+        var number = $(this).data('number');
+        console.log('Клик по элементу. Номер:', number);
+        if(number) {
+            copyToClipboard(number);
+        } else {
+            console.log('Номер отсутствует. Копирование не выполнено.');
+        }
+    });
+
+    // Обработчик клика по элементам с классом .edit-icon
+    $(document).on('click', '.edit-icon', function (e) {
+        e.stopPropagation(); // Предотвращаем всплытие события клика на строку
+
+        var entryId = $(this).data('entry-id');
+        var entryRow = $('tr[data-id="' + entryId + '"]');
+        if (entryRow.length) {
+            // Заполнение формы модального окна данными
+            var cells = entryRow.children('td');
+            $('#editEntryId').val(entryId);
+            $('#editBroker').val(cells.eq(2).text().trim());
+            $('#editFloor').val(cells.eq(4).text().trim());
+            $('#editObject').val(cells.eq(5).text().trim());
+            $('#editSource').val(cells.eq(6).text().trim());
+            $('#editClientId').val(cells.eq(7).text().trim());
+            $('#editOperator').val(cells.eq(8).text().trim());
+
+            // Обновление скрытых select'ов на основе текущих значений
+            updateHiddenSelect('#editBroker', '#editBrokerList');
+            updateHiddenSelect('#editFloor', '#editFloorList');
+            updateHiddenSelect('#editObject', '#editObjectList');
+            updateHiddenSelect('#editSource', '#editSourceList');
+            updateHiddenSelect('#editOperator', '#editOperatorList');
+            $('#editEntryModal').modal('show');
+        }
+    });
+
+    // Обработчик клика на строку для редактирования (без иконки)
+    $(document).on('click', '.recent-entries tr.editable, .previous-entries tr.editable', function (e) {
+        // Если клик произошел по иконке, не обрабатывать здесь
+        if ($(e.target).hasClass('edit-icon')) {
+            return;
+        }
+
+        // Получение ID записи
+        var entryId = $(this).data('id');
+        if (entryId) {
+            // Получение данных из атрибутов строки
+            var ukcKc = $(this).data('ukc-kc');
+
+            // Заполнение формы модального окна данными
+            var cells = $(this).children('td');
+            $('#editEntryId').val(entryId);
+            $('#editBroker').val(cells.eq(2).text().trim());
+            $('#editFloor').val(cells.eq(4).text().trim());
+            $('#editObject').val(cells.eq(5).text().trim());
+            $('#editSource').val(cells.eq(6).text().trim());
+            $('#editClientId').val(cells.eq(7).text().trim());
+            $('#editOperator').val(cells.eq(8).text().trim());
+            $('#editUkcKc').val(ukcKc);
+
+            // Обновление скрытых select'ов на основе текущих значений
+            updateHiddenSelect('#editBroker', '#editBrokerList');
+            updateHiddenSelect('#editFloor', '#editFloorList');
+            updateHiddenSelect('#editObject', '#editObjectList');
+            updateHiddenSelect('#editSource', '#editSourceList');
+            updateHiddenSelect('#editOperator', '#editOperatorList');
+
+            $('#editEntryModal').modal('show');
+        }
+    });
+
+    // Функция обновления скрытого select на основе значения input
+    function updateHiddenSelect(inputId, selectId) {
+        var inputValue = $(inputId).val();
+
+        if (inputValue) {
+            inputValue = inputValue.toLowerCase();
+            var matchedOption = $(selectId + ' option').filter(function () {
+                return $(this).text().toLowerCase() === inputValue;
+            }).first();
+
+            if (matchedOption.length) {
+                $(selectId).val(matchedOption.val());
+            } else {
+                $(selectId).val('');
+            }
+        } else {
+            $(selectId).val('');
+        }
+    }
+
+    // Привязка событий прокрутки после определения функций
+    $('#toggleScrollUpBtn').on('click', scrollToTop);
+    $('#toggleScrollDownBtn').on('click', scrollToBottom);
+
+    // Функция для обновления счетчика записей
+    function updateEntryCount() {
+        var visibleCount = $('#recent-entries-table tbody tr:visible').length + $('#previous-entries-table tbody tr:visible').length;
+        $('.entry-count').text('Передано: ' + visibleCount);
+    }
+
+    // Инициализация счетчика при загрузке страницы
+    updateEntryCount();
+
+    // Обработчик кнопки "Показать предыдущий день"
+    $('#togglePreviousDay').on('click', function () {
+        var previousEntries = $('#previous-entries');
+        var toggleButton = $(this);
+        var icon = toggleButton.find('i');
+
+        if (previousEntries.is(':visible')) {
+            // Скрыть предыдущие записи
+            previousEntries.slideUp();
+            // Изменить кнопку на "Показать предыдущий день"
+            toggleButton.html('<i class="fas fa-chevron-down"></i> Показать предыдущий день');
+            // Скрыть стрелочки прокрутки
+            $('#toggleScrollUpBtn, #toggleScrollDownBtn').hide();
+        } else {
+            // Показать предыдущие записи
+            previousEntries.slideDown();
+            // Изменить кнопку на "Свернуть"
+            toggleButton.html('<i class="fas fa-chevron-up"></i> Свернуть');
+            // Показать стрелочки прокрутки
+            $('#toggleScrollUpBtn, #toggleScrollDownBtn').show();
+        }
+    });
+
+    // Функции прокрутки
+    function scrollToTop() {
+        $('html, body').animate({ scrollTop: 0 }, 'slow');
+    }
+
+    function scrollToBottom() {
+        $('html, body').animate({ scrollTop: $(document).height() }, 'slow');
+    }
+
+    // Обработчики стрелочек прокрутки
+    $('#toggleScrollUpBtn').css({'margin-bottom': '45px'}); // Увеличенный отступ
+    $('#toggleScrollDownBtn').css({'margin-top': '45px'}); // Увеличенный отступ
+
+    // Функция для поиска в обеих таблицах
+    function searchEntries(searchTerm) {
+        var lowerSearch = searchTerm.toLowerCase();
+
+        // Поиск в таблице "Последние переданные"
+        $('#recent-entries-table tbody tr').each(function () {
+            var text = $(this).text().toLowerCase();
+            $(this).toggle(text.includes(lowerSearch));
+        });
+
+        // Поиск в таблице "Предыдущие переданные"
+        $('#previous-entries-table tbody tr').each(function () {
+            var text = $(this).text().toLowerCase();
+            $(this).toggle(text.includes(lowerSearch));
+        });
+
+        // Обновление счетчика записей
+        updateEntryCount();
+    }
+
+    // Обработчик строки поиска
+    $('#recent-search-input').on('input', function () {
+        var searchTerm = $(this).val();
+        searchEntries(searchTerm);
+    });
+
+    // Функция для обновления онлайн-статуса пользователя
+    function updateUserStatus(userId, status) {
+        var userElement = $('#online-user-' + userId);
+        if (userElement.length) {
+            // Обновляем существующий элемент
+            userElement.text(`Пользователь ${userId}: ${status}`);
+            userElement.removeClass('online offline');
+            if (status === 'Онлайн') {
+                userElement.addClass('online');
+                userElement.find('.status-icon').removeClass('fa-circle').addClass('fa-circle');
+            } else {
+                userElement.addClass('offline');
+                userElement.find('.status-icon').removeClass('fa-circle').addClass('fa-circle');
+            }
+        } else {
+            // Создаём новый элемент
+            var statusClass = status === 'Онлайн' ? 'online' : 'offline';
+            var statusIcon = status === 'Онлайн' ? '<i class="fas fa-circle status-icon"></i>' : '<i class="fas fa-circle status-icon"></i>';
+            var newUserElement = $('<li>')
+                .addClass(statusClass)
+                .attr('id', 'online-user-' + userId)
+                .html(statusIcon + ` Пользователь ${userId}: ${status}`);
+        
+            $('#online-status-list').append(newUserElement);
+        }
+    }
+
+    $('#changeNumberButton').click(function(){
+        $('#changeNumberModal').modal('show');
+    });
+
+    $('.change-number-option').click(function(){
+    var selectedGroup = $(this).data('group'); // Например, "Лето" или "Не лето"
+    $.ajax({
+        url: '/vats/manual_change_number',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ group: selectedGroup, operator_id: {{ session.get("id") }} }),
+        success: function(response) {
+            showChangeNumberToast(response.message, true);
+            $('#changeNumberModal').modal('hide');
+        },
+        error: function(xhr) {
+            showChangeNumberToast("Ошибка при смене номера: " + xhr.responseText, false);
+        }
+    });
+});
+
+
+
+
+
+    // Функция для загрузки начальных статусов пользователей
+    function loadInitialStatuses(statuses) {
+        $('#online-status-list').empty();
+        statuses.forEach(function(userStatus) {
+            var statusClass = userStatus.status === 'Онлайн' ? 'online' : 'offline';
+            var statusIcon = userStatus.status === 'Онлайн' ? '<i class="fas fa-circle status-icon"></i>' : '<i class="fas fa-circle status-icon"></i>';
+            var userElement = $('<li>')
+                .addClass(statusClass)
+                .attr('id', 'online-user-' + userStatus.user_id)
+                .html(statusIcon + ` Пользователь ${userStatus.user_id}: ${userStatus.status}`);
+            $('#online-status-list').append(userElement);
+        });
+    }
+
+    // Функция для загрузки текущих онлайн-статусов при загрузке страницы
+    function loadCurrentStatuses() {
+        $.ajax({
+            url: '{{ url_for("callcenter.get_current_statuses") }}',
+            method: 'GET',
+            data: { room: ukcKc },
+            success: function(data) {
+                loadInitialStatuses(data.statuses);
+            },
+            error: function(error) {
+                console.log('Ошибка при загрузке текущих статусов:', error);
+            }
+        });
+    }
+
+    // Вызов функции загрузки текущих статусов при загрузке страницы
+    loadCurrentStatuses();
+
+    // Функция для воспроизведения звука смены номера и новых записей
+    function playNumberChangeSound() {
+        if (!isPlayingNumberChangeSound) {
+            numberChangeSound.currentTime = 0; // Сброс времени воспроизведения
+            numberChangeSound.play().catch(function (error) {
+                console.error('Ошибка при воспроизведении звука смены номера:', error);
+            });
+        }
+    }
+
+    function playNewEntrySound() {
+        newEntrySound.currentTime = 0; // Сброс времени воспроизведения
+        newEntrySound.play().catch(function (error) {
+            console.error('Ошибка при воспроизведении звука новых записей:', error);
+        });
+    }
+
+    // Функция для отображения уведомления о смене номера
+    function showNumberChangedNotification(data) {
+        // Проверка наличия operator_name и new_number
+        if (!data.operator_name || !data.new_number) {
+            console.error('Недостаточно данных для уведомления:', data);
+            return;
+        }
+
+        // Обновляем текст уведомления с использованием operator_name
+        $('#numberChangedNotification').text(`Номер оператора ${data.operator_name} изменен на ${data.new_number}`);
+
+        // Воспроизведение звука только если он не воспроизводится
+        playNumberChangeSound();
+
+        // Анимация появления уведомления
+        $('#numberChangedNotification').css({ bottom: '-100px', display: 'block' }).animate({ bottom: '20px' }, 500);
+
+        // Через 5 секунд скрываем уведомление
+        setTimeout(function () {
+            $('#numberChangedNotification').animate({ bottom: '-100px' }, 500, function () {
+                $(this).css('display', 'none');
+            });
+        }, 5000);
+    }
+
+    // Функция для отображения Toast уведомления о новой записи
+    function showNewEntryToast() {
+        var newEntryToast = new bootstrap.Toast(document.getElementById('newEntryToast'));
+        newEntryToast.show();
+    }
+
+    function showChangeNumberToast(message, isSuccess) {
+    var toastEl = document.getElementById('changeNumberToast');
+    $('#changeNumberToast .toast-body').text(message);
+    // Если успех – можно добавить класс с зелёным фоном, иначе с красным
+    if (isSuccess) {
+        $('#changeNumberToast').removeClass('text-bg-danger').addClass('text-bg-success');
+    } else {
+        $('#changeNumberToast').removeClass('text-bg-success').addClass('text-bg-danger');
+    }
+    var changeNumberToast = new bootstrap.Toast(toastEl);
+    changeNumberToast.show();
+    }
+
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,506 @@
+{% extends "base.html" %}
+
+{% block title %}VATS{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Trajan+Pro+3&display=swap">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/vats.css') }}">
+{% endblock %}
+
+{% block content %}
+        <div class="table-container">
+            <h1>Управление операторами</h1>
+
+            <table class="table" id="operators-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Имя оператора</th>
+                        <th>Тип</th>
+                        <th>CRM ID</th>
+                        <th>MegaPBX ID</th>
+                        <th>Текущий номер</th>
+                        <th>Предыдущий номер</th>
+                        <th>Номер в CRM</th>
+                        <th>Номер в АТС</th>
+                        <th>Статус</th>
+                        <th>Активен</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Данные будут загружены с помощью JavaScript -->
+                </tbody>
+            </table>
+    </div>
+
+    <div class="modal fade" id="addOperatorModal" tabindex="-1" aria-labelledby="addOperatorModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <form id="addOperatorForm">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Добавить оператора</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Поля формы -->
+                        <div class="mb-3">
+                            <label for="operatorName" class="form-label">Имя оператора</label>
+                            <input type="text" class="form-control" id="operatorName" name="operator_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="operatorType" class="form-label">Тип оператора</label>
+                            <select class="form-select" id="operatorType" name="operator_type" required>
+                                <option value="КЦ">КЦ</option>
+                                <option value="УКЦ">УКЦ</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="crmId" class="form-label">CRM ID</label>
+                            <input type="text" class="form-control" id="crmId" name="crm_id" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="megapbxId" class="form-label">MegaPBX ID</label>
+                            <input type="text" class="form-control" id="megapbxId" name="megapbx_id" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="currentNumber" class="form-label">Текущий номер (опционально)</label>
+                            <input type="text" class="form-control" id="currentNumber" name="current_number">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Добавить</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="assignNumbersModal" tabindex="-1" aria-labelledby="assignNumbersModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <form id="assignNumbersForm">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Назначить номера для <span id="operatorNameTitle"></span></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="assign-numbers-container">
+                            <div class="assign-numbers-table">
+                                <h6>Назначенные номера</h6>
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th></th>
+                                            <th>Номер</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="assignedNumbers">
+                                        <!-- Назначенные номера -->
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="assign-numbers-arrows">
+                                <button type="button" class="btn btn-secondary" onclick="moveNumbers('toAvailable')">
+                                    <i class="fas fa-arrow-right"></i>
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="moveNumbers('toAssigned')">
+                                    <i class="fas fa-arrow-left"></i>
+                                </button>
+                            </div>
+
+                            <div class="assign-numbers-table">
+                                <h6>Доступные номера</h6>
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th></th>
+                                            <th>Номер</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="availableNumbers">
+                                        <!-- Доступные номера -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                        <button type="button" class="btn btn-danger" onclick="deleteOperator()">Удалить оператора</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    </div>
+                </div>
+                <input type="hidden" id="assignOperatorId" name="operator_id">
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Подтверждение удаления</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    Вы уверены, что хотите удалить оператора <strong id="operatorNameToDelete"></strong>?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" onclick="confirmDeleteOperator()">Удалить</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="confirmChangeNumbersModal" tabindex="-1" aria-labelledby="confirmChangeNumbersModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Подверждение смены номеров</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    Вы уверены, что хотите сменить номера для всех активных операторов?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="confirmChangeAllNumbers()">Да</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="spinner-overlay" id="spinnerOverlay">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Загрузка...</span>
+        </div>
+    </div>
+
+    <div id="notificationContainer" class="notification-container"></div>
+
+    <script>
+        var currentOperatorId = null;
+        var currentOperatorName = '';
+    var operatorsList = [];
+
+        $(document).ready(function() {
+            loadOperators();
+        });
+
+        function loadOperators() {
+        showSpinner();
+            $.ajax({
+                url: "{{ url_for('vats.get_operators_json') }}",
+                method: "GET",
+                success: function(response) {
+                hideSpinner();
+                    if (response.success) {
+                        var operators = response.operators;
+                    operatorsList = operators;
+                        var tbody = $("#operators-table tbody");
+                        tbody.empty();
+                        operators.forEach(function(op) {
+                            var isActiveChecked = op.is_active ? 'checked' : '';
+
+                            var statusText = '';
+                            var statusClass = '';
+                            if (op.current_number === op.crm_number && op.current_number === op.ats_number) {
+                                statusText = 'OK';
+                                statusClass = 'status-ok';
+                            } else {
+                                statusText = 'Номера различаются';
+                                statusClass = 'status-error';
+                            }
+
+                            var assignedIcon = '';
+                            if (op.has_assigned_numbers) {
+                                assignedIcon = `<i class="fas fa-check-circle assigned-icon" style="color: green;" title="Есть назначенные номера"></i>`;
+                            } else {
+                                assignedIcon = `<i class="fas fa-times-circle assigned-icon" style="color: red;" title="Нет назначенных номеров"></i>`;
+                            }
+
+                            var row = `
+                                <tr>
+                                    <td>${op.id}</td>
+                                    <td class="operator-name">
+                                        ${assignedIcon}
+                                        ${op.operator_name}
+                                        <i class="fas fa-pencil-alt edit-icon" title="Назначить номера" onclick="showAssignNumbersModal(${op.id}, '${op.operator_name}')"></i>
+                                    </td>
+                                    <td>${op.operator_type}</td>
+                                    <td>${op.crm_id}</td>
+                                    <td>${op.megapbx_id}</td>
+                                    <td>${op.current_number}</td>
+                                    <td>${op.previous_number}</td>
+                                    <td>${op.crm_number}</td>
+                                    <td>${op.ats_number}</td>
+                                    <td class="${statusClass}">${statusText}</td>
+                                    <td>
+                                        <input type="checkbox" onchange="toggleOperatorActivity(${op.id}, this.checked)" ${isActiveChecked}>
+                                    </td>
+                                </tr>
+                            `;
+                            tbody.append(row);
+                        });
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function() {
+                hideSpinner();
+                    alert("Ошибка при загрузке операторов.");
+                }
+            });
+        }
+
+        function showAddOperatorModal() {
+            $('#addOperatorModal').modal('show');
+        }
+
+        $('#addOperatorForm').on('submit', function(e) {
+            e.preventDefault();
+            var formData = {
+                operator_name: $('#operatorName').val(),
+                operator_type: $('#operatorType').val(),
+                crm_id: $('#crmId').val(),
+                megapbx_id: $('#megapbxId').val(),
+                current_number: $('#currentNumber').val()
+            };
+
+            $.ajax({
+                url: "{{ url_for('vats.add_operator') }}",
+                method: "POST",
+                contentType: "application/json",
+                data: JSON.stringify(formData),
+                success: function(response) {
+                    if (response.success) {
+                        $('#addOperatorModal').modal('hide');
+                        loadOperators();
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function() {
+                    alert("Ошибка при добавлении оператора.");
+                }
+            });
+        });
+
+        function showAssignNumbersModal(operatorId, operatorName) {
+            currentOperatorId = operatorId;
+            currentOperatorName = operatorName;
+            $('#assignOperatorId').val(operatorId);
+            $('#operatorNameTitle').text(operatorName);
+            $('#operatorNameToDelete').text(operatorName);
+            $('#assignNumbersModal').modal('show');
+
+            loadAssignedNumbers();
+            loadAvailableNumbers();
+        }
+
+        function loadAssignedNumbers() {
+            $.ajax({
+                url: "{{ url_for('vats.get_assigned_numbers_route') }}?operator_id=" + currentOperatorId,
+                method: "GET",
+                success: function(response) {
+                    var tbody = $('#assignedNumbers');
+                    tbody.empty();
+
+                    if (response.assigned_numbers.length > 0) {
+                        response.assigned_numbers.forEach(function(number) {
+                            var row = `
+                                <tr data-id="${number.id}">
+                                    <td><input type="checkbox" class="number-checkbox"></td>
+                                    <td>${number.phone_number}</td>
+                                </tr>
+                            `;
+                            tbody.append(row);
+                        });
+                    } else {
+                        tbody.append('<tr><td colspan="2">Нет назначенных номеров</td></tr>');
+                    }
+                },
+                error: function() {
+                    alert("Ошибка при загрузке назначенных номеров.");
+                }
+            });
+        }
+
+        function loadAvailableNumbers() {
+            $.ajax({
+                url: "{{ url_for('vats.get_available_numbers_route') }}",
+                method: "GET",
+                success: function(response) {
+                    var tbody = $('#availableNumbers');
+                    tbody.empty();
+
+                    if (response.available_numbers.length > 0) {
+                        response.available_numbers.forEach(function(number) {
+                            var row = `
+                                <tr data-id="${number.id}">
+                                    <td><input type="checkbox" class="number-checkbox"></td>
+                                    <td>${number.phone_number}</td>
+                                </tr>
+                            `;
+                            tbody.append(row);
+                        });
+                    } else {
+                        tbody.append('<tr><td colspan="2">Нет доступных номеров</td></tr>');
+                    }
+                },
+                error: function() {
+                    alert("Ошибка при загрузке доступных номеров.");
+                }
+            });
+        }
+
+        function moveNumbers(direction) {
+            if (direction === 'toAssigned') {
+                $('#availableNumbers input.number-checkbox:checked').each(function() {
+                    var row = $(this).closest('tr');
+                    $(this).prop('checked', false);
+                    $('#assignedNumbers').append(row);
+                });
+            } else if (direction === 'toAvailable') {
+                $('#assignedNumbers input.number-checkbox:checked').each(function() {
+                    var row = $(this).closest('tr');
+                    $(this).prop('checked', false);
+                    $('#availableNumbers').append(row);
+                });
+            }
+        }
+
+        $('#assignNumbersForm').on('submit', function(e) {
+            e.preventDefault();
+            var numberIds = [];
+            $('#assignedNumbers tr').each(function() {
+                numberIds.push($(this).data('id'));
+            });
+
+            $.ajax({
+                url: "{{ url_for('vats.assign_numbers') }}",
+                method: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({
+                    operator_id: currentOperatorId,
+                    number_ids: numberIds
+                }),
+                success: function(response) {
+                    if (response.success) {
+                        $('#assignNumbersModal').modal('hide');
+                        loadOperators();
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function() {
+                    alert("Ошибка при назначении номеров.");
+                }
+            });
+        });
+
+        function deleteOperator() {
+            $('#confirmDeleteModal').modal('show');
+        }
+
+        function confirmDeleteOperator() {
+            $.ajax({
+                url: "{{ url_for('vats.delete_operator', operator_id=0) }}".replace('0', currentOperatorId),
+                method: "DELETE",
+                success: function(response) {
+                    if (response.success) {
+                        $('#confirmDeleteModal').modal('hide');
+                        $('#assignNumbersModal').modal('hide');
+                        loadOperators();
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function() {
+                    alert("Ошибка при удалении оператора.");
+                }
+            });
+        }
+
+        function changeAllNumbers() {
+            var activeOperators = operatorsList.filter(function(op) {
+                return op.is_active;
+            });
+            if (activeOperators.length === 0) {
+                showNotification('Выберите хотя бы одного оператора', 'error');
+                return;
+            }
+
+            $('#confirmChangeNumbersModal').modal('show');
+        }
+
+        function confirmChangeAllNumbers() {
+            $('#confirmChangeNumbersModal').modal('hide');
+            showSpinner();
+            $.ajax({
+                url: "{{ url_for('vats.test_change_numbers') }}",
+                method: "POST",
+                success: function(response) {
+                    hideSpinner();
+                    if (response.success) {
+                    showNotification(response.message);
+                        loadOperators();
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function() {
+                    hideSpinner();
+                    alert("Ошибка при смене номеров.");
+                }
+            });
+        }
+
+        function toggleOperatorActivity(operatorId, isActive) {
+            $.ajax({
+                url: "{{ url_for('vats.update_operator_activity') }}",
+                method: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({
+                    operator_id: operatorId,
+                    is_active: isActive
+                }),
+                success: function(response) {
+                    if (!response.success) {
+                        alert(response.message);
+                        loadOperators();
+                    }
+                },
+                error: function() {
+                    alert("Ошибка при обновлении статуса активности.");
+                    loadOperators();
+                }
+            });
+        }
+
+        function showSpinner() {
+            $('#spinnerOverlay').css('display', 'flex');
+        }
+
+        function hideSpinner() {
+            $('#spinnerOverlay').css('display', 'none');
+        }
+
+        function showNotification(message, type = 'success') {
+            var notification = $('<div class="notification"></div>').text(message);
+        notification.addClass(type);
+            $('#notificationContainer').append(notification);
+            notification.addClass('slide-in').show();
+
+            setTimeout(function() {
+                notification.removeClass('slide-in').addClass('slide-out');
+                setTimeout(function() {
+                    notification.remove();
+            }, 500);
+        }, 3000);
+        }
+    </script>
+{% endblock %}

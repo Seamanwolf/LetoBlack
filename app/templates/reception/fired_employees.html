@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}Уволенные сотрудники{% endblock %}
+{% block page_title %}Уволенные сотрудники{% endblock %}
+
+{% block extra_css %}
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+    font-size: 0.85rem;
+  }
+  
+  /* Стили для навигационного меню */
+  .nav-menu {
+    background-color: white;
+    padding: 0 1.2rem;
+    border-radius: 12px;
+    display: flex;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    margin-bottom: 2rem;
+    border-bottom: 2px solid #dee2e6;
+    align-items: center;
+  }
+
+  .nav-menu a {
+    color: #6c757d;
+    font-weight: 500;
+    padding: 1rem 1.2rem;
+    margin-right: 1.2rem;
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .nav-menu a:hover {
+    color: #e74c3c;
+    background-color: rgba(231, 76, 60, 0.05);
+  }
+
+  .nav-menu a.active {
+    color: #e74c3c;
+    border-bottom: 3px solid #e74c3c;
+    font-weight: 600;
+  }
+
+  .nav-menu a i {
+    margin-right: 0.7rem;
+    font-size: 1.1rem;
+  }
+  
+  /* Таблица и иконки */
+  .department-section {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  
+  .department-header {
+    background: #e74c3c;
+    color: white;
+    padding: 8px 15px;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .department-header .badge {
+    background-color: white;
+    color: #e74c3c;
+    font-size: 0.8rem;
+    padding: 3px 8px;
+  }
+  
+  .table {
+    margin-bottom: 0;
+    font-size: 0.9rem;
+  }
+  
+  .table th {
+    font-weight: 600;
+    color: #7f8c8d;
+    background-color: #f8f9fa;
+    padding: 8px;
+  }
+  
+  .table td {
+    padding: 8px;
+    vertical-align: middle;
+  }
+  
+  .employee-row {
+    position: relative;
+    transition: background-color 0.3s;
+  }
+  
+  .employee-row:hover {
+    background-color: #f8f9fa;
+  }
+  
+  .rehire-icon, .delete-icon {
+    cursor: pointer;
+    font-size: 1rem;
+    margin-right: 5px;
+  }
+  
+  .rehire-icon {
+    color: #2ecc71;
+  }
+  
+  .delete-icon {
+    color: #e74c3c;
+  }
+  
+  /* Строка поиска и фильтры */
+  .search-box {
+    position: relative;
+    margin-bottom: 20px;
+  }
+  
+  .search-box input {
+    border-radius: 50px;
+    padding-left: 45px;
+    border: 1px solid #ddd;
+    background-color: white;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  }
+  
+  .search-box i {
+    position: absolute;
+    left: 15px;
+    top: 12px;
+    color: #7f8c8d;
+  }
+  
+  /* Фильтры */
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .filter-btn {
+    border: none;
+    background-color: white;
+    border-radius: 50px;
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s;
+  }
+  
+  .filter-btn:hover, .filter-btn.active {
+    background-color: #e74c3c;
+    color: white;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Навигационное меню -->
+    <div class="nav-menu">
+        <a href="{{ url_for('reception.personnel') }}">
+            <i class="fas fa-users"></i>
+            Активные
+        </a>
+        <a href="{{ url_for('reception.fired_employees') }}" class="active">
+            <i class="fas fa-user-times"></i>
+            Уволенные
+        </a>
+        <a href="{{ url_for('reception.personnel_dashboard') }}">
+            <i class="fas fa-chart-line"></i>
+            Дашборд
+        </a>
+    </div>
+
+    <!-- Поиск и фильтры -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" class="form-control" placeholder="Поиск уволенных сотрудников...">
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="filters">
+                <button class="filter-btn active">Все</button>
+                <button class="filter-btn">Руководители</button>
+                <button class="filter-btn">Заместители</button>
+                <button class="filter-btn">Сотрудники</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Список уволенных сотрудников -->
+    {% for department in departments %}
+    <div class="department-section">
+        <div class="department-header">
+            <span>{{ department.name }}</span>
+            <span class="badge">{{ department.fired_count }}</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Сотрудник</th>
+                        <th>Должность</th>
+                        <th>Дата увольнения</th>
+                        <th>Причина</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for employee in department.fired_employees %}
+                    <tr class="employee-row">
+                        <td>{{ employee.name }}</td>
+                        <td>{{ employee.position }}</td>
+                        <td>{{ employee.fired_date }}</td>
+                        <td>{{ employee.fired_reason }}</td>
+                        <td>
+                            <i class="fas fa-user-plus rehire-icon" title="Восстановить"></i>
+                            <i class="fas fa-trash delete-icon" title="Удалить"></i>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %} 

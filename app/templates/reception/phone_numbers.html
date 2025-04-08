@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Номера – Ресепшн</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  <!-- Передаем данные через элемент скрипта, который не будет выполнен -->
+  <script id="departments-json" type="application/json">
+    {{ sorted_departments|tojson|safe }}
+  </script>
+  <script>
+    // Читаем данные из JSON-скрипта при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+      try {
+        var jsonScript = document.getElementById('departments-json');
+        if (jsonScript) {
+          window.serverDepartmentsDirectData = JSON.parse(jsonScript.textContent || jsonScript.innerText);
+          console.log("Напрямую загружены данные отделов:", window.serverDepartmentsDirectData);
+        }
+      } catch (e) {
+        console.error("Ошибка при чтении данных отделов:", e);
+      }
+    });
+  </script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f8f9fa;
+      font-size: 0.85rem;
+    }
+    
+    /* Стили для боковой панели и верхней панели */
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 60px;
+      background: #2c3e50;
+      display: flex;
+      flex-direction: column;
+      padding-top: 20px;
+      z-index: 1000;
+      box-shadow: 3px 0 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .sidebar a {
+      color: #fff;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px 0;
+      font-size: 0.75rem;
+      transition: all 0.3s;
+    }
+    
+    .sidebar a i {
+      font-size: 1.2rem;
+      margin-bottom: 3px;
+    }
+    
+    .sidebar a:hover {
+      background-color: #34495e;
+    }
+    
+    .topbar {
+      position: fixed;
+      left: 60px;
+      top: 0;
+      right: 0;
+      height: 60px;
+      background-color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      z-index: 100;
+    }
+    
+    .topbar .title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+    
+    .topbar .profile-icon {
+      display: flex;
+      align-items: center;
+    }
+    
+    .topbar .profile-icon i {
+      font-size: 1.2rem;
+      margin-right: 10px;
+      color: #3498db;
+    }
+    
+    /* Контент */
+    .content {
+      padding: 80px 20px 20px;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      max-width: 1200px;
+      margin-right: auto;
+      margin-left: auto;
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .content .row {
+      width: 100%;
+      max-width: 1100px;
+    }
+    
+    .content h2 {
+      margin-bottom: 20px;
+      color: #343a40;
+      text-align: center;
+      align-self: center;
+    }
+    
+    /* Заголовки для разделов */
+    .page-title h2 {
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 30px;
+    }
+    
+    .section-title {
+      font-weight: 500;
+      color: #3498db;
+      margin-top: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .department-container {
+      width: 100%;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    
+    .departments-cards-container {
+      width: 100%;
+    }
+    
+    /* Стили для карточки фильтра */
+    .filter-card {
+      background-color: #fff;
+      border: 1px solid rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+    }
+    
+    .filter-card .form-label {
+      color: #2c3e50;
+      margin-bottom: 8px;
+    }
+    
+    .filter-card .form-select {
+      border-color: rgba(0,0,0,0.1);
+    }
+    
+    /* Стили для таблицы номеров */
+    .numbers-container {
+      margin-left: auto;
+      margin-right: auto;
+      width: 100%;
+      max-width: 1200px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 80px;
+      padding-bottom: 30px;
+    }
+    
+    .department-card {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      margin-bottom: 20px;
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .department-header {
+      background-color: #3498db;
+      color: white;
+      padding: 12px 15px;
+      font-weight: 600;
+      font-size: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .department-header.orange {
+      background-color: #f39c12;
+    }
+    
+    .department-header.red {
+      background-color: #e74c3c;
+    }
+    
+    .department-header .badge {
+      background-color: rgba(255, 255, 255, 0.9);
+      color: #3498db;
+      font-size: 0.8rem;
+      padding: 5px 10px;
+      border-radius: 20px;
+    }
+    
+    .department-header.orange .badge {
+      color: #f39c12;
+    }
+    
+    .department-header.red .badge {
+      color: #e74c3c;
+    }
+    
+    .number-table {
+      width: 100%;
+      font-size: 0.85rem;
+    }
+    
+    .number-table th {
+      font-weight: 600;
+      background-color: #f8f9fa;
+      padding: 8px;
+    }
+    
+    .number-table td {
+      padding: 6px 8px;
+      vertical-align: middle;
+    }
+    
+    .number-row {
+      transition: background-color 0.2s;
+    }
+    
+    .number-row:hover {
+      background-color: #f8f9fa;
+    }
+    
+    .action-icon {
+      cursor: pointer;
+      font-size: 0.9rem;
+      margin-right: 8px;
+      color: #3498db;
+    }
+    
+    .delete-icon {
+      color: #e74c3c;
+    }
+    
+    .move-icon {
+      color: #f39c12;
+    }
+    
+    /* Стили для фильтра и поиска */
+    .search-box {
+      position: relative;
+      width: 300px;
+    }
+    
+    .search-box input {
+      border-radius: 50px;
+      padding-left: 40px;
+      border: 1px solid #ddd;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+    
+    .search-box i {
+      position: absolute;
+      left: 15px;
+      top: 10px;
+      color: #7f8c8d;
+    }
+    
+    .add-number-btn {
+      border-radius: 50px;
+      padding: 6px 20px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s;
+    }
+    
+    .add-number-btn:hover {
+      background-color: #2980b9;
+      transform: translateY(-2px);
+    }
+    
+    /* Стиль для чекбокса */
+    .form-check-input {
+      cursor: pointer;
+    }
+    
+    /* Стиль для модальных окон */
+    .modal-header {
+      background-color: #3498db;
+      color: white;
+      border-bottom: none;
+      border-top-left-radius: 10px;
+      border-top-right-radius: 10px;
+    }
+    
+    .modal-header .btn-close {
+      color: white;
+      filter: brightness(0) invert(1);
+    }
+    
+    .modal-content {
+      border: none;
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+    
+    .modal-body {
+      padding: 25px;
+    }
+    
+    .modal-footer {
+      background-color: #f8f9fa;
+      border-top: none;
+      border-bottom-left-radius: 10px;
+      border-bottom-right-radius: 10px;
+      padding: 15px 25px;
+    }
+
+    .modal-header.bg-danger {
+      background-color: #e74c3c !important;
+    }
+    
+    /* Стили для карточек статистики */
+    .card {
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+      transition: transform 0.3s;
+      border: none;
+      margin-bottom: 15px;
+    }
+    
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .card-title {
+      font-size: 0.9rem;
+      margin-bottom: 15px;
+    }
+    
+    .card-body {
+      padding: 20px 15px;
+    }
+    
+    .card-text {
+      font-weight: 700;
+      color: #2c3e50;
+    }
+    
+    /* Стиль для кнопок */
+    .btn-primary {
+      background-color: #3498db;
+      border-color: #3498db;
+      box-shadow: 0 2px 5px rgba(52, 152, 219, 0.3);
+      transition: all 0.2s;
+    }
+    
+    .btn-primary:hover {
+      background-color: #2980b9;
+      border-color: #2980b9;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(52, 152, 219, 0.4);
+    }
+    
+    .btn-secondary {
+      background-color: #95a5a6;
+      border-color: #95a5a6;
+      box-shadow: 0 2px 5px rgba(149, 165, 166, 0.3);
+      transition: all 0.2s;
+    }
+    
+    .btn-secondary:hover {
+      background-color: #7f8c8d;
+      border-color: #7f8c8d;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(149, 165, 166, 0.4);
+    }
+    
+    .btn-danger {
+      background-color: #e74c3c;
+      border-color: #e74c3c;
+      box-shadow: 0 2px 5px rgba(231, 76, 60, 0.3);
+      transition: all 0.2s;
+    }
+    
+    .btn-danger:hover {
+      background-color: #c0392b;
+      border-color: #c0392b;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(231, 76, 60, 0.4);
+    }
+    
+    /* Анимация для модальных окон */
+    .modal.fade .modal-dialog {
+      transition: transform 0.3s ease-out, opacity 0.3s;
+      transform: scale(0.95);
+      opacity: 0;
+    }
+    
+    .modal.show .modal-dialog {
+      transform: scale(1);
+      opacity: 1;
+    }
+
+    /* стили для выпадающего списка отделов */
+    .form-select {
+      width: 100%;
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+
+    .dropdown-menu {
+      display: block;
+      visibility: visible;
+      opacity: 1;
+      z-index: 9999;
+    }
+
+    .select-container {
+      position: relative;
+      z-index: 1050;
+    }
+  </style>
+</head>
+<body>
+  <!-- Боковая панель -->
+  <div class="sidebar">
+    <a href="{{ url_for('reception.reception_dashboard') }}">
+      <i class="fas fa-users"></i>
+      <span>Сотрудники</span>
+    </a>
+    <a href="{{ url_for('reception.fired_employees') }}">
+      <i class="fas fa-user-slash"></i>
+      <span>Уволенные</span>
+    </a>
+    <a href="{{ url_for('reception.phone_numbers') }}" class="active">
+      <i class="fas fa-phone"></i>
+      <span>Номера</span>
+    </a>
+    <a href="#">
+      <i class="fas fa-chart-bar"></i>
+      <span>Статистика</span>
+    </a>
+    <a href="#">
+      <i class="fas fa-cog"></i>
+      <span>Настройки</span>
+    </a>
+    <a href="{{ url_for('userlist.logout') }}">
+      <i class="fas fa-sign-out-alt"></i>
+      <span>Выход</span>
+    </a>
+  </div>
+
+  <!-- Верхняя панель -->
+  <div class="topbar">
+    <div class="title">Корпоративные номера</div>
+    <div class="d-flex align-items-center">
+      <div class="search-box me-3">
+        <i class="fas fa-search"></i>
+        <input type="text" id="searchNumbers" class="form-control" placeholder="Поиск номера...">
+      </div>
+      <button id="addNumberBtn" class="add-number-btn" data-bs-toggle="modal" data-bs-target="#addNumberModal">
+        <i class="fas fa-plus"></i> Добавить номер
+      </button>
+    </div>
+  </div>
+
+  <!-- Основной контент -->
+  <div class="content">
+    <!-- Заголовок страницы -->
+    <div class="page-title mb-4 text-center">
+      <h2>Телефонные номера</h2>
+    </div>
+
+    <!-- Сводная статистика -->
+    <div class="row mb-4">
+      <div class="col-md-3">
+        <div class="card">
+          <div class="card-body text-center">
+            <h5 class="card-title text-muted">Всего номеров</h5>
+            <div class="d-flex align-items-center justify-content-center gap-2">
+              <i class="fas fa-phone-alt text-primary" style="font-size: 1.5rem;"></i>
+              <h2 class="card-text mb-0">{{ numbers|length }}</h2>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card">
+          <div class="card-body text-center">
+            <h5 class="card-title text-muted">Закреплено</h5>
+            <div class="d-flex align-items-center justify-content-center gap-2">
+              <i class="fas fa-user-check text-success" style="font-size: 1.5rem;"></i>
+              <h2 class="card-text mb-0">{{ numbers|selectattr('assigned_to', 'defined')|rejectattr('assigned_to', 'none')|list|length }}</h2>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card">
+          <div class="card-body text-center">
+            <h5 class="card-title text-muted">Свободно</h5>
+            <div class="d-flex align-items-center justify-content-center gap-2">
+              <i class="fas fa-phone-slash text-warning" style="font-size: 1.5rem;"></i>
+              <h2 class="card-text mb-0">{{ numbers|length - numbers|selectattr('assigned_to', 'defined')|rejectattr('assigned_to', 'none')|list|length }}</h2>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card">
+          <div class="card-body text-center">
+            <h5 class="card-title text-muted">Запрещены</h5>
+            <div class="d-flex align-items-center justify-content-center gap-2">
+              <i class="fas fa-ban text-danger" style="font-size: 1.5rem;"></i>
+              <h2 class="card-text mb-0">{{ numbers|selectattr('prohibit_issuance', 'defined')|selectattr('prohibit_issuance', 'equalto', 1)|list|length }}</h2>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Группировка номеров по отделам -->
+    <h2 class="section-title mb-4 text-center">Телефонные номера по отделам</h2>
+    
+    <!-- Создаем словарь для группировки номеров по отделам -->
+    {% set departments = {} %}
+    {% set free_numbers = {} %}
+    {% for number in numbers %}
+      {% if number.department not in departments %}
+        {% set _ = departments.update({number.department: []}) %}
+        {% set _ = free_numbers.update({number.department: 0}) %}
+      {% endif %}
+      {% set _ = departments[number.department].append(number) %}
+      {% if not number.assigned_to %}
+        {% set _ = free_numbers.update({number.department: free_numbers[number.department] + 1}) %}
+      {% endif %}
+    {% endfor %}
+    
+    <!-- Сортируем отделы -->
+    {% set sorted_departments = departments.keys()|list %}
+    {% if sorted_departments|first|string|int == sorted_departments|first %}
+      {% set sorted_departments = sorted_departments|map('string')|map('int')|sort %}
+    {% else %}
+      {% set sorted_departments = sorted_departments|sort %}
+    {% endif %}
+    
+    <!-- Скрытый элемент с данными об отделах для использования в jQuery -->
+    <div id="departments-data" data-departments="{{ sorted_departments|tojson|safe }}" style="display: none;"></div>
+    
+    <div class="department-container">
+      <div class="form-group mb-4">
+        <div class="row">
+          <div class="col-md-6 mx-auto">
+            <div class="filter-card p-3 rounded shadow-sm">
+              <label for="departmentFilter" class="form-label fw-bold">Фильтр по отделам:</label>
+              <select id="departmentFilter" class="form-select form-select-sm">
+                <option value="all">Все отделы</option>
+                {% for dept in sorted_departments %}
+                  <option value="{{ dept }}">{{ dept }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="departments-cards-container">
+        <!-- Отображаем номера по отделам -->
+        {% for department in sorted_departments %}
+          <div class="department-card" data-department-name="{{ department }}">
+            {% set free_count = free_numbers[department] %}
+            {% if free_count == 0 %}
+              <div class="department-header red">
+                <span><i class="fas fa-building me-2"></i>{{ department or 'Без отдела' }}</span>
+                <span class="badge">Свободных номеров нет</span>
+              </div>
+            {% elif free_count <= 2 %}
+              <div class="department-header orange">
+                <span><i class="fas fa-building me-2"></i>{{ department or 'Без отдела' }}</span>
+                <span class="badge">Осталось {{ free_count }} номер{{ 'а' if free_count == 2 else '' }}</span>
+              </div>
+            {% else %}
+              <div class="department-header">
+                <span><i class="fas fa-building me-2"></i>{{ department or 'Без отдела' }}</span>
+                <span class="badge">{{ departments[department]|length }} номеров (свободно: {{ free_count }})</span>
+              </div>
+            {% endif %}
+            <div class="table-responsive">
+              <table class="number-table table table-hover">
+                <thead>
+                  <tr>
+                    <th style="width: 8%">ID</th>
+                    <th style="width: 20%">Номер</th>
+                    <th style="width: 35%">За кем закреплён</th>
+                    <th style="width: 15%">Запрет выдачи</th>
+                    <th style="width: 22%">Действия</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for number in departments[department] %}
+                    <tr class="number-row" data-number-id="{{ number.id }}" data-department="{{ number.department }}">
+                      <td>{{ number.id }}</td>
+                      <td>{{ number.phone_number }}</td>
+                      <td>{{ number.assigned_to or '—' }}</td>
+                      <td>
+                        <div class="form-check form-switch">
+                          <input class="form-check-input prohibit-checkbox" type="checkbox" data-number-id="{{ number.id }}" {% if number.prohibit_issuance %}checked{% endif %}>
+                          <label class="form-check-label small">{{ 'Запрещен' if number.prohibit_issuance else 'Разрешен' }}</label>
+                        </div>
+                      </td>
+                      <td>
+                        <i class="fas fa-exchange-alt action-icon move-icon" title="Переместить" data-bs-toggle="modal" data-bs-target="#moveNumberModal" data-number-id="{{ number.id }}" data-department="{{ number.department }}"></i>
+                        <i class="fas fa-pen action-icon edit-icon" title="Редактировать" data-bs-toggle="modal" data-bs-target="#editNumberModal" data-number-id="{{ number.id }}"></i>
+                        <i class="fas fa-user-plus action-icon assign-icon" title="Назначить сотруднику" data-bs-toggle="modal" data-bs-target="#assignNumberModal" data-number-id="{{ number.id }}" data-number-phone="{{ number.phone_number }}"></i>
+                        <i class="fas fa-trash-alt action-icon delete-icon" title="Удалить" data-number-id="{{ number.id }}"></i>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно для добавления номера -->
+  <div class="modal fade" id="addNumberModal" tabindex="-1" aria-labelledby="addNumberModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addNumberModalLabel">Добавить номер</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        <div class="modal-body">
+          <form id="addNumberForm">
+            <div class="mb-3">
+              <label for="phoneNumberInput" class="form-label">Номер телефона</label>
+              <input type="text" class="form-control" id="phoneNumberInput" name="phone_number" required>
+              <div class="form-text">Введите номер телефона в любом формате</div>
+            </div>
+            <div class="mb-3">
+              <label for="departmentSelect" class="form-label">Отдел</label>
+              <select class="form-select" id="departmentSelect" name="department" required>
+                <option value="" selected disabled>Выберите отдел</option>
+                {% for dept in sorted_departments %}
+                  <option value="{{ dept }}">{{ dept }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="submit" form="addNumberForm" class="btn btn-primary">Добавить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Контейнер для отладочной информации -->
+  <div id="debugContainer" class="container mt-3" style="display:none;">
+    <div class="alert alert-info">
+      <h5>Отладочная информация</h5>
+      <div id="debugContent"></div>
+    </div>
+  </div>
+
+  <!-- Модальное окно для перемещения номера между отделами -->
+  <div class="modal fade" id="moveNumberModal" tabindex="-1" aria-labelledby="moveNumberModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="moveNumberForm">
+          <div class="modal-header">
+            <h5 class="modal-title" id="moveNumberModalLabel">Переместить номер</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="moveNumberId" name="number_id">
+            <div class="mb-3">
+              <label class="form-label">Текущий отдел:</label>
+              <input type="text" class="form-control" id="currentDepartment" readonly>
+            </div>
+            <div class="mb-3">
+              <label for="newDepartmentSelect" class="form-label">Новый отдел:</label>
+              <select class="form-select form-select-sm" id="newDepartmentSelect" name="new_department" required>
+                <option value="" disabled selected>Выберите отдел</option>
+                {% for dept in sorted_departments %}
+                  <option value="{{ dept }}">{{ dept }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+            <button type="submit" class="btn btn-primary">Переместить</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно для подтверждения удаления -->
+  <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title" id="deleteConfirmModalLabel">Подтверждение удаления</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        <div class="modal-body">
+          <p>Вы действительно хотите удалить номер <span id="deleteNumberSpan"></span>?</p>
+          <input type="hidden" id="deleteNumberId">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="button" id="confirmDeleteBtn" class="btn btn-danger">Удалить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно для редактирования номера -->
+  <div class="modal fade" id="editNumberModal" tabindex="-1" aria-labelledby="editNumberModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="editNumberForm">
+          <div class="modal-header">
+            <h5 class="modal-title" id="editNumberModalLabel">Редактировать номер</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="editNumberId" name="number_id">
+            <div class="mb-3">
+              <label for="editNumberInput" class="form-label">Номер телефона</label>
+              <input type="text" class="form-control" id="editNumberInput" name="phone_number" required>
+            </div>
+            <div class="mb-3">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="editProhibitCheckbox" name="prohibit_issuance">
+                <label class="form-check-label" for="editProhibitCheckbox">Запрет выдачи</label>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно для оповещений -->
+  <div class="modal fade" id="alertModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header" id="alertHeader">
+          <h5 class="modal-title" id="alertTitle"></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        <div class="modal-body" id="alertBody">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно для назначения номера сотруднику -->
+  <div class="modal fade" id="assignNumberModal" tabindex="-1" aria-labelledby="assignNumberModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="assignNumberForm">
+          <div class="modal-header">
+            <h5 class="modal-title" id="assignNumberModalLabel">Назначить номер сотруднику</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="assignNumberId" name="number_id">
+            <div class="mb-3">
+              <label class="form-label">Номер телефона:</label>
+              <input type="text" class="form-control" id="assignNumberPhone" readonly>
+            </div>
+            <div class="mb-3">
+              <label for="employeeSelectForNumber" class="form-label">Сотрудник:</label>
+              <select class="form-select" id="employeeSelectForNumber" name="employee_id">
+                <option value="" selected>-- Освободить номер --</option>
+                <!-- Сотрудники будут загружены по отделам через AJAX -->
+              </select>
+              <div class="form-text">Выберите сотрудника, которому нужно назначить этот номер</div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+            <button type="submit" class="btn btn-primary">Назначить</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно для создания нового отдела -->
+  <div class="modal fade" id="addDepartmentModal" tabindex="-1" aria-labelledby="addDepartmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="addDepartmentForm">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addDepartmentModalLabel">Добавить новый отдел</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="newDepartmentName" class="form-label">Название отдела</label>
+              <input type="text" class="form-control" id="newDepartmentName" name="department_name" required>
+              <div class="form-text">Введите название нового отдела. Будет добавлен в справочник и доступен для выбора.</div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+            <button type="submit" class="btn btn-primary">Добавить отдел</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Скрипты для работы с JQuery и Bootstrap -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    $(document).ready(function() {
+      // Получаем список отделов из глобальной переменной или скрытого элемента
+      var departments = [];
+      
+      try {
+        // Сначала пробуем загрузить из глобальной переменной
+        if (window.serverDepartmentsDirectData && Array.isArray(window.serverDepartmentsDirectData)) {
+          departments = window.serverDepartmentsDirectData;
+          console.log("jQuery: Данные отделов загружены напрямую, количество:", departments.length);
+        } 
+        // Если это не работает, пробуем прочитать JSON из элемента
+        else if ($("#departments-json").length) {
+          try {
+            var jsonStr = $("#departments-json").html();
+            var parsedData = JSON.parse(jsonStr);
+            if (Array.isArray(parsedData)) {
+              departments = parsedData;
+              console.log("jQuery: Данные отделов загружены из JSON-элемента, количество:", departments.length);
+            }
+          } catch (parseErr) {
+            console.error("jQuery: Ошибка при разборе JSON из элемента:", parseErr);
+          }
+        }
+        // Если не получилось, пробуем через атрибут (старый метод)
+        else {
+          var $deptData = $("#departments-data");
+          if ($deptData.length) {
+            var dataStr = $deptData.attr("data-departments");
+            console.log("jQuery: data-departments атрибут =", dataStr);
+            
+            if (dataStr && dataStr !== "null" && dataStr !== "[]") {
+              departments = JSON.parse(dataStr);
+              
+              // Дополнительная проверка правильности данных
+              if (Array.isArray(departments)) {
+                console.log("jQuery: Список отделов успешно загружен из атрибута");
+              } else {
+                console.error("jQuery: Данные не являются массивом:", departments);
+                departments = [];
+              }
+            } else {
+              console.warn("jQuery: Данные отделов пусты или содержат пустой массив");
+            }
+          } else {
+            console.error("jQuery: Элемент #departments-data не найден");
+          }
+        }
+      } catch (e) {
+        console.error("jQuery: Ошибка при парсинге JSON данных отделов:", e);
+        // Показываем ошибку на странице
+        $(".content").prepend('<div class="alert alert-danger">Ошибка загрузки списка отделов. Пожалуйста, обновите страницу.</div>');
+      }
+      
+      // Отладочный вывод в консоль
+      console.log("jQuery: Список отделов:", departments);
+      console.log("jQuery: Количество отделов:", departments.length);
+      
+      // === ВАЖНО: Заполняем выпадающие списки сразу, чтобы они были готовы до обработки событий ===
+      // Динамически заполняем выпадающий список фильтра отделов
+      if (departments && departments.length > 0) {
+        // Заполняем основной фильтр отделов
+        var $departmentFilter = $("#departmentFilter");
+        $departmentFilter.find('option:not([value="all"])').remove();
+        
+        // Заполняем выпадающий список в форме добавления номера
+        var $departmentSelect = $("#departmentSelect");
+        $departmentSelect.find('option:not(:first)').remove();
+        
+        // Заполняем выпадающий список в форме перемещения номера
+        var $newDepartmentSelect = $("#newDepartmentSelect");
+        $newDepartmentSelect.find('option:not(:first)').remove();
+        
+        // Добавляем отделы из полученного списка во все выпадающие списки
+        departments.forEach(function(dept) {
+          // В основной фильтр
+          $departmentFilter.append($('<option>', {
+            value: dept,
+            text: dept
+          }));
+          
+          // В форму добавления номера
+          $departmentSelect.append($('<option>', {
+            value: dept,
+            text: dept
+          }));
+          
+          // В форму перемещения номера
+          $newDepartmentSelect.append($('<option>', {
+            value: dept,
+            text: dept
+          }));
+        });
+        
+        console.log("Все выпадающие списки отделов обновлены, добавлено элементов:", departments.length);
+      } else {
+        console.warn("Не удалось обновить выпадающие списки отделов: список пуст");
+      }
+      
+      // Обработчик фильтрации по отделам
+      $("#departmentFilter").on("change", function() {
+        var selectedDepartment = $(this).val();
+        console.log("Выбран отдел для фильтрации:", selectedDepartment);
+        
+        if (selectedDepartment === "all") {
+          // Показать все отделы
+          $(".department-card").show();
+          console.log("Показаны все отделы");
+        } else {
+          // Показать только выбранный отдел
+          $(".department-card").hide();
+          
+          // Используем data-атрибут для более точного сопоставления
+          var $cards = $(".department-card[data-department-name='" + selectedDepartment + "']");
+          $cards.show();
+          
+          console.log("Найдено карточек с отделом '" + selectedDepartment + "':", $cards.length);
+          
+          // Если не найдено ни одной карточки, выводим предупреждение
+          if ($cards.length === 0) {
+            console.warn("Не найдено карточек для отдела:", selectedDepartment);
+            console.log("Все доступные data-department-name атрибуты:");
+            
+          $(".department-card").each(function() {
+              console.log($(this).data("department-name"));
+            });
+          }
+        }
+      });
+
+      // Обработка поиска номеров
+      $("#searchNumbers").on("keyup", function() {
+        var value = $(this).val().toLowerCase();
+        $(".number-row").filter(function() {
+          $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+        });
+        
+        // Скрываем отделы без видимых номеров
+        $(".department-card").each(function() {
+          var visibleRows = $(this).find(".number-row:visible").length;
+          $(this).toggle(visibleRows > 0);
+        });
+      });
+
+      // Обновление отладочной информации при изменении формы
+      $("#phoneNumberInput, #departmentSelect").on("change keyup", function() {
+        updateDebugData();
+      });
+      
+      function updateDebugData() {
+        var phoneNumber = $("#phoneNumberInput").val() || "не указан";
+        var department = $("#departmentSelect").val() || "не выбран";
+        
+        var data = {
+          phone_number: phoneNumber,
+          department: department
+        };
+        
+        $("#debugData").text(JSON.stringify(data, null, 2));
+      }
+      
+      // Тест соединения с сервером
+      $("#testConnectionBtn").on("click", function() {
+        $("#debugContainer").show();
+        $("#debugContent").html("<p>Проверка соединения с сервером...</p>");
+        
+        $.ajax({
+          url: "{{ url_for('reception.phone_numbers') }}",
+          type: "GET",
+          success: function() {
+            $("#debugContent").append(
+              "<p class='text-success'>✓ Соединение с сервером установлено</p>"
+            );
+            
+            // Проверка доступности API
+            $.ajax({
+              url: "{{ url_for('reception.add_number') }}",
+              type: "POST",
+              data: JSON.stringify({ test: true }),
+              contentType: "application/json",
+              success: function(response) {
+                $("#debugContent").append(
+                  "<p class='text-success'>✓ API доступен</p>" +
+                  "<pre>" + JSON.stringify(response, null, 2) + "</pre>"
+                );
+              },
+              error: function(xhr) {
+                $("#debugContent").append(
+                  "<p class='text-warning'>⚠ API доступен, но вернул ошибку</p>" +
+                  "<pre>" + xhr.responseText + "</pre>"
+                );
+              }
+            });
+          },
+          error: function(xhr) {
+            $("#debugContent").append(
+              "<p class='text-danger'>✗ Ошибка соединения с сервером</p>" +
+              "<pre>" + xhr.responseText + "</pre>"
+            );
+          }
+        });
+      });
+      
+      // Инициализация отладочных данных
+      updateDebugData();
+
+      // Инициализация модального окна
+      var addNumberModal = new bootstrap.Modal(document.getElementById('addNumberModal'));
+      
+      // Обработчик для кнопки добавления номера
+      $('#addNumberBtn').on('click', function() {
+          // Очищаем форму перед открытием
+          $('#addNumberForm')[0].reset();
+          addNumberModal.show();
+      });
+      
+      // Обработчик для формы добавления номера
+      $('#addNumberForm').on('submit', function(e) {
+          e.preventDefault();
+          
+          var phoneNumber = $('#phoneNumberInput').val();
+          var department = $('#departmentSelect').val();
+          
+          if (!phoneNumber || !department) {
+              alert('Пожалуйста, заполните все поля');
+              return;
+          }
+          
+          $.ajax({
+              url: '/api/add_number',
+              method: 'POST',
+              data: JSON.stringify({
+                  phone_number: phoneNumber,
+                  department: department
+              }),
+              contentType: 'application/json',
+              success: function(response) {
+                  if (response.success) {
+                      addNumberModal.hide();
+                      location.reload();
+                  } else {
+                      alert('Ошибка при добавлении номера: ' + (response.error || 'Неизвестная ошибка'));
+                  }
+              },
+              error: function(xhr, status, error) {
+                  alert('Ошибка при добавлении номера: ' + error);
+              }
+          });
+      });
+    });
+  </script>
+
+  <!-- Функция для отображения уведомлений -->
+  <script>
+    function showAlert(title, message, callback) {
+        $('#alertTitle').text(title);
+        $('#alertBody').text(message);
+        
+        if (title === 'Ошибка') {
+          $('#alertHeader').removeClass('bg-success').addClass('bg-danger text-white');
+          $('#alertTitle').removeClass('text-success').addClass('text-white');
+        } else {
+          $('#alertHeader').removeClass('bg-danger').addClass('bg-success text-white');
+          $('#alertTitle').removeClass('text-danger').addClass('text-white');
+        }
+        
+        var alertModal = new bootstrap.Modal(document.getElementById('alertModal'));
+      
+      if (callback) {
+        // Добавляем обработчик закрытия модального окна
+        $('#alertModal').on('hidden.bs.modal', function() {
+          callback();
+          // Удаляем обработчик, чтобы избежать многократных вызовов
+          $('#alertModal').off('hidden.bs.modal');
+        });
+      }
+      
+        alertModal.show();
+      }
+  </script>
+</body>
+</html>

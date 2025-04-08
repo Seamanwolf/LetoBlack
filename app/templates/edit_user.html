@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Редактирование пользователя</title>
+    <link rel="stylesheet" href="{{ url_for(\'static\', filename=\'css/common.css\') }}?v={{ range(1, 100000) | random }}">
+    <style>
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: calc(100vh - 70px);
+            padding: 0 20px;
+        }
+
+        .form-container {
+            border: none;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: white;
+            box-shadow: 0 2px 3px #ccc;
+            width: 48%;
+        }
+
+        form {
+            width: 100%;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        input[type="text"], input[type="password"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        .phone-container {
+            display: flex;
+            align-items: center;
+        }
+
+            .phone-container span {
+                padding: 10px;
+                background-color: #ccc;
+                border: 1px solid #ccc;
+                border-radius: 5px 0 0 5px;
+            }
+
+            .phone-container input {
+                flex: 1;
+                border-radius: 0 5px 5px 0;
+            }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            margin: 20px 0;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+            button:hover {
+                background-color: #0056b3;
+            }
+
+        .back-button {
+            display: flex;
+            align-items: center;
+            background-color: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+            .back-button i {
+                margin-right: 8px;
+            }
+
+            .back-button:hover {
+                background-color: #5a6268;
+            }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-container">
+            <h2>Редактировать пользователя</h2>
+            <form action="{{ url_for('edit_user', id=user.id) }}" method="post">
+                <label for="login">Логин:</label>
+                <input type="text" id="login" name="login" value="{{ user.login }}" required>
+
+                <label for="department">Отдел:</label>
+                <input type="text" id="department" name="department" value="{{ user.department }}" required>
+
+                <label for="phone">Телефон:</label>
+                <div class="phone-container">
+                    <span>+7</span>
+                    <input type="text" id="phone" name="phone" value="{{ user.phone|replace('+7', '') }}" placeholder="0000000000" pattern="\d{10}" required>
+                </div>
+                <input type="hidden" id="full_phone" name="full_phone" value="{{ user.phone }}">
+
+                <button type="submit">Сохранить изменения</button>
+            </form>
+            <form action="{{ url_for('change_user_password', id=user.id) }}" method="post">
+                <h3>Смена пароля</h3>
+                <label for="new_password">Новый пароль:</label>
+                <input type="password" id="new_password" name="new_password" required>
+
+                <label for="confirm_password">Подтвердите новый пароль:</label>
+                <input type="password" id="confirm_password" name="confirm_password" required>
+
+                <button type="submit">Сменить пароль</button>
+            </form>
+            <a href="{{ url_for('show_brokers') }}" class="back-button"><i class="fas fa-arrow-left"></i>Назад к списку пользователей</a>
+        </div>
+    </div>
+    <script>document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById('phone').addEventListener('input', function () {
+                const phone = this.value;
+                const fullPhone = '+7' + phone;
+                document.getElementById('full_phone').value = fullPhone;
+            });
+        });</script>
+</body>
+</html>

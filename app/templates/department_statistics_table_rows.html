@@ -1,0 +1,15 @@
+{% for stat in scores %}
+<tr>
+    <td data-label="Сотрудник">
+        {{ stat['full_name'] }}
+    </td>
+    <!-- Суммируемые поля -->
+    {% for field in sum_fields %}
+    <td data-label="{{ field_names.get(field, field) }}">{{ stat.get(field, 0) or 0 }}</td>
+    {% endfor %}
+    <!-- Поля с последним значением -->
+    {% for field in last_fields %}
+    <td data-label="{{ field_names.get(field, field) }}">{{ stat.get(field, 0) or 0 }}</td>
+    {% endfor %}
+</tr>
+{% endfor %}

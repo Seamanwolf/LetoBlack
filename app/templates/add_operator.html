@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Добавление оператора</title>
+    <!-- Подключение внешних стилей и скриптов -->
+    <link rel="stylesheet" href="{{ url_for(\'static\', filename=\'css/common.css\') }}?v={{ range(1, 100000) | random }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        /* Общие стили */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: white;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-size: 12px;
+        }
+
+        /* Стили для боковой панели */
+        .sidebar {
+            background: rgba(22,28,38,1);
+            width: 50px;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            transition: width 0.3s;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 1100;
+        }
+
+            .sidebar:hover {
+                width: 250px;
+            }
+
+        .logo {
+            width: 40px;
+            height: 40px;
+            background-color: black;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+
+        .menu {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            width: 100%;
+        }
+
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            color: white;
+            text-decoration: none;
+            padding: 10px;
+            background-color: rgba(22,28,38,1);
+            margin: 10px 0;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+
+            .sidebar a:hover {
+                background-color: #dbdbdb;
+                color: black;
+            }
+
+            .sidebar a .icon {
+                display: inline-block;
+                width: 24px;
+                height: 24px;
+                margin-right: 10px;
+                color: white;
+                transition: color 0.3s;
+            }
+
+            .sidebar a .text {
+                display: none;
+            }
+
+        .sidebar:hover a .text {
+            display: inline-block;
+        }
+
+        /* Стили для верхней панели */
+        .topbar {
+            margin-left: 50px;
+            padding: 20px;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: calc(100% - 50px);
+            z-index: 1000;
+        }
+
+            .topbar .title {
+                font-size: 18px;
+                color: #333;
+                font-weight: bold;
+            }
+
+        .profile-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #7b7b7b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-left: 20px;
+            position: relative;
+        }
+
+        .profile-menu {
+            display: none;
+            position: absolute;
+            top: 50px;
+            right: 0;
+            width: 240px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 5px;
+            z-index: 1100;
+        }
+
+            .profile-menu a {
+                display: block;
+                width: 100%;
+                padding: 10px;
+                color: black;
+                text-decoration: none;
+                background-color: #e0e0e0;
+                border-bottom: 1px solid #ddd;
+            }
+
+        .profile-icon:focus .profile-menu {
+            display: block;
+        }
+
+        .main-container {
+            margin-left: 50px;
+            margin-top: 80px;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .table-container {
+            width: 100%;
+            max-width: 800px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+        }
+
+        th, td {
+            padding: 6px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        .edit-button {
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            display: none;
+        }
+
+        .operator-name:hover .edit-button {
+            display: inline;
+        }
+
+        .badge-success {
+            background-color: #28a745;
+        }
+
+        .badge-secondary {
+            background-color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">Л</div>
+        <div class="menu">
+            <a href="{{ url_for('callcenter.call_center_dashboard') }}">
+                <i class="fas fa-arrow-left icon"></i><span class="text">Назад</span>
+            </a>
+            <a href="#" class="button" data-bs-toggle="modal" data-bs-target="#addOperatorModal">
+                <i class="fas fa-plus-circle icon"></i><span class="text">Добавить оператора</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="topbar">
+        <div class="title">Добавление оператора</div>
+        <div class="right-icons">
+            <div class="profile-icon" tabindex="0">
+                <i class="fas fa-user"></i>
+                <div class="profile-menu">
+                    <a href="{{ url_for('userlist.logout') }}">Выход</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <h2>Список операторов</h2>
+        <input type="text" id="search-input" class="form-control mb-3" placeholder="Поиск...">
+
+        <div class="table-container">
+            <table class="table table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th>Полное имя</th>
+                        <th>Логин</th>
+                        <th>УКЦ/КЦ</th>
+                        <th>Статус</th>
+                        <th>Активность сегодня</th>
+                    </tr>
+                </thead>
+                <tbody id="operatorTable">
+                    {% for operator in operators %}
+                    <tr id="operator-{{ operator.id }}">
+                        <td class="operator-name position-relative">
+                            {{ operator.full_name }}
+                            <button type="button" class="edit-button" data-bs-toggle="modal" data-bs-target="#editOperatorModal"
+                                    data-id="{{ operator.id }}"
+                                    data-name="{{ operator.full_name }}"
+                                    data-login="{{ operator.login }}"
+                                    data-ukc_kc="{{ operator.ukc_kc }}">
+                                <i class="fas fa-pencil-alt"></i>
+                            </button>
+                        </td>
+                        <td>{{ operator.login }}</td>
+                        <td>{{ operator.ukc_kc }}</td>
+                        <td>
+                            <span class="badge {% if operator.status == 'Онлайн' %}badge-success{% else %}badge-secondary{% endif %}">
+                                {{ operator.status }}
+                            </span>
+                        </td>
+                        <td class="operator-active-time">{{ operator.active_time_today }} мин.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addOperatorModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Добавить оператора</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="{{ url_for('vats.add_operator') }}" method="post">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Логин</label>
+                            <input type="text" class="form-control" id="username" name="username" placeholder="Введите логин" required>
+                            <div id="login-exists-alert" class="text-danger" style="display: none;">Такой логин уже существует</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="fullname" class="form-label">Полное имя</label>
+                            <input type="text" class="form-control" id="fullname" name="fullname" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="ukc_kc" class="form-label">УКЦ/КЦ</label>
+                            <select class="form-select" id="ukc_kc" name="ukc_kc" required>
+                                <option value="" disabled selected>Выберите УКЦ или КЦ</option>
+                                <option value="УКЦ">УКЦ</option>
+                                <option value="КЦ">КЦ</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Пароль</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-dark">Добавить</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editOperatorModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Редактировать оператора</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editOperatorForm" action="{{ url_for('callcenter.edit_operator') }}" method="post">
+                        <input type="hidden" id="editOperatorId" name="operator_id">
+                        <div class="mb-3">
+                            <label for="editFullname" class="form-label">Полное имя</label>
+                            <input type="text" class="form-control" id="editFullname" name="fullname" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editLogin" class="form-label">Логин</label>
+                            <input type="text" class="form-control" id="editLogin" name="login" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editUKC_KC" class="form-label">УКЦ/КЦ</label>
+                            <select class="form-select" id="editUKC_KC" name="ukc_kc" required>
+                                <option value="УКЦ">УКЦ</option>
+                                <option value="КЦ">КЦ</option>
+                            </select>
+                        </div>
+                        <div class="mb-3" style="display: none;">
+                            <label for="editStatus" class="form-label">Статус</label>
+                            <select class="form-select" id="editStatus" name="status">
+                                <option value="Онлайн">Онлайн</option>
+                                <option value="Офлайн" selected>Офлайн</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editPassword" class="form-label">Новый пароль (необязательно)</label>
+                            <input type="password" class="form-control" id="editPassword" name="password">
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-dark">Сохранить</button>
+                            <form id="deleteOperatorForm" action="{{ url_for('callcenter.fire_operator') }}" method="post" class="d-inline">
+                                <input type="hidden" id="deleteOperatorId" name="operator_id">
+                                <button type="submit" class="btn btn-danger" onclick="return confirm('Вы уверены, что хотите уволить этого оператора?');">
+                                    Удалить
+                                </button>
+                            </form>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script> document.addEventListener('DOMContentLoaded', function () {
+            const deleteButtons = document.querySelectorAll('.btn-danger');
+
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const operatorId = this.getAttribute('data-operator-id');
+                    document.getElementById('deleteOperatorId').value = operatorId;
+                });
+            });
+        });
+
+        $(document).ready(function () {
+        // Функция для обновления статуса операторов и активности сегодня
+        function updateOperatorStatus() {
+            $.get('{{ url_for("callcenter.get_operator_status") }}', function (data) {
+                data.operators.forEach(function (operator) {
+                    var row = $('#operator-' + operator.id);
+
+                    // Обновляем статус оператора
+                    var statusBadge = row.find('.badge');
+                    if (operator.status === 'Онлайн') {
+                        statusBadge.removeClass('badge-secondary').addClass('badge-success').text('Онлайн');
+                    } else {
+                        statusBadge.removeClass('badge-success').addClass('badge-secondary').text('Офлайн');
+                    }
+
+                    // Обновляем активность сегодня
+                    row.find('.operator-active-time').text(operator.active_time_today + ' мин.');
+                });
+            });
+        }
+
+        // Вызываем обновление статуса операторов сразу при загрузке страницы
+        updateOperatorStatus();
+
+        // Устанавливаем интервал обновления статусов каждые 10 секунд
+        setInterval(updateOperatorStatus, 10000);
+
+        // Обработка ввода логина для проверки уникальности
+        $('#username').on('input', function () {
+            var username = $(this).val();
+            if (username.length > 0) {
+                $.post('{{ url_for("admin.check_username") }}', { username: username }, function (response) {
+                    if (response.exists) {
+                        $('#login-exists-alert').show();
+                    } else {
+                        $('#login-exists-alert').hide();
+                    }
+                });
+            } else {
+                $('#login-exists-alert').hide();
+            }
+        });
+
+        // Обработка нажатия кнопки редактирования
+        $('.edit-button').on('click', function () {
+            var operatorId = $(this).data('id');
+            var operatorName = $(this).data('name');
+            var operatorLogin = $(this).data('login');
+            var operatorUkcKc = $(this).data('ukc_kc');
+
+            $('#editOperatorId').val(operatorId);
+            $('#editFullname').val(operatorName);
+            $('#editLogin').val(operatorLogin);
+            $('#editUKC_KC').val(operatorUkcKc);
+            $('#deleteOperatorId').val(operatorId);
+
+            $('#editOperatorModal').modal('show');
+        });
+    });
+    </script>
+</body>
+</html>

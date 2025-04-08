@@ -1,0 +1,51 @@
+{% extends "admin/settings/base.html" %}
+
+{% block settings_content %}
+<!-- Общие настройки -->
+<div class="tab-pane fade show active" id="general">
+    <h5 class="card-title">Общие настройки системы</h5>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Основные параметры</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('admin.settings') }}">
+                        <div class="mb-3">
+                            <label for="systemName" class="form-label">Название системы</label>
+                            <input type="text" class="form-control" id="systemName" name="system_name" value="Brokers CRM">
+                        </div>
+                        <div class="mb-3">
+                            <label for="adminEmail" class="form-label">Email администратора</label>
+                            <input type="email" class="form-control" id="adminEmail" name="admin_email" value="admin@example.com">
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="maintenanceMode" name="maintenance_mode">
+                                <label class="form-check-label" for="maintenanceMode">Режим обслуживания</label>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Информация о системе</h6>
+                </div>
+                <div class="card-body">
+                    <p><strong>Версия системы:</strong> 1.0.0</p>
+                    <p><strong>Дата установки:</strong> 01.01.2023</p>
+                    <p><strong>Последнее обновление:</strong> 01.06.2023</p>
+                    <p><strong>Версия PHP:</strong> 7.4.3</p>
+                    <p><strong>Версия MySQL:</strong> 8.0.27</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

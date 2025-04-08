@@ -1,0 +1,108 @@
+/* Стили для страницы рейтинга */
+
+/* Стили для таблицы сортировки */
+.sortable {
+    width: 100%;
+    margin-bottom: 1rem;
+    color: #212529;
+    border-collapse: collapse;
+}
+
+.sortable th {
+    cursor: pointer;
+    position: relative;
+    background-color: #f8f9fa;
+    padding: 0.75rem;
+    vertical-align: top;
+    border-top: 1px solid #dee2e6;
+}
+
+.sortable th:hover {
+    background-color: #e9ecef;
+}
+
+.sortable th.asc .arrow,
+.sortable th.desc .arrow {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    border-style: solid;
+    content: "";
+    display: inline-block;
+    width: 0;
+    height: 0;
+}
+
+.sortable th.asc .arrow {
+    border-width: 0 5px 5px 5px;
+    border-color: transparent transparent black transparent;
+}
+
+.sortable th.desc .arrow {
+    border-width: 5px 5px 0 5px;
+    border-color: black transparent transparent transparent;
+}
+
+/* Стили для рейтинга */
+.rating {
+    color: #f1c40f;
+    font-weight: bold;
+}
+
+/* Стили для редактирования */
+.fio {
+    position: relative;
+}
+
+.fio a {
+    color: #3498db;
+    text-decoration: none;
+}
+
+.fio a:hover {
+    text-decoration: underline;
+}
+
+.pencil {
+    margin-left: 0.5rem;
+    color: #7f8c8d;
+    display: none;
+}
+
+.fio:hover .pencil {
+    display: inline;
+}
+
+/* Стили для модального окна */
+.modal-content {
+    border-radius: 0.3rem;
+    border: none;
+}
+
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.modal-title {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.modal-footer {
+    border-top: 1px solid #dee2e6;
+}
+
+/* Стили для кнопок */
+.btn-warning {
+    background-color: #f39c12;
+    border-color: #f39c12;
+    color: white;
+}
+
+.btn-warning:hover {
+    background-color: #e67e22;
+    border-color: #e67e22;
+    color: white;
+} 

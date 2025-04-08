@@ -1,0 +1,545 @@
+{% extends "base.html" %}
+
+{% block title %}Управление персоналом{% endblock %}
+{% block page_title %}Управление персоналом{% endblock %}
+
+{% block extra_css %}
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+    font-size: 0.85rem;
+  }
+  
+  /* Стили для карточек статистики */
+  .stat-card {
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    padding: 20px;
+    margin-bottom: 20px;
+    background: white;
+    transition: transform 0.3s;
+  }
+  
+  .stat-card:hover {
+    transform: translateY(-5px);
+  }
+  
+  .stat-card .stat-title {
+    font-size: 1rem;
+    color: #7f8c8d;
+    margin-bottom: 10px;
+  }
+  
+  .stat-card .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #2c3e50;
+  }
+  
+  .stat-card .stat-icon {
+    float: right;
+    font-size: 2.5rem;
+    opacity: 0.2;
+    color: #3498db;
+  }
+  
+  /* Стили для навигационного меню */
+  .nav-menu {
+    background-color: white;
+    padding: 0 1.2rem;
+    border-radius: 12px;
+    display: flex;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    margin-bottom: 2rem;
+    border-bottom: 2px solid #dee2e6;
+    align-items: center;
+  }
+
+  .nav-menu a {
+    color: #6c757d;
+    font-weight: 500;
+    padding: 1rem 1.2rem;
+    margin-right: 1.2rem;
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .nav-menu a:hover {
+    color: #3498db;
+    background-color: rgba(52, 152, 219, 0.05);
+  }
+
+  .nav-menu a.active {
+    color: #3498db;
+    border-bottom: 3px solid #3498db;
+    font-weight: 600;
+  }
+
+  .nav-menu a i {
+    margin-right: 0.7rem;
+    font-size: 1.1rem;
+  }
+  
+  /* Таблица и иконки */
+  .department-section {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  
+  .department-header {
+    background-color: #f8f9fa;
+    padding: 15px 20px;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+  }
+  
+  .department-header .badge {
+    background-color: #3498db;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 50px;
+    font-size: 0.8rem;
+  }
+  
+  .employee-row {
+    transition: background-color 0.2s;
+  }
+  
+  .employee-row:hover {
+    background-color: #f8f9fa;
+  }
+  
+  .manager-row {
+    background-color: rgba(52, 152, 219, 0.05);
+  }
+  
+  .deputy-row {
+    background-color: rgba(46, 204, 113, 0.05);
+  }
+  
+  .employee-status {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 5px;
+  }
+  
+  .status-online {
+    background-color: #2ecc71;
+  }
+  
+  .status-offline {
+    background-color: #e74c3c;
+  }
+  
+  .edit-icon, .fire-icon, .delete-icon {
+    cursor: pointer;
+    margin-right: 10px;
+    font-size: 1.1rem;
+    transition: color 0.2s;
+  }
+  
+  .edit-icon {
+    color: #3498db;
+  }
+  
+  .fire-icon {
+    color: #e74c3c;
+  }
+  
+  .delete-icon {
+    color: #95a5a6;
+  }
+  
+  .edit-icon:hover {
+    color: #2980b9;
+  }
+  
+  .fire-icon:hover {
+    color: #c0392b;
+  }
+  
+  .delete-icon:hover {
+    color: #7f8c8d;
+  }
+  
+  /* Поиск и фильтры */
+  .search-box {
+    position: relative;
+    margin-bottom: 20px;
+  }
+  
+  .search-box i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #95a5a6;
+  }
+  
+  .search-box input {
+    padding-left: 40px;
+    border-radius: 50px;
+    border: 1px solid #e9ecef;
+  }
+  
+  .filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .filter-btn {
+    border: none;
+    background-color: white;
+    border-radius: 50px;
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s;
+  }
+  
+  .filter-btn:hover, .filter-btn.active {
+    background-color: #3498db;
+    color: white;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Статистика -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stat-card">
+                <i class="fas fa-users stat-icon"></i>
+                <div class="stat-title">Всего сотрудников</div>
+                <div class="stat-value">{{ total_employees }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <i class="fas fa-user-check stat-icon"></i>
+                <div class="stat-title">Активные сотрудники</div>
+                <div class="stat-value">{{ active_employees }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <i class="fas fa-user-times stat-icon"></i>
+                <div class="stat-title">Уволенные сотрудники</div>
+                <div class="stat-value">{{ fired_employees }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <i class="fas fa-building stat-icon"></i>
+                <div class="stat-title">Отделов</div>
+                <div class="stat-value">{{ departments|length }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Навигационное меню -->
+    <div class="nav-menu">
+        <a href="{{ url_for('admin.personnel') }}" class="active">
+            <i class="fas fa-users"></i>
+            Активные
+        </a>
+        <a href="{{ url_for('admin.fired_employees') }}">
+            <i class="fas fa-user-times"></i>
+            Уволенные
+        </a>
+        <a href="{{ url_for('admin.personnel_dashboard') }}">
+            <i class="fas fa-chart-line"></i>
+            Дашборд
+        </a>
+    </div>
+
+    <!-- Поиск и фильтры -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" class="form-control" id="searchInput" placeholder="Поиск сотрудников...">
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="filters">
+                <button class="filter-btn active">Все</button>
+                <button class="filter-btn">Руководители</button>
+                <button class="filter-btn">Заместители</button>
+                <button class="filter-btn">Сотрудники</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Список сотрудников по отделам -->
+    {% for department in departments %}
+    <div class="department-section">
+        <div class="department-header">
+            <span>{{ department.name }}</span>
+            <span class="badge">{{ employees_by_department[department.name]|default(0) }}</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>ФИО</th>
+                        <th>Должность</th>
+                        <th>Корп. телефон</th>
+                        <th>Корп. почта</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for employee in employees %}
+                    {% if employee.department_id == department.id %}
+                    <tr class="employee-row {% if employee.role == 'leader' %}manager-row{% elif employee.role == 'deputy' %}deputy-row{% endif %}">
+                        <td>{{ employee.id }}</td>
+                        <td>{{ employee.full_name }}</td>
+                        <td>{{ employee.position }}</td>
+                        <td>{{ employee.corporate_number }}</td>
+                        <td>{{ employee.corporate_email }}</td>
+                        <td>
+                            <span class="employee-status {% if employee.status == 'online' %}status-online{% else %}status-offline{% endif %}"></span>
+                            {{ employee.status }}
+                        </td>
+                        <td>
+                            <i class="fas fa-edit edit-icon" title="Редактировать" data-bs-toggle="modal" data-bs-target="#editEmployeeModal" data-id="{{ employee.id }}"></i>
+                            <i class="fas fa-user-slash fire-icon" title="Уволить" data-id="{{ employee.id }}"></i>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Модальное окно для редактирования сотрудника -->
+<div class="modal fade" id="editEmployeeModal" tabindex="-1" aria-labelledby="editEmployeeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editEmployeeModalLabel">Редактировать сотрудника</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editEmployeeForm">
+                    <input type="hidden" id="editEmployeeId" name="id">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="editFullName" class="form-label">ФИО</label>
+                            <input type="text" class="form-control" id="editFullName" name="full_name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editPosition" class="form-label">Должность</label>
+                            <input type="text" class="form-control" id="editPosition" name="position" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="editDepartment" class="form-label">Отдел</label>
+                            <select class="form-select" id="editDepartment" name="department_id" required>
+                                {% for department in departments %}
+                                <option value="{{ department.id }}">{{ department.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editRole" class="form-label">Роль</label>
+                            <select class="form-select" id="editRole" name="role" required>
+                                <option value="employee">Сотрудник</option>
+                                <option value="deputy">Заместитель</option>
+                                <option value="leader">Руководитель</option>
+                                <option value="admin">Администратор</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="editCorporateNumber" class="form-label">Корп. телефон</label>
+                            <input type="text" class="form-control" id="editCorporateNumber" name="corporate_number">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editCorporateEmail" class="form-label">Корп. почта</label>
+                            <input type="email" class="form-control" id="editCorporateEmail" name="corporate_email">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="editPhone" class="form-label">Личный телефон</label>
+                            <input type="text" class="form-control" id="editPhone" name="phone">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editPersonalEmail" class="form-label">Личная почта</label>
+                            <input type="email" class="form-control" id="editPersonalEmail" name="personal_email">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="saveEmployeeChanges">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для увольнения сотрудника -->
+<div class="modal fade" id="fireEmployeeModal" tabindex="-1" aria-labelledby="fireEmployeeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="fireEmployeeModalLabel">Уволить сотрудника</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите уволить этого сотрудника?</p>
+                <form id="fireEmployeeForm">
+                    <input type="hidden" id="fireEmployeeId" name="id">
+                    <div class="mb-3">
+                        <label for="fireDate" class="form-label">Дата увольнения</label>
+                        <input type="date" class="form-control" id="fireDate" name="fire_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="fireReason" class="form-label">Причина увольнения</label>
+                        <textarea class="form-control" id="fireReason" name="fire_reason" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-danger" id="confirmFireEmployee">Уволить</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Загрузка данных сотрудника при открытии модального окна редактирования
+document.querySelectorAll('.edit-icon').forEach(icon => {
+    icon.addEventListener('click', function() {
+        const employeeId = this.getAttribute('data-id');
+        fetch(`/admin/get_employee/${employeeId}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('editEmployeeId').value = data.id;
+                document.getElementById('editFullName').value = data.full_name;
+                document.getElementById('editPosition').value = data.position;
+                document.getElementById('editDepartment').value = data.department_id;
+                document.getElementById('editRole').value = data.role;
+                document.getElementById('editCorporateNumber').value = data.corporate_number;
+                document.getElementById('editCorporateEmail').value = data.corporate_email;
+                document.getElementById('editPhone').value = data.phone;
+                document.getElementById('editPersonalEmail').value = data.personal_email;
+            });
+    });
+});
+
+// Сохранение изменений сотрудника
+document.getElementById('saveEmployeeChanges').addEventListener('click', function() {
+    const form = document.getElementById('editEmployeeForm');
+    const formData = new FormData(form);
+    const employeeId = formData.get('id');
+    
+    fetch(`/admin/update_employee/${employeeId}`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Ошибка при сохранении изменений');
+        }
+    });
+});
+
+// Открытие модального окна увольнения
+document.querySelectorAll('.fire-icon').forEach(icon => {
+    icon.addEventListener('click', function() {
+        const employeeId = this.getAttribute('data-id');
+        document.getElementById('fireEmployeeId').value = employeeId;
+        document.getElementById('fireDate').valueAsDate = new Date();
+        new bootstrap.Modal(document.getElementById('fireEmployeeModal')).show();
+    });
+});
+
+// Подтверждение увольнения
+document.getElementById('confirmFireEmployee').addEventListener('click', function() {
+    const form = document.getElementById('fireEmployeeForm');
+    const formData = new FormData(form);
+    const employeeId = formData.get('id');
+    
+    fetch(`/admin/fire_employee/${employeeId}`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Ошибка при увольнении сотрудника');
+        }
+    });
+});
+
+// Поиск сотрудников
+document.getElementById('searchInput').addEventListener('input', function() {
+    const searchText = this.value.toLowerCase();
+    document.querySelectorAll('.employee-row').forEach(row => {
+        const employeeName = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+        const employeePosition = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+        
+        if (employeeName.includes(searchText) || employeePosition.includes(searchText)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+});
+
+// Фильтрация по ролям
+document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        const filter = this.textContent.trim();
+        document.querySelectorAll('.employee-row').forEach(row => {
+            if (filter === 'Все') {
+                row.style.display = '';
+            } else if (filter === 'Руководители' && row.classList.contains('manager-row')) {
+                row.style.display = '';
+            } else if (filter === 'Заместители' && row.classList.contains('deputy-row')) {
+                row.style.display = '';
+            } else if (filter === 'Сотрудники' && !row.classList.contains('manager-row') && !row.classList.contains('deputy-row')) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

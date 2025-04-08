@@ -1,0 +1,474 @@
+/* Базовые стили */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f6fa;
+    font-size: 14px;
+}
+
+/* Стили для шрифтов */
+@import url('https://fonts.googleapis.com/css2?family=Trajan+Pro+3&display=swap');
+
+/* Боковая панель */
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    width: 300px;
+    background-color: #2c3e50;
+    padding: 20px 0;
+    color: white;
+    z-index: 1000;
+}
+
+.sidebar .logo {
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 30px;
+    color: #ecf0f1;
+    font-family: 'Trajan Pro 3', serif;
+}
+
+.sidebar a {
+    display: flex;
+    align-items: center;
+    padding: 15px 25px;
+    color: #ecf0f1;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar a:hover {
+    background-color: #34495e;
+}
+
+.sidebar a.active {
+    background-color: #3498db;
+}
+
+.sidebar .icon {
+    width: 24px;
+    margin-right: 15px;
+    flex-shrink: 0;
+}
+
+.sidebar .text {
+    font-size: 16px;
+    flex-grow: 1;
+}
+
+/* Верхняя панель */
+.topbar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 300px;
+    height: 60px;
+    background-color: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    z-index: 900;
+}
+
+.topbar .title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.topbar .nav-menu {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.topbar .nav-menu a {
+    color: #2c3e50;
+    text-decoration: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+}
+
+.topbar .nav-menu a:hover {
+    background-color: #f5f6fa;
+}
+
+.topbar .nav-menu a.active {
+    background-color: #3498db;
+    color: white;
+}
+
+/* Профиль */
+.profile-icon {
+    position: relative;
+    cursor: pointer;
+}
+
+.profile-icon i {
+    font-size: 24px;
+    color: #2c3e50;
+}
+
+.profile-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    display: none;
+    min-width: 200px;
+}
+
+.profile-menu.show {
+    display: block;
+}
+
+.profile-info {
+    padding: 15px;
+    border-bottom: 1px solid #ddd;
+}
+
+.profile-info p {
+    margin: 0;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.profile-menu a {
+    display: block;
+    padding: 10px 15px;
+    color: #2c3e50;
+    text-decoration: none;
+}
+
+.profile-menu a:hover {
+    background-color: #f5f6fa;
+}
+
+/* Основной контент */
+.main-content {
+    margin-left: 300px;
+    padding: 80px 20px 20px;
+    min-height: 100vh;
+    background-color: #f5f6fa;
+}
+
+/* Карточки */
+.card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: transform 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.card .number {
+    font-size: 32px;
+    font-weight: 600;
+    color: #3498db;
+    margin: 10px 0;
+}
+
+/* Таблицы */
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+}
+
+.table th,
+.table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.table tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Кнопки */
+.btn {
+    padding: 8px 16px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.btn-primary {
+    background-color: #3498db;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #2980b9;
+}
+
+.btn-secondary {
+    background-color: #95a5a6;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #7f8c8d;
+}
+
+.btn-success {
+    background-color: #2ecc71;
+    color: white;
+}
+
+.btn-success:hover {
+    background-color: #27ae60;
+}
+
+.btn-danger {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #c0392b;
+}
+
+.btn-warning {
+    background-color: #f39c12;
+    color: white;
+}
+
+.btn-warning:hover {
+    background-color: #d35400;
+}
+
+.btn-info {
+    background-color: #3498db;
+    color: white;
+}
+
+.btn-info:hover {
+    background-color: #2980b9;
+}
+
+/* Формы */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+/* Уведомления */
+.notification-icon {
+    position: relative;
+    font-size: 24px;
+    color: #7b7b7b;
+    cursor: pointer;
+    margin-right: 20px;
+}
+
+.notification-icon:hover {
+    color: #5b5b5b;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background-color: red;
+    color: white;
+    border-radius: 50%;
+    padding: 5px 10px;
+    font-size: 12px;
+}
+
+.notification {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #d4edda;
+    color: #155724;
+    padding: 15px;
+    border: 1px solid #c3e6cb;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    z-index: 1050;
+    cursor: pointer;
+}
+
+/* Статусы */
+.status {
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.status-success {
+    background-color: #2ecc71;
+    color: white;
+}
+
+.status-warning {
+    background-color: #f1c40f;
+    color: #2c3e50;
+}
+
+.status-danger {
+    background-color: #e74c3c;
+    color: white;
+}
+
+/* Заголовки */
+h1, h2, h3, h4, h5, h6 {
+    color: #2c3e50;
+    margin-bottom: 1rem;
+}
+
+h1 {
+    font-size: 2rem;
+    font-weight: 600;
+}
+
+h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+/* Уведомления */
+.alert {
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+/* Модальные окна */
+.modal-dialog {
+    max-width: 60%;
+}
+
+.modal-backdrop.custom-backdrop {
+    opacity: 0.5 !important;
+}
+
+.modal.custom-modal {
+    z-index: 1050;
+}
+
+/* Анимации */
+.new-ticket {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        background-color: #ffeeba;
+    }
+    50% {
+        background-color: #fff3cd;
+    }
+    100% {
+        background-color: #ffeeba;
+    }
+}
+
+/* Поиск */
+#searchContainer {
+    margin-top: 120px;
+    z-index: 1051;
+}
+
+/* Утилиты */
+.mt-20 { margin-top: 20px; }
+.mb-20 { margin-bottom: 20px; }
+.ml-20 { margin-left: 20px; }
+.mr-20 { margin-right: 20px; }
+.p-20 { padding: 20px; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.text-left { text-align: left; }
+.d-flex { display: flex; }
+.align-items-center { align-items: center; }
+.justify-content-between { justify-content: space-between; }
+.justify-content-center { justify-content: center; }
+.flex-column { flex-direction: column; }
+.gap-10 { gap: 10px; }
+.gap-20 { gap: 20px; }
+.w-100 { width: 100%; }
+.h-100 { height: 100%; }
+.position-relative { position: relative; }
+.position-absolute { position: absolute; }
+.overflow-hidden { overflow: hidden; }
+.text-success { color: #28a745; }
+.text-danger { color: #dc3545; }
+.text-warning { color: #ffc107; }
+.text-info { color: #17a2b8; }
+.bg-white { background-color: white; }
+.bg-light { background-color: #f8f9fa; }
+.rounded { border-radius: 4px; }
+.shadow { box-shadow: 0 2px 5px rgba(0,0,0,0.1); } 

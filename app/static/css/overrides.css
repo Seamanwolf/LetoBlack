@@ -1,0 +1,139 @@
+/* Решение конфликтов между CSS файлами */
+
+/* Переопределение стилей для боковой панели */
+.sidebar {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    height: 100vh !important;
+    width: 300px !important;
+    background-color: #2c3e50 !important;
+    padding: 20px 0 !important;
+    color: white !important;
+    z-index: 1000 !important;
+}
+
+.sidebar .logo {
+    text-align: center !important;
+    font-size: 24px !important;
+    font-weight: bold !important;
+    margin-bottom: 30px !important;
+    color: #ecf0f1 !important;
+    font-family: 'Trajan Pro 3', serif !important;
+}
+
+.sidebar a {
+    display: flex !important;
+    align-items: center !important;
+    padding: 15px 25px !important;
+    color: #ecf0f1 !important;
+    text-decoration: none !important;
+    transition: all 0.3s ease !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.sidebar a:hover {
+    background-color: #34495e !important;
+    color: white !important;
+}
+
+.sidebar a.active {
+    background-color: #34495e !important;
+    color: white !important;
+    border-left: 3px solid #3498db !important;
+}
+
+/* Переопределение для основного контента */
+.main-content {
+    margin-left: 300px !important;
+    padding: 20px !important;
+    padding-top: 90px !important;
+}
+
+/* Переопределение для кнопок и остальных элементов */
+.btn-primary {
+    background-color: #3498db !important;
+    border-color: #3498db !important;
+}
+
+.btn-primary:hover {
+    background-color: #2980b9 !important;
+    border-color: #2980b9 !important;
+}
+
+.btn-danger {
+    background-color: #e74c3c !important;
+    border-color: #e74c3c !important;
+}
+
+.btn-danger:hover {
+    background-color: #c0392b !important;
+    border-color: #c0392b !important;
+}
+
+.btn-success {
+    background-color: #2ecc71 !important;
+    border-color: #2ecc71 !important;
+}
+
+.btn-success:hover {
+    background-color: #27ae60 !important;
+    border-color: #27ae60 !important;
+}
+
+/* Переопределение для таблиц */
+.table {
+    width: 100% !important;
+    margin-bottom: 1rem !important;
+    color: #212529 !important;
+    border-collapse: collapse !important;
+}
+
+.table th,
+.table td {
+    padding: 0.75rem !important;
+    vertical-align: top !important;
+    border-top: 1px solid #dee2e6 !important;
+}
+
+/* Переопределение для модальных окон */
+.modal-content {
+    border-radius: 0.3rem !important;
+    border: 1px solid rgba(0, 0, 0, 0.2) !important;
+}
+
+.modal-header {
+    border-bottom: 1px solid #dee2e6 !important;
+    border-top-left-radius: calc(0.3rem - 1px) !important;
+    border-top-right-radius: calc(0.3rem - 1px) !important;
+}
+
+.modal-footer {
+    border-top: 1px solid #dee2e6 !important;
+    border-bottom-right-radius: calc(0.3rem - 1px) !important;
+    border-bottom-left-radius: calc(0.3rem - 1px) !important;
+}
+
+/* Переопределение для топбара */
+.topbar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 300px !important;
+    right: 0 !important;
+    height: 70px !important;
+    background-color: white !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1) !important;
+    padding: 0 20px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    z-index: 999 !important;
+}
+
+.topbar .title {
+    font-size: 1.5rem !important;
+    font-weight: 600 !important;
+    color: #2c3e50 !important;
+} 

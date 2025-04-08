@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Список руководителей</title>
+    <!-- Подключение стилей и скриптов -->
+    <link rel="stylesheet" href="{{ url_for(\'static\', filename=\'css/common.css\') }}?v={{ range(1, 100000) | random }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Ваши дополнительные стили -->
+    <style>
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: calc(100vh - 70px);
+            padding: 0 20px;
+        }
+
+        .form-container, .leaders-list {
+            border: none;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: white;
+            box-shadow: 0 2px 3px #ccc;
+            width: 48%;
+        }
+
+        table {
+            width: 100%;
+            max-width: 800px;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background-color: white;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 6px;
+            border-bottom: 1px solid #ddd;
+            position: relative;
+        }
+
+        th {
+            background-color: #ccc;
+            color: black;
+            cursor: pointer;
+        }
+
+        th .sort-arrow {
+            display: inline-block;
+            width: 0;
+            height: 0;
+            margin-left: 5px;
+            vertical-align: middle;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+        }
+
+        th .sort-arrow.asc {
+            border-bottom: 5px solid #333;
+        }
+        th .sort-arrow.desc {
+            border-top: 5px solid #333;
+        }
+
+        td {
+            font-size: 14px;
+        }
+        td:hover .edit-icon {
+            visibility: visible;
+        }
+
+        .edit-icon {
+            position: absolute;
+            right: 10px;
+            visibility: hidden;
+            cursor: pointer;
+        }
+
+        .action-btn {
+            background-color: #000;
+            color: white;
+            padding: 6px 10px;
+            margin: 2px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .action-btn:hover {
+            background-color: #333;
+        }
+
+        .delete-button {
+            background-color: #dc3545;
+            color: white;
+        }
+        .delete-button:hover {
+            background-color: #c82333;
+        }
+
+        .fire-button {
+            background-color: #ffcc00;
+            color: black;
+        }
+        .fire-button:hover {
+            background-color: #ff9900;
+        }
+
+        .save-button {
+            background-color: #6c757d;
+            color: white;
+        }
+        .save-button:hover {
+            background-color: #5a6268;
+        }
+
+        .add-button {
+            background-color: #28a745;
+            color: white;
+        }
+        .add-button:hover {
+            background-color: #218838;
+        }
+
+        .button {
+            padding: 10px 5px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            color: white;
+            margin: 10px 5px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+
+        .back-button {
+            display: flex;
+            align-items: center;
+            background-color: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .back-button i {
+            margin-right: 8px;
+        }
+        .back-button:hover {
+            background-color: #5a6268;
+        }
+
+        .content {
+            margin-left: 50px;
+            padding: 70px 20px 20px 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            overflow-x: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .actions {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .search-input {
+            width: 100%;
+            max-width: 800px;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+        }
+
+        tr {
+            border-bottom: 1px solid #ddd;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        td + td, th + th {
+            border-left: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <!-- Боковая панель -->
+    <div class="sidebar">
+        <div class="logo">Л</div>
+        <div class="menu">
+            <a href="{{ url_for('admin_routes.personnel') }}">
+                <i class="fas fa-arrow-left icon"></i><span class="text">Назад</span>
+            </a>
+            <a href="#" class="button" data-bs-toggle="modal" data-bs-target="#addLeaderModal">
+                <i class="fas fa-user-plus icon"></i><span class="text">Добавить руководителя</span>
+            </a>
+            <a href="{{ url_for('admin.show_fired_leaders') }}">
+                <i class="fas fa-user-minus icon"></i><span class="text">Уволенные</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Верхняя панель -->
+    <div class="topbar">
+        <div class="title">Руководители</div>
+        <div class="right-icons">
+            <div class="profile-icon" tabindex="0">
+                <i class="fas fa-user"></i>
+                <div class="profile-menu">
+                    <div class="profile-info">
+                        <p>Администратор</p>
+                    </div>
+                    <a href="{{ url_for('userlist.logout') }}">Выход</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Основной контент -->
+    <div class="content">
+        <h2>Руководители</h2>
+        <input type="text" id="search-input" class="search-input" placeholder="Поиск...">
+        <table>
+            <thead>
+                <tr>
+                    <th>Полное имя <span class="sort-arrow"></span></th>
+                    <th>Отдел <span class="sort-arrow"></span></th>
+                    <th>Телефон <span class="sort-arrow"></span></th>
+                    <th>Дата приема <span class="sort-arrow"></span></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for leader in leaders %}
+                <tr>
+                    <td>
+                        {{ leader.full_name }}
+                        <i class="fas fa-pencil-alt edit-icon" data-bs-toggle="modal" data-bs-target="#editLeaderModal" data-id="{{ leader.id }}"></i>
+                    </td>
+                    <td>{{ leader.department }}</td>
+                    <td>{{ leader.phone }}</td>
+                    <td>{{ leader.hire_date }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Модальное окно для добавления руководителя -->
+    <div class="modal fade" id="addLeaderModal" tabindex="-1" aria-labelledby="addLeaderModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Добавить руководителя</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addLeaderForm">
+                        <div class="mb-3">
+                            <label for="addLogin" class="form-label">Логин</label>
+                            <input type="text" class="form-control" id="addLogin" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="addFullName" class="form-label">Полное имя</label>
+                            <input type="text" class="form-control" id="addFullName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="addPhone" class="form-label">Телефон</label>
+                            <input type="text" class="form-control" id="addPhone" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="addDepartment" class="form-label">Отдел</label>
+                            <input type="text" class="form-control" id="addDepartment" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="addHireDate" class="form-label">Дата приема</label>
+                            <input type="date" class="form-control" id="addHireDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="addPassword" class="form-label">Пароль</label>
+                            <input type="password" class="form-control" id="addPassword" required>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn add-button">Добавить</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для редактирования руководителя -->
+    <div class="modal fade" id="editLeaderModal" tabindex="-1" aria-labelledby="editLeaderModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Редактировать руководителя</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editLeaderForm">
+                        <input type="hidden" id="editLeaderId">
+                        
+                        <div class="mb-3">
+                            <label for="editLogin" class="form-label">Логин</label>
+                            <input type="text" class="form-control" id="editLogin" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editFullName" class="form-label">Полное имя</label>
+                            <input type="text" class="form-control" id="editFullName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editPhone" class="form-label">Телефон</label>
+                            <input type="text" class="form-control" id="editPhone" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editDepartment" class="form-label">Отдел</label>
+                            <input type="text" class="form-control" id="editDepartment" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editHireDate" class="form-label">Дата приема</label>
+                            <input type="date" class="form-control" id="editHireDate" required>
+                        </div>
+                        
+                        <!-- Выбор роли -->
+                        <div class="mb-3">
+                            <label for="editRole" class="form-label">Роль</label>
+                            <select class="form-control" id="editRole" required>
+                                <option value="leader">Руководитель</option>
+                                <option value="admin">Администратор</option>
+                                <option value="backoffice">Бэк-офис</option>
+                                <option value="user">Брокер</option>
+                            </select>
+                        </div>
+
+                        <!-- Поле для смены пароля -->
+                        <div class="mb-3">
+                            <label for="editPassword" class="form-label">Новый пароль</label>
+                            <input type="password" class="form-control" id="editPassword">
+                        </div>
+                        
+                        <div class="modal-footer">
+                            <button type="submit" class="btn save-button">Сохранить изменения</button>
+                            <button type="button" class="btn fire-button" id="fireButton">Уволить</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Подключение скриптов -->
+    <!-- jQuery и Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap Bundle с Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Ваши скрипты -->
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // ... здесь может быть ваш код сортировки/поиска, если нужно ...
+
+        // ------------------ Клик по иконке "Редактировать" ------------------
+        document.querySelectorAll('.edit-icon').forEach(item => {
+            item.addEventListener('click', function () {
+                const leaderId = this.getAttribute('data-id');
+
+                fetch(`/admin/api/get_leader/${leaderId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            document.getElementById('editLeaderId').value    = data.id || '';
+                            document.getElementById('editLogin').value       = data.login || '';
+                            document.getElementById('editFullName').value    = data.full_name || '';
+                            document.getElementById('editPhone').value       = data.phone || '';
+                            document.getElementById('editDepartment').value  = data.department || '';
+                            document.getElementById('editHireDate').value    = data.hire_date ? data.hire_date.substring(0, 10) : '';
+                            
+                            // Если API возвращает 'role', устанавливаем его
+                            if (data.role) {
+                                document.getElementById('editRole').value = data.role;
+                            } else {
+                                // Если не пришло, по умолчанию ставим 'leader'
+                                document.getElementById('editRole').value = 'leader';
+                            }
+
+                            document.getElementById('editPassword').value = ''; // Очищаем поле пароля
+                        } else {
+                            alert('Ошибка при загрузке данных руководителя');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Ошибка при загрузке данных:', error);
+                    });
+            });
+        });
+
+        // ------------------ Сабмит формы редактирования ------------------
+        document.getElementById('editLeaderForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const leaderId   = document.getElementById('editLeaderId').value;
+            const login      = document.getElementById('editLogin').value;
+            const fullName   = document.getElementById('editFullName').value;
+            const phone      = document.getElementById('editPhone').value;
+            const department = document.getElementById('editDepartment').value;
+            const hireDate   = document.getElementById('editHireDate').value;
+            const role       = document.getElementById('editRole').value;
+            const password   = document.getElementById('editPassword').value;
+
+            // Формируем объект для отправки
+            const dataToSend = {
+                id: leaderId,
+                login: login,
+                full_name: fullName,
+                phone: phone,
+                department: department,
+                hire_date: hireDate,
+                role: role
+            };
+
+            // Если ввели новый пароль — добавим
+            if (password) {
+                dataToSend.password = password;
+            }
+
+            // Вызываем наш новый эндпоинт update_leader
+            fetch('/admin/api/update_leader', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(dataToSend)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Закрываем модальное окно
+                    $('#editLeaderModal').modal('hide');
+                    // Обновляем страницу
+                    location.reload();
+                } else {
+                    alert('Ошибка: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при обновлении руководителя:', error);
+            });
+        });
+
+        // ------------------ Кнопка "Уволить" ------------------
+        document.getElementById('fireButton').addEventListener('click', function () {
+            const leaderId = document.getElementById('editLeaderId').value;
+            if (confirm('Вы уверены, что хотите уволить этого руководителя?')) {
+                fetch(`/admin/api/fire_leader`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ id: leaderId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Закрываем модальное окно и обновляем страницу
+                        $('#editLeaderModal').modal('hide');
+                        location.reload();
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка при увольнении руководителя:', error);
+                });
+            }
+        });
+
+        // ------------------ Добавление нового руководителя ------------------
+        document.getElementById('addLeaderForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const login       = document.getElementById('addLogin').value;
+            const fullName    = document.getElementById('addFullName').value;
+            const phone       = document.getElementById('addPhone').value;
+            const department  = document.getElementById('addDepartment').value;
+            const hireDate    = document.getElementById('addHireDate').value;
+            const password    = document.getElementById('addPassword').value;
+
+            const dataToSend = {
+                login: login,
+                full_name: fullName,
+                phone: phone,
+                department: department,
+                hire_date: hireDate,
+                password: password
+            };
+
+            fetch('/admin/leaders/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(dataToSend)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Закрываем модальное окно
+                    $('#addLeaderModal').modal('hide');
+                    // Обновляем страницу
+                    location.reload();
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при добавлении руководителя:', error);
+            });
+        });
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+
+{% block title %}Уволенные сотрудники{% endblock %}
+{% block page_title %}Уволенные сотрудники{% endblock %}
+
+{% block extra_css %}
+    <style>
+        table {
+            width: 100%;
+        max-width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background-color: white;
+            text-align: center;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 4px; /* Уменьшаем отступы */
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #ccc;
+            color: black;
+            cursor: pointer;
+        }
+
+            th .sort-arrow {
+                display: inline-block;
+                width: 0;
+                height: 0;
+                margin-left: 5px;
+                vertical-align: middle;
+                border-left: 5px solid transparent;
+                border-right: 5px solid transparent;
+            }
+
+                th .sort-arrow.asc {
+                    border-bottom: 5px solid #333;
+                }
+
+                th .sort-arrow.desc {
+        border-top: 5px solid #333;
+                }
+
+        td {
+            font-size: 14px;
+        }
+
+        .action-btn {
+            background-color: #000;
+            color: white;
+            padding: 4px 8px; /* Уменьшаем отступы */
+            margin: 2px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-size: 14px;
+        }
+
+            .action-btn:hover {
+                background-color: #333;
+            }
+
+        .rehire-button {
+            background-color: #28a745;
+            color: white;
+        }
+
+            .rehire-button:hover {
+                background-color: #218838;
+            }
+
+        .delete-button {
+            background-color: #dc3545;
+            color: white;
+        }
+
+            .delete-button:hover {
+                background-color: #c82333;
+            }
+
+        table tr {
+            height: 20px; /* Уменьшаем высоту строки */
+        }
+
+        .action-btn i {
+            font-size: 14px; /* Уменьшаем размер значков */
+        }
+
+        table th, table td {
+            border-left: 1px solid #ddd;
+        }
+
+            table th:first-child, table td:first-child {
+                border-left: none;
+            }
+
+        .modal-button {
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+
+        .search-input {
+            width: 100%;
+            max-width: 800px;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+    }
+    
+    /* Стили для навигационного меню */
+    .nav-menu {
+        background-color: white;
+        padding: 0 1.2rem;
+        border-radius: 12px;
+        display: flex;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        margin-bottom: 2rem;
+        border-bottom: 2px solid #dee2e6;
+        align-items: center;
+    }
+
+    .nav-menu a {
+        color: #6c757d;
+        font-weight: 500;
+        padding: 1rem 1.2rem;
+        margin-right: 1.2rem;
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .nav-menu a:hover {
+        color: #3498db;
+        background-color: rgba(52, 152, 219, 0.05);
+    }
+
+    .nav-menu a.active {
+        color: #3498db;
+        border-bottom: 3px solid #3498db;
+        font-weight: 600;
+    }
+
+    .nav-menu a i {
+        margin-right: 0.7rem;
+        font-size: 1.1rem;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="nav-menu">
+                <a href="{{ url_for('admin.personnel') }}">
+                    <i class="fas fa-tachometer-alt"></i> Дашборд
+                </a>
+                <a href="{{ url_for('admin.personnel') }}">
+                    <i class="fas fa-users"></i> Активные
+                </a>
+                <a href="{{ url_for('admin.show_fired_brokers') }}" class="active">
+                    <i class="fas fa-user-slash"></i> Уволенные
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <input type="text" id="search-input" class="search-input" placeholder="Поиск по имени или должности">
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID <span class="sort-arrow"></span></th>
+                            <th>ФИО <span class="sort-arrow"></span></th>
+                            <th>Должность <span class="sort-arrow"></span></th>
+                            <th>Телефон <span class="sort-arrow"></span></th>
+                            <th>Дата найма <span class="sort-arrow"></span></th>
+                            <th>Дата увольнения <span class="sort-arrow"></span></th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for broker in fired_brokers %}
+                        <tr>
+                            <td>{{ broker.id }}</td>
+                            <td>{{ broker.full_name }}</td>
+                            <td>{{ broker.position }}</td>
+                            <td>{{ broker.personal_phone }}</td>
+                            <td>{{ broker.hire_date }}</td>
+                            <td>{{ broker.fire_date }}</td>
+                            <td>
+                                <button class="action-btn rehire-button" data-id="{{ broker.id }}">
+                                    <i class="fas fa-user-plus"></i> Восстановить
+                                </button>
+                                <button class="action-btn delete-button" data-id="{{ broker.id }}">
+                                    <i class="fas fa-trash-alt"></i> Удалить
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для восстановления брокера -->
+<div class="modal fade" id="rehireModal" tabindex="-1" aria-labelledby="rehireModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="rehireModalLabel">Восстановление брокера</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите восстановить этого брокера?</p>
+                <form id="rehireForm" action="{{ url_for('admin.rehire_broker') }}" method="post">
+                    <input type="hidden" id="rehireBrokerId" name="broker_id">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="submit" form="rehireForm" class="btn btn-success">Восстановить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для удаления брокера -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Удаление брокера</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить этого брокера? Это действие нельзя отменить.</p>
+                <form id="deleteForm" action="{{ url_for('admin.delete_fired_broker') }}" method="post">
+                    <input type="hidden" id="deleteBrokerId" name="broker_id">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="submit" form="deleteForm" class="btn btn-danger">Удалить навсегда</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+            const getCellValue = (tr, idx) => tr.children[idx].innerText || tr.children[idx].textContent;
+
+            const comparer = (idx, asc) => (a, b) => ((v1, v2) =>
+                v1 !== '' && v2 !== '' && !isNaN(v1) && !isNaN(v2) ? v1 - v2 : v1.toString().localeCompare(v2)
+            )(getCellValue(asc ? a : b, idx), getCellValue(asc ? b : a, idx));
+
+            document.querySelectorAll('th').forEach(th => th.addEventListener('click', () => {
+                const table = th.closest('table');
+                Array.from(table.querySelectorAll('tr:nth-child(n+2)'))
+                    .sort(comparer(Array.from(th.parentNode.children).indexOf(th), this.asc = !this.asc))
+                    .forEach(tr => table.appendChild(tr));
+
+                // Обновление стрелочек сортировки
+                document.querySelectorAll('.sort-arrow').forEach(arrow => arrow.classList.remove('asc', 'desc'));
+                const sortArrow = th.querySelector('.sort-arrow');
+                if (sortArrow) {
+                    sortArrow.classList.toggle('asc', this.asc);
+                    sortArrow.classList.toggle('desc', !this.asc);
+                }
+            }));
+
+            const searchInput = document.getElementById('search-input');
+            searchInput.addEventListener('input', function () {
+                const filter = searchInput.value.toLowerCase();
+                const rows = document.querySelectorAll('table tbody tr');
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(filter) ? '' : 'none';
+                });
+            });
+
+            document.querySelectorAll('.rehire-button').forEach(button => {
+                button.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    const brokerId = this.getAttribute('data-id');
+                    $('#rehireModal').modal('show');
+                    document.getElementById('rehireBrokerId').value = brokerId;
+                });
+            });
+
+            document.querySelectorAll('.delete-button').forEach(button => {
+                button.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    const brokerId = this.getAttribute('data-id');
+                    $('#deleteModal').modal('show');
+                    document.getElementById('deleteBrokerId').value = brokerId;
+                });
+            });
+    });
+</script>
+{% endblock %}

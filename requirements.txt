@@ -1,0 +1,13 @@
+Flask
+Flask-SocketIO
+mysql-connector-python
+colorama
+selenium
+webdriver-manager
+python-dotenv
+requests
+gspread
+oauth2client
+pandas
+python-dateutil
+pytz

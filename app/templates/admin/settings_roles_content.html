@@ -1,0 +1,411 @@
+<!-- Управление ролями -->
+<div class="tab-pane fade show active" id="roles">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="card-title">Управление ролями пользователей</h5>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addRoleModal">
+            <i class="fas fa-plus"></i> Добавить роль
+        </button>
+    </div>
+    
+    <div class="alert alert-info mb-3">
+        <i class="fas fa-info-circle"></i> Системные роли (admin, leader, operator, user) нельзя изменить или удалить. Бэк-офисные роли можно настраивать для доступа к различным модулям системы.
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Имя</th>
+                    <th>Отображаемое имя</th>
+                    <th>Тип</th>
+                    <th>Описание</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for role in roles %}
+                <tr>
+                    <td>{{ role.id }}</td>
+                    <td>{{ role.name }}</td>
+                    <td>{{ role.display_name }}</td>
+                    <td>
+                        {% if role.is_system %}
+                            <span class="badge bg-primary">Системная</span>
+                        {% elif role.type == 'backoffice' %}
+                            <span class="badge bg-info">Бэк-офис</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Обычная</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ role.description }}</td>
+                    <td>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-sm btn-primary edit-role" 
+                                    data-role-id="{{ role.id }}"
+                                    data-role-name="{{ role.name }}"
+                                    data-role-display="{{ role.display_name }}"
+                                    data-role-type="{{ role.type }}"
+                                    data-role-desc="{{ role.description }}"
+                                    data-role-system="{{ role.is_system }}">
+                                <i class="fas fa-edit"></i> Редактировать
+                            </button>
+                            {% if not role.is_system %}
+                            <button type="button" class="btn btn-sm btn-danger delete-role" 
+                                    data-role-id="{{ role.id }}" 
+                                    data-role-name="{{ role.display_name }}">
+                                <i class="fas fa-trash"></i> Удалить
+                            </button>
+                            {% endif %}
+                            <button type="button" class="btn btn-sm btn-info edit-permissions" 
+                                    data-role-id="{{ role.id }}"
+                                    data-role-name="{{ role.display_name }}">
+                                <i class="fas fa-key"></i> Разрешения
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Модальное окно для добавления роли -->
+<div class="modal fade" id="addRoleModal" tabindex="-1" aria-labelledby="addRoleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addRoleModalLabel">Добавление новой роли</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="addRoleForm" action="{{ url_for('admin.add_role') }}" method="post">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="roleName" class="form-label">Системное имя</label>
+                        <input type="text" class="form-control" id="roleName" name="name" required
+                               pattern="[a-z0-9_]+" title="Только латинские буквы, цифры и подчеркивания">
+                        <div class="form-text">Используется в системе. Только латинские буквы, цифры и подчеркивания.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="roleDisplayName" class="form-label">Отображаемое имя</label>
+                        <input type="text" class="form-control" id="roleDisplayName" name="display_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="roleType" class="form-label">Тип роли</label>
+                        <select class="form-select" id="roleType" name="role_type">
+                            <option value="backoffice">Бэк-офис</option>
+                            <option value="custom">Обычная</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="roleDescription" class="form-label">Описание</label>
+                        <textarea class="form-control" id="roleDescription" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Добавить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для редактирования роли -->
+<div class="modal fade" id="editRoleModal" tabindex="-1" aria-labelledby="editRoleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editRoleModalLabel">Редактирование роли</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editRoleForm" action="{{ url_for('admin.update_role') }}" method="post">
+                <input type="hidden" id="editRoleId" name="role_id">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="editRoleName" class="form-label">Системное имя</label>
+                        <input type="text" class="form-control" id="editRoleName" name="name" readonly>
+                        <div class="form-text">Системное имя нельзя изменить.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editRoleDisplayName" class="form-label">Отображаемое имя</label>
+                        <input type="text" class="form-control" id="editRoleDisplayName" name="display_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editRoleType" class="form-label">Тип роли</label>
+                        <select class="form-select" id="editRoleType" name="role_type">
+                            <option value="backoffice">Бэк-офис</option>
+                            <option value="custom">Обычная</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editRoleDescription" class="form-label">Описание</label>
+                        <textarea class="form-control" id="editRoleDescription" name="description" rows="3"></textarea>
+                    </div>
+                    <div id="systemRoleWarning" class="alert alert-warning d-none">
+                        <i class="fas fa-exclamation-triangle"></i> Системную роль нельзя изменить. Вы можете только отредактировать описание.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для редактирования разрешений -->
+<div class="modal fade" id="editPermissionsModal" tabindex="-1" aria-labelledby="editPermissionsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editPermissionsModalLabel">Настройка разрешений роли: <span id="permissionRoleName"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editPermissionsForm" action="{{ url_for('admin.update_role_permissions') }}" method="post">
+                <input type="hidden" id="permissionRoleId" name="role_id">
+                <div class="modal-body">
+                    <p class="mb-3">Укажите, к каким модулям системы роль будет иметь доступ и какие действия сможет выполнять:</p>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Модуль</th>
+                                    <th class="text-center">Просмотр</th>
+                                    <th class="text-center">Создание</th>
+                                    <th class="text-center">Редактирование</th>
+                                    <th class="text-center">Удаление</th>
+                                </tr>
+                            </thead>
+                            <tbody id="permissionsTableBody">
+                                <!-- Здесь будут модули и их разрешения -->
+                                <tr>
+                                    <td>HR модуль</td>
+                                    <td class="text-center"><input type="checkbox" name="perm_hr_view" class="form-check-input"></td>
+                                    <td class="text-center"><input type="checkbox" name="perm_hr_create" class="form-check-input"></td>
+                                    <td class="text-center"><input type="checkbox" name="perm_hr_edit" class="form-check-input"></td>
+                                    <td class="text-center"><input type="checkbox" name="perm_hr_delete" class="form-check-input"></td>
+                                </tr>
+                                <tr>
+                                    <td>Колл-центр</td>
+                                    <td class="text-center"><input type="checkbox" name="perm_callcenter_view" class="form-check-input"></td>
+                                    <td class="text-center"><input type="checkbox" name="perm_callcenter_create" class="form-check-input"></td>
+                                    <td class="text-center"><input type="checkbox" name="perm_callcenter_edit" class="form-check-input"></td>
+                                    <td class="text-center"><input type="checkbox" name="perm_callcenter_delete" class="form-check-input"></td>
+                                </tr>
+                                <tr>
+                                    <td>Финансы</td>
+                                    <td class="text-center"><input type="checkbox" name="perm_finance_view" class="form-check-input"></td>
+                                    <td class="text-center"><input type="checkbox" name="perm_finance_create" class="form-check-input"></td>
+                                    <td class="text-center"><input type="checkbox" name="perm_finance_edit" class="form-check-input"></td>
+                                    <td class="text-center"><input type="checkbox" name="perm_finance_delete" class="form-check-input"></td>
+                                </tr>
+                                <tr>
+                                    <td>Отчеты</td>
+                                    <td class="text-center"><input type="checkbox" name="perm_reports_view" class="form-check-input"></td>
+                                    <td class="text-center"><input type="checkbox" name="perm_reports_create" class="form-check-input"></td>
+                                    <td class="text-center"><input type="checkbox" name="perm_reports_edit" class="form-check-input"></td>
+                                    <td class="text-center"><input type="checkbox" name="perm_reports_delete" class="form-check-input"></td>
+                                </tr>
+                                <tr>
+                                    <td>Пользователи</td>
+                                    <td class="text-center"><input type="checkbox" name="perm_users_view" class="form-check-input"></td>
+                                    <td class="text-center"><input type="checkbox" name="perm_users_create" class="form-check-input"></td>
+                                    <td class="text-center"><input type="checkbox" name="perm_users_edit" class="form-check-input"></td>
+                                    <td class="text-center"><input type="checkbox" name="perm_users_delete" class="form-check-input"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить разрешения</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно подтверждения удаления -->
+<div class="modal fade" id="deleteRoleModal" tabindex="-1" aria-labelledby="deleteRoleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteRoleModalLabel">Подтверждение удаления</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы действительно хотите удалить роль "<span id="deleteRoleName"></span>"?</p>
+                <p class="text-danger">Это действие нельзя отменить. Убедитесь, что роль не назначена пользователям.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <form id="deleteRoleForm" action="{{ url_for('admin.delete_role') }}" method="post">
+                    <input type="hidden" id="deleteRoleId" name="role_id">
+                    <button type="submit" class="btn btn-danger">Удалить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        // Инициализация для формы добавления роли
+        $('#roleDisplayName').on('input', function() {
+            var displayName = $(this).val().toLowerCase();
+            var systemName = displayName
+                .replace(/[^a-z0-9\s_]/g, '')
+                .replace(/\s+/g, '_');
+            $('#roleName').val(systemName);
+        });
+        
+        // Редактирование роли
+        $('.edit-role').click(function() {
+            var roleId = $(this).data('role-id');
+            var roleName = $(this).data('role-name');
+            var roleDisplay = $(this).data('role-display');
+            var roleType = $(this).data('role-type');
+            var roleDesc = $(this).data('role-desc');
+            var isSystem = $(this).data('role-system') === true;
+            
+            $('#editRoleId').val(roleId);
+            $('#editRoleName').val(roleName);
+            $('#editRoleDisplayName').val(roleDisplay);
+            $('#editRoleType').val(roleType);
+            $('#editRoleDescription').val(roleDesc);
+            
+            if (isSystem) {
+                $('#systemRoleWarning').removeClass('d-none');
+                $('#editRoleDisplayName').prop('readonly', true);
+                $('#editRoleType').prop('disabled', true);
+            } else {
+                $('#systemRoleWarning').addClass('d-none');
+                $('#editRoleDisplayName').prop('readonly', false);
+                $('#editRoleType').prop('disabled', false);
+            }
+            
+            $('#editRoleModal').modal('show');
+        });
+        
+        // Удаление роли
+        $('.delete-role').click(function() {
+            var roleId = $(this).data('role-id');
+            var roleName = $(this).data('role-name');
+            
+            $('#deleteRoleId').val(roleId);
+            $('#deleteRoleName').text(roleName);
+            
+            $('#deleteRoleModal').modal('show');
+        });
+        
+        // Редактирование разрешений
+        $('.edit-permissions').click(function() {
+            var roleId = $(this).data('role-id');
+            var roleName = $(this).data('role-name');
+            
+            $('#permissionRoleId').val(roleId);
+            $('#permissionRoleName').text(roleName);
+            
+            // Сначала сбрасываем все чекбоксы
+            $('input[type="checkbox"][name^="perm_"]').prop('checked', false);
+            
+            // Загружаем текущие разрешения роли
+            $.ajax({
+                url: '/admin/settings/get_role_permissions/' + roleId,
+                type: 'GET',
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        var permissions = response.permissions;
+                        
+                        // Устанавливаем чекбоксы в соответствии с разрешениями
+                        for (var moduleName in permissions) {
+                            var modulePerms = permissions[moduleName];
+                            
+                            if (modulePerms.can_view) {
+                                $('input[name="perm_' + moduleName + '_view"]').prop('checked', true);
+                            }
+                            
+                            if (modulePerms.can_create) {
+                                $('input[name="perm_' + moduleName + '_create"]').prop('checked', true);
+                            }
+                            
+                            if (modulePerms.can_edit) {
+                                $('input[name="perm_' + moduleName + '_edit"]').prop('checked', true);
+                            }
+                            
+                            if (modulePerms.can_delete) {
+                                $('input[name="perm_' + moduleName + '_delete"]').prop('checked', true);
+                            }
+                        }
+                    } else {
+                        alert('Ошибка при загрузке разрешений: ' + response.message);
+                    }
+                },
+                error: function() {
+                    alert('Ошибка при загрузке разрешений. Пожалуйста, попробуйте позже.');
+                }
+            });
+            
+            $('#editPermissionsModal').modal('show');
+        });
+        
+        // Динамическая загрузка модулей для таблицы разрешений
+        $.ajax({
+            url: '/admin/settings/get_modules',
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    var modules = response.modules;
+                    var tableBody = $('#permissionsTableBody');
+                    
+                    // Очищаем таблицу
+                    tableBody.empty();
+                    
+                    // Заполняем таблицу модулями
+                    modules.forEach(function(module) {
+                        var row = $('<tr>');
+                        
+                        row.append($('<td>').text(module.display_name));
+                        
+                        // Чекбокс для просмотра
+                        var viewCell = $('<td class="text-center">');
+                        var viewCheckbox = $('<input type="checkbox" class="form-check-input">')
+                            .attr('name', 'perm_' + module.name + '_view');
+                        viewCell.append(viewCheckbox);
+                        row.append(viewCell);
+                        
+                        // Чекбокс для создания
+                        var createCell = $('<td class="text-center">');
+                        var createCheckbox = $('<input type="checkbox" class="form-check-input">')
+                            .attr('name', 'perm_' + module.name + '_create');
+                        createCell.append(createCheckbox);
+                        row.append(createCell);
+                        
+                        // Чекбокс для редактирования
+                        var editCell = $('<td class="text-center">');
+                        var editCheckbox = $('<input type="checkbox" class="form-check-input">')
+                            .attr('name', 'perm_' + module.name + '_edit');
+                        editCell.append(editCheckbox);
+                        row.append(editCell);
+                        
+                        // Чекбокс для удаления
+                        var deleteCell = $('<td class="text-center">');
+                        var deleteCheckbox = $('<input type="checkbox" class="form-check-input">')
+                            .attr('name', 'perm_' + module.name + '_delete');
+                        deleteCell.append(deleteCheckbox);
+                        row.append(deleteCell);
+                        
+                        tableBody.append(row);
+                    });
+                }
+            }
+        });
+    });
+</script> 

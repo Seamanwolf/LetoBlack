@@ -1,0 +1,12 @@
+@app.route('/admin/leaders/delete/<int:id>', methods=['POST'])
+@login_required
+def delete_leader(id):
+    connection = create_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("DELETE FROM rop WHERE id = %s", (id,))
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    flash('Руководитель успешно удалён', 'success')
+    return redirect(url_for('show_leaders'))

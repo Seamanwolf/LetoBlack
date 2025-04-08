@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Дашборд Руководителя</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Подключаем Font Awesome для иконок -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <!-- Ваш файл стилей -->
+    <link rel="stylesheet" href="{{ url_for(\'static\', filename=\'css/common.css\') }}?v={{ range(1, 100000) | random }}">
+    <style>
+        /* Стили страницы */
+        .settings-icon {
+            position: relative;
+            font-size: 24px;
+            color: #7b7b7b;
+            cursor: pointer;
+            margin-right: 20px;
+        }
+
+            .settings-icon:hover {
+                color: #5b5b5b;
+            }
+
+        /* Стили для модального окна */
+        .modal-header .close {
+            outline: none;
+        }
+
+        /* Дополнительные стили */
+        .period-buttons {
+            margin-bottom: 20px;
+        }
+
+            .period-buttons .btn {
+                margin-right: 10px;
+                margin-bottom: 10px;
+            }
+
+        .search-box {
+            margin-bottom: 10px;
+        }
+
+        #period-label {
+            margin-bottom: 20px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .back-button {
+            margin-top: 20px;
+        }
+
+        /* Таблица с идентификатором statistics-table */
+        #statistics-table {
+            border: 2px solid #007bff; /* Синяя обводка для таблицы */
+            background-color: white; /* Белый фон таблицы */
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            cursor: pointer; /* Указатель курсора для столбцов */
+        }
+
+            #statistics-table th, #statistics-table td {
+                text-align: left;
+                padding: 6px 8px; /* Уменьшение высоты строк */
+                border: 1px solid #d9d9d9; /* Обводка ячеек */
+                vertical-align: middle;
+                background-color: white; /* Белый фон для ячеек */
+                color: #343a40;
+            }
+
+            #statistics-table th {
+                background-color: #d3d3d3; /* Светло-серый фон для заголовков */
+                color: #333; /* Тёмный цвет текста */
+                position: sticky;
+                top: 0;
+                cursor: pointer; /* Указатель курсора для столбцов */
+            }
+
+            #statistics-table tr:hover {
+                background-color: #f5f5f5; /* Фон при наведении */
+            }
+
+            /* Стиль для выделенной строки */
+            #statistics-table tr.highlighted {
+                background-color: #e0f0ff !important; /* Светло-голубой фон */
+            }
+
+            /* Дополнительные стили для стрелок сортировки */
+            #statistics-table th .sort-arrow {
+                display: inline-block;
+                width: 0;
+                height: 0;
+                margin-left: 5px;
+                vertical-align: middle;
+                border-left: 5px solid transparent;
+                border-right: 5px solid transparent;
+            }
+
+                #statistics-table th .sort-arrow.asc {
+                    border-bottom: 5px solid #333; /* Треугольник вверх */
+                }
+
+                #statistics-table th .sort-arrow.desc {
+                    border-top: 5px solid #333; /* Треугольник вниз */
+                }
+
+        /* Стили для кнопок редактирования */
+        .edit-icon {
+            font-size: 16px; /* Уменьшенный размер иконки */
+            color: #007bff; /* Цвет иконки (синий) */
+        }
+
+            .edit-icon:hover {
+                color: #0056b3; /* Темно-синий при наведении */
+            }
+
+        /* Показать кнопку редактирования только при наведении на ячейку */
+        td:hover .edit-icon {
+            visibility: visible;
+        }
+
+        /* Дополнительные стили для кнопок */
+        .action-btn {
+            background-color: #000;
+            color: white;
+            padding: 6px 10px;
+            margin: 2px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+            .action-btn:hover {
+                background-color: #333;
+            }
+
+        .delete-button {
+            background-color: #dc3545;
+            color: white;
+        }
+
+            .delete-button:hover {
+                background-color: #c82333;
+            }
+
+        .fire-button {
+            background-color: #ffcc00;
+            color: black;
+        }
+
+            .fire-button:hover {
+                background-color: #ff9900;
+            }
+
+        .save-button {
+            background-color: #000;
+            color: white;
+        }
+
+            .save-button:hover {
+                background-color: #333;
+            }
+
+        .button {
+            padding: 10px 5px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            color: white;
+            margin: 10px 5px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+            .button:hover {
+                background-color: #45a049;
+            }
+
+        .back-button {
+            display: flex;
+            align-items: center;
+            background-color: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+            .back-button i {
+                margin-right: 8px;
+            }
+
+            .back-button:hover {
+                background-color: #5a6268;
+            }
+
+        /* Адаптивность для мобильных устройств */
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+
+            .topbar {
+                width: 100%;
+                left: 0;
+            }
+
+            .content {
+                margin-left: 0;
+                margin-top: 80px;
+                padding: 20px 10px;
+            }
+
+            #statistics-table {
+                font-size: 12px;
+            }
+
+            .edit-icon {
+                font-size: 14px;
+            }
+
+            /* Дополнительные стили для мобильных */
+            #statistics-table th, #statistics-table td {
+                padding: 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Боковая панель -->
+    <div class="sidebar">
+        <div class="logo">Л</div>
+        <div class="menu">
+            <a href="{{ url_for('leader.show_department_users') }}">
+                <i class="fas fa-users icon"></i><span class="text">Мой отдел</span>
+            </a>
+            <a href="{{ url_for('leader.department_statistics') }}">
+                <i class="fas fa-chart-line icon"></i><span class="text">Статистика по моему отделу</span>
+            </a>
+            <a href="#">
+                <i class="fas fa-chart-pie icon"></i><span class="text">Статистика по другим отделам</span>
+            </a>
+            <a href="{{ url_for('helpdesk.my_department_tickets', department=leader_info.department) }}">
+                <i class="fas fa-ticket-alt icon"></i><span class="text">Заявки отдела</span>
+            </a>
+            <a href="#" data-toggle="modal" data-target="#addReportModal">
+                <i class="fas fa-edit icon"></i><span class="text">Добавить отчет</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Верхняя панель -->
+    <div class="topbar">
+        <div class="title">Чек-лист успешного брокера</div>
+        <div class="right-icons">
+            <div class="notification-icon" tabindex="0">
+                <i class="fas fa-bell"></i>
+                {% if notifications_count > 0 %}
+                <span class="notification-badge">{{ notifications_count }}</span>
+                {% endif %}
+            </div>
+            <!-- Иконка настроек -->
+            <div class="settings-icon" tabindex="0">
+                <i class="fas fa-cog"></i>
+            </div>
+            <div class="profile-icon" tabindex="0">
+                <i class="fas fa-user"></i>
+                <div class="profile-menu">
+                    <div class="profile-info">
+                        <p>{{ leader_info.full_name }}</p>
+                        <p>{{ leader_info.department }} отдел</p>
+                    </div>
+                    <a href="#">Мой профиль</a>
+                    <a href="{{ url_for('userlist.logout') }}">Выйти</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Основное содержимое -->
+    <div class="content">
+        <h2>Статистика отдела за последние 7 дней</h2>
+        <table id="statistics-table">
+            <thead>
+                <tr>
+                    <th>Сотрудник <span class="sort-arrow"></span></th>
+                    <!-- Обязательные поля -->
+                    {% for field in mandatory_fields %}
+                    <th>{{ field_names.get(field, field) }} <span class="sort-arrow"></span></th>
+                    {% endfor %}
+                    <!-- Необязательные поля -->
+                    {% for field in optional_fields %}
+                    {% if not field_settings.get(field, False) %}
+                    <th>{{ field_names.get(field, field) }} <span class="sort-arrow"></span></th>
+                    {% endif %}
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for stat in weekly_stats %}
+                <tr>
+                    <td data-label="Сотрудник">{{ stat.full_name }}</td>
+                    <!-- Обязательные поля -->
+                    {% for field in mandatory_fields %}
+                    <td data-label="{{ field_names.get(field, field) }}">{{ stat.get(field, 0) }}</td>
+                    {% endfor %}
+                    <!-- Необязательные поля -->
+                    {% for field in optional_fields %}
+                    {% if not field_settings.get(field, False) %}
+                    <td data-label="{{ field_names.get(field, field) }}">{{ stat.get(field, 0) }}</td>
+                    {% endif %}
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Модальное окно для управления видимостью полей -->
+    <div id="manageFieldsModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="manageFieldsModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <form id="manageFieldsForm" method="post" action="{{ url_for('leader.manage_fields') }}">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Управление видимостью полей</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        {% for field in optional_fields %}
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" name="{{ field }}" {% if not field_settings.get(field, False) %}checked{% endif %}>
+                                {{ field_names.get(field, field)|capitalize }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+                        <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно для добавления отчета -->
+    <div class="modal fade" id="addReportModal" tabindex="-1" role="dialog" aria-labelledby="addReportModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <form id="addReportForm">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Добавить отчет</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        {% for field in mandatory_fields %}
+                        <div class="form-group">
+                            <label for="{{ field }}">{{ field_names.get(field, field) }}:</label>
+                            <input type="text" class="form-control numeric" id="{{ field }}" name="{{ field }}" required>
+                            <small class="text-danger error-message" style="display:none;">Введите цифры</small>
+                        </div>
+                        {% endfor %}
+
+                        {% for field in optional_fields %}
+                        {% if not field_settings.get(field, False) %}
+                        <div class="form-group">
+                            <label for="{{ field }}">{{ field_names.get(field, field) }}:</label>
+                            <input type="text" class="form-control numeric" id="{{ field }}" name="{{ field }}">
+                            <small class="text-danger error-message" style="display:none;">Введите цифры</small>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+
+                        <div class="form-group">
+                            <label for="date">Дата:</label>
+                            <input type="date" class="form-control" id="date" name="date" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно для уведомлений -->
+    <div class="modal fade" id="notificationsModal" tabindex="-1" role="dialog" aria-labelledby="notificationsModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Уведомления</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <ul>
+                        {% for notification in notifications %}
+                        <li>{{ notification.message }}</li>
+                        {% else %}
+                        <li>У вас нет новых уведомлений.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Подключаем необходимые библиотеки -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script> <!-- jQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script> <!-- Popper.js -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script> <!-- Bootstrap JS -->
+
+    <script>
+        $(document).ready(function () {
+            // Обработчик отправки формы управления видимостью полей
+            $('#manageFieldsForm').on('submit', function (event) {
+                event.preventDefault(); // Отключаем стандартное поведение формы
+                var formData = $(this).serialize();
+                $.post('{{ url_for("leader.manage_fields") }}', formData, function (response) {
+                    // После успешного обновления, перезагружаем страницу
+                    location.reload();
+                }).fail(function () {
+                    alert('Ошибка при сохранении настроек видимости полей');
+                });
+            });
+
+            // Обработчик отправки формы добавления отчета
+            $('#addReportForm').on('submit', function (event) {
+                event.preventDefault();
+                var formData = $(this).serialize();
+                $.ajax({
+                    type: 'POST',
+                    url: '{{ url_for("leader.add_report_by_leader") }}',
+                    data: formData,
+                    success: function (response) {
+                        if (response.success) {
+                            // Закрываем модальное окно
+                            $('#addReportModal').modal('hide');
+                            // Показываем сообщение об успехе
+                            alert('Отчет успешно добавлен');
+                            // Обновляем страницу или таблицу
+                            location.reload();
+                        } else {
+                            alert('Ошибка: ' + response.message);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        alert('Произошла ошибка: ' + error);
+                    }
+                });
+            });
+
+            // Валидация ввода только чисел для полей с классом 'numeric'
+            $('.numeric').on('input', function () {
+                const originalValue = $(this).val();
+                const numericValue = originalValue.replace(/[^0-9]/g, '');
+                if (originalValue !== numericValue) {
+                    $(this).next('.error-message').show();
+                } else {
+                    $(this).next('.error-message').hide();
+                }
+                this.value = numericValue;
+            });
+
+            // Обработчик клика по иконке уведомлений
+            $('.notification-icon').click(function () {
+                $.getJSON('{{ url_for("leader.api_get_notifications") }}', function (data) {
+                    var items = [];
+                    $.each(data, function (key, val) {
+                        items.push("<li>" + val.message + "</li>");
+                    });
+                    if (items.length === 0) {
+                        items.push("<li>У вас нет новых уведомлений.</li>");
+                    }
+                    $('#notificationsModal .modal-body ul').html(items.join(""));
+                }).fail(function (jqXHR, textStatus, errorThrown) {
+                    console.error("Error fetching notifications:", textStatus, errorThrown);
+                }).always(function () {
+                    // Скрываем кружочек уведомлений и помечаем уведомления как прочитанные
+                    $('.notification-badge').hide();
+                    $.post('{{ url_for("leader.mark_notifications_read") }}');
+                });
+
+                // Показываем модальное окно
+                $('#notificationsModal').modal('show');
+            });
+
+            // Обработчик клика по иконке настроек
+            $('.settings-icon').click(function () {
+                $('#manageFieldsModal').modal('show');
+            });
+
+            // Проверяем непрочитанные уведомления при загрузке страницы
+            checkForUnreadNotifications();
+
+            function checkForUnreadNotifications() {
+                $.getJSON('{{ url_for("leader.api_get_notifications") }}', function (data) {
+                    var hasUnread = data.some(notification => !notification.is_read);
+                    if (!hasUnread) {
+                        $('.notification-badge').hide();
+                    } else {
+                        $('.notification-badge').show();
+                    }
+                });
+            }
+
+            // Сортировка таблицы
+            $('#statistics-table th').click(function () {
+                var table = $(this).parents('table').eq(0);
+                var rows = table.find('tbody tr').toArray().sort(comparer($(this).index()));
+                this.asc = !this.asc;
+                updateSortArrows(this, this.asc);
+                if (!this.asc) { rows = rows.reverse(); }
+                for (var i = 0; i < rows.length; i++) { table.find('tbody').append(rows[i]); }
+            });
+
+            function comparer(index) {
+                return function (a, b) {
+                    var valA = getCellValue(a, index), valB = getCellValue(b, index);
+                    valA = valA.replace(',', '.');
+                    valB = valB.replace(',', '.');
+                    return $.isNumeric(valA) && $.isNumeric(valB) ? valA - valB : valA.localeCompare(valB);
+                };
+            }
+
+            function getCellValue(row, index) {
+                return $(row).children('td').eq(index).text();
+            }
+
+            function updateSortArrows(header, asc) {
+                $('.sort-arrow').removeClass('asc').removeClass('desc');
+                $(header).find('.sort-arrow').addClass(asc ? 'asc' : 'desc');
+            }
+        });
+    </script>
+</body>
+</html>

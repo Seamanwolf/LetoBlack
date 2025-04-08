@@ -1,0 +1,419 @@
+/* Основные переменные и настройки */
+:root {
+    --primary-color: #3498db;
+    --primary-dark: #2980b9;
+    --success-color: #2ecc71;
+    --warning-color: #f1c40f;
+    --danger-color: #e74c3c;
+    --text-dark: #2c3e50;
+    --text-muted: #6c757d;
+    --gray-light: #f8f9fa;
+    --border-color: #dee2e6;
+}
+
+/* Стили для Хелпдеск */
+
+/* Основные стили */
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f5f8fa;
+    color: var(--text-dark);
+    font-size: 14px;
+}
+
+/* Стили для боковой панели */
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 60px;
+    background: #2c3e50;
+    display: flex;
+    flex-direction: column;
+    padding-top: 20px;
+    z-index: 1000;
+    box-shadow: 3px 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar .logo {
+    color: #fff;
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 30px;
+}
+
+.sidebar a {
+    color: #fff;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 0;
+    font-size: 0.75rem;
+    transition: all 0.3s;
+}
+
+.sidebar a i {
+    font-size: 1.2rem;
+    margin-bottom: 3px;
+}
+
+.sidebar a:hover {
+    background-color: #34495e;
+}
+
+.sidebar a.active {
+    background-color: #3498db;
+}
+
+/* Стили для верхней панели */
+.topbar {
+    margin-left: 60px;
+    padding: 15px 30px;
+    background: white;
+    height: 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 900;
+}
+
+.topbar .title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+/* Стили для основного контента */
+.main-content {
+    margin-left: 60px;
+    padding-top: 80px;
+    padding-bottom: 30px;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+/* Стили для карточек */
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    background-color: white;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    padding: 1.5rem;
+}
+
+.card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+}
+
+.card h2, .card h3 {
+    color: var(--text-dark);
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.card .number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.progress {
+    height: 8px;
+    border-radius: 50px;
+    background-color: var(--gray-light);
+    margin-top: 0.8rem;
+}
+
+.progress-bar {
+    border-radius: 50px;
+}
+
+/* Стили для статусов */
+.status {
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.status-warning {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+/* Стили для навигации */
+.nav-menu {
+    display: flex;
+    overflow-x: auto;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    margin-bottom: 2rem;
+}
+
+.nav-menu a {
+    padding: 1rem 1.5rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s;
+    white-space: nowrap;
+}
+
+.nav-menu a i {
+    margin-right: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.nav-menu a:hover {
+    color: var(--primary-color);
+    background-color: rgba(52, 152, 219, 0.05);
+}
+
+.nav-menu a.active {
+    color: white;
+    background-color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* Стили для тикетов */
+.ticket-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.ticket-item {
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.ticket-item:last-child {
+    border-bottom: none;
+}
+
+.ticket-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.ticket-id {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.ticket-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.ticket-meta {
+    display: flex;
+    gap: 1rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.ticket-status {
+    padding: 0.3rem 0.8rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 50px;
+    color: white;
+}
+
+.ticket-status-new {
+    background-color: var(--primary-color);
+}
+
+.ticket-status-open {
+    background-color: var(--warning-color);
+}
+
+.ticket-status-close {
+    background-color: var(--success-color);
+}
+
+.ticket-priority {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.ticket-priority-low {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.ticket-priority-medium {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.ticket-priority-high {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.25em 0.4em;
+    font-size: 75%;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.25rem;
+}
+
+.badge-success {
+    color: #fff;
+    background-color: #2ecc71;
+}
+
+.badge-warning {
+    color: #212529;
+    background-color: #f1c40f;
+}
+
+.badge-danger {
+    color: #fff;
+    background-color: #e74c3c;
+}
+
+/* Стили для таблиц */
+.table {
+    background-color: white;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 0;
+}
+
+.table th {
+    background-color: var(--gray-light);
+    border-bottom: 2px solid var(--border-color);
+    color: var(--text-muted);
+    font-weight: 600;
+    padding: 1rem 1.2rem;
+    font-size: 0.85rem;
+}
+
+.table td {
+    vertical-align: middle;
+    padding: 1rem 1.2rem;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.table tr:hover {
+    background-color: rgba(52, 152, 219, 0.03);
+}
+
+/* Стили для формы */
+.form-label {
+    font-weight: 500;
+    color: var(--text-dark);
+}
+
+.form-control, .form-select {
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+    border: 1px solid var(--border-color);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.15);
+}
+
+/* Стили для кнопок */
+.btn {
+    padding: 0.6rem 1.2rem;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 10px rgba(52, 152, 219, 0.2);
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-dark);
+    border-color: var(--primary-dark);
+    box-shadow: 0 6px 15px rgba(52, 152, 219, 0.3);
+}
+
+/* Стили для модальных окон */
+.modal-content {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--border-color);
+    padding: 1.5rem;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    border-top: 1px solid var(--border-color);
+    padding: 1rem 1.5rem;
+}
+
+.modal-title {
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+/* Адаптация для Bootstrap */
+.container-fluid {
+    margin-left: 60px;
+    width: calc(100% - 60px);
+    padding-top: 20px;
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        width: 50px;
+    }
+    
+    .container-fluid, .topbar {
+        margin-left: 50px;
+        width: calc(100% - 50px);
+    }
+    
+    .card, .nav-menu {
+        margin-bottom: 1rem;
+    }
+} 

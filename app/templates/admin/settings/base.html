@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Настройки системы{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <h2 class="mb-4">Настройки системы</h2>
+            
+            <div class="card shadow">
+                <div class="card-header">
+                    <ul class="nav nav-tabs card-header-tabs" id="settingsTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link{% if active_tab == 'general' %} active{% endif %}" 
+                               id="general-tab" href="{{ url_for('admin.settings') }}" role="tab">
+                                <i class="fas fa-cog"></i> Общие
+                            </a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link{% if active_tab == 'roles' %} active{% endif %}" 
+                               id="roles-tab" href="{{ url_for('admin.settings_roles') }}" role="tab">
+                                <i class="fas fa-user-tag"></i> Роли пользователей
+                            </a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link{% if active_tab == 'departments' %} active{% endif %}" 
+                               id="departments-tab" href="#" role="tab">
+                                <i class="fas fa-sitemap"></i> Отделы
+                            </a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link{% if active_tab == 'email' %} active{% endif %}" 
+                               id="email-tab" href="#" role="tab">
+                                <i class="fas fa-envelope"></i> Настройки почты
+                            </a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link{% if active_tab == 'backup' %} active{% endif %}" 
+                               id="backup-tab" href="#" role="tab">
+                                <i class="fas fa-database"></i> Резервное копирование
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="card-body">
+                    <div class="tab-content" id="settingsContent">
+                        {% block settings_content %}
+                        <!-- Контент для каждой вкладки будет определен в дочерних шаблонах -->
+                        {% endblock %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

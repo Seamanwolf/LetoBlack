@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Администраторская панель{% endblock %}
+{% block page_title %}Администраторская панель{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f8f9fa;
+      font-size: 0.85rem;
+    }
+    
+    /* Стили для карточек статистики */
+    .stat-card {
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+      padding: 20px;
+      margin-bottom: 20px;
+      background: white;
+      transition: transform 0.3s;
+    }
+    
+    .stat-card:hover {
+      transform: translateY(-5px);
+    }
+    
+    .stat-card .stat-title {
+      font-size: 1rem;
+      color: #7f8c8d;
+      margin-bottom: 10px;
+    }
+    
+    .stat-card .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #2c3e50;
+    }
+    
+    .stat-card .stat-icon {
+      float: right;
+      font-size: 2.5rem;
+      opacity: 0.2;
+      color: #3498db;
+    }
+    
+    /* Графики */
+    .chart-container {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .chart-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Основной контент -->
+<div class="container-fluid">
+    <div class="row">
+        <!-- Статистика -->
+        <div class="col-md-3">
+            <div class="stat-card">
+                <i class="fas fa-users stat-icon"></i>
+                <div class="stat-title">Всего сотрудников</div>
+                <div class="stat-value">{{ total_employees }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <i class="fas fa-user-check stat-icon"></i>
+                <div class="stat-title">Активных</div>
+                <div class="stat-value">{{ active_employees }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <i class="fas fa-user-slash stat-icon"></i>
+                <div class="stat-title">Уволенных</div>
+                <div class="stat-value">{{ fired_employees }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <i class="fas fa-chart-line stat-icon"></i>
+                <div class="stat-title">Средний скорринг</div>
+                <div class="stat-value">{{ avg_score }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="alert alert-info">
+                <h4 class="alert-heading">Информация!</h4>
+                <p>Графики перенесены на страницу дашборда персонала. Перейдите по ссылке в меню "Персонал" -> "Дашборд" для просмотра подробной аналитики.</p>
+                <hr>
+                <p class="mb-0">Для навигации используйте меню сверху.</p>
+                <div class="mt-3">
+                    <a href="{{ url_for('admin.personnel') }}" class="btn btn-primary">
+                        <i class="fas fa-users"></i> Перейти к управлению персоналом
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <!-- Последние события -->
+        <div class="col-md-12">
+            <div class="chart-container">
+                <div class="chart-title">Последние события</div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Дата</th>
+                                <th>Пользователь</th>
+                                <th>Действие</th>
+                                <th>Детали</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for event in recent_events %}
+                            <tr>
+                                <td>{{ event.date }}</td>
+                                <td>{{ event.user }}</td>
+                                <td>{{ event.action }}</td>
+                                <td>{{ event.details }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Графики временно удалены и перенесены на страницу dashboard
+</script>
+{% endblock %}

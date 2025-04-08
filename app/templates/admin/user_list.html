@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Список пользователей{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Список пользователей</h1>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+            <i class="fas fa-plus"></i> Добавить пользователя
+        </button>
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Имя пользователя</th>
+                            <th>Email</th>
+                            <th>Роль</th>
+                            <th>Статус</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user.id }}</td>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.role }}</td>
+                            <td>
+                                <span class="badge {% if user.status == 'Онлайн' %}bg-success{% elif user.status == 'Офлайн' %}bg-secondary{% else %}bg-danger{% endif %}">
+                                    {{ user.status }}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary me-1" title="Редактировать" onclick="editUser({{ user.id }})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" title="Удалить" onclick="deleteUser({{ user.id }})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно добавления пользователя -->
+<div class="modal fade" id="addUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Добавить пользователя</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addUserForm">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Имя пользователя</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Пароль</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="role" class="form-label">Роль</label>
+                        <select class="form-select" id="role" name="role" required>
+                            <option value="user">Пользователь</option>
+                            <option value="admin">Администратор</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" onclick="saveUser()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function editUser(userId) {
+    // Здесь будет код для редактирования пользователя
+    alert('Редактирование пользователя с ID: ' + userId);
+}
+
+function deleteUser(userId) {
+    if (confirm('Вы уверены, что хотите удалить этого пользователя?')) {
+        // Здесь будет код для удаления пользователя
+        alert('Удаление пользователя с ID: ' + userId);
+    }
+}
+
+function saveUser() {
+    // Здесь будет код для сохранения нового пользователя
+    alert('Пользователь сохранен');
+    document.getElementById('addUserModal').querySelector('.btn-close').click();
+}
+</script>
+{% endblock %} 

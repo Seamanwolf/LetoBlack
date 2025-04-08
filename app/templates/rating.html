@@ -1,0 +1,370 @@
+{% extends "base.html" %}
+
+{% block title %}Скорринг{% endblock %}
+{% block page_title %}Скорринг{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/rating.css') }}">
+<style>
+    /* Стили для навигационного меню */
+    .nav-menu {
+        background-color: white;
+        padding: 0 1.2rem;
+        border-radius: 12px;
+        display: flex;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        margin-bottom: 2rem;
+        border-bottom: 2px solid #dee2e6;
+        align-items: center;
+    }
+
+    .nav-menu a {
+        color: #6c757d;
+        font-weight: 500;
+        padding: 1rem 1.2rem;
+        margin-right: 1.2rem;
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .nav-menu a:hover {
+        color: #3498db;
+        background-color: rgba(52, 152, 219, 0.05);
+    }
+
+    .nav-menu a.active {
+        color: #3498db;
+        border-bottom: 3px solid #3498db;
+        font-weight: 600;
+    }
+
+    .nav-menu a i {
+        margin-right: 0.7rem;
+        font-size: 1.1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Основной контент -->
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="nav-menu">
+                <a href="{{ url_for('rating.show_rating') }}" class="active">
+                    <i class="fas fa-star"></i> Общий рейтинг
+                </a>
+                <a href="{{ url_for('rating.show_integral_rating') }}">
+                    <i class="fas fa-chart-line"></i> Интегральный рейтинг
+                </a>
+                <button id="uploadDataButton" class="btn btn-primary ms-auto" data-bs-toggle="modal" data-bs-target="#uploadDataModal">
+                    <i class="fas fa-upload"></i> Загрузить данные
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <h1>Скорринг сотрудников</h1>
+            <div class="d-flex">
+                <input type="text" id="searchInput" class="form-control mb-3" placeholder="Поиск по сотрудникам">
+                <button id="clearValuesButton" class="btn btn-warning btn-sm ms-2 mb-3">Очистить значения</button>
+            </div>
+            <table class="table table-striped mt-3 sortable">
+                <thead>
+                    <tr>
+                        <th data-type="number">№ <span class="arrow"></span></th>
+                        <th data-type="string">ФИО <span class="arrow"></span></th>
+                        <th data-type="string">Отдел <span class="arrow"></span></th>
+                        <th data-type="string">Дата приема <span class="arrow"></span></th>
+                        <th data-type="number">Ср. кол-во сделок <span class="arrow"></span></th>
+                        <th data-type="number">∫ рейтинг <span class="arrow"></span></th>
+                        <th data-type="number">Ассессмент брокера <span class="arrow"></span></th>
+                        <th data-type="number">Чек-лист звонка <span class="arrow"></span></th>
+                        <th data-type="number">Зап. карт CRM <span class="arrow"></span></th>
+                        <th data-type="number">Итоговый рейтинг <span class="arrow"></span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rating in ratings %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td class="fio"><a href="#" class="edit-values-link" data-bs-toggle="modal" data-bs-target="#editValuesModal" data-id="{{ rating.user_id }}" data-fullname="{{ rating.full_name }}">{{ rating.full_name }}<i class="fas fa-pencil-alt pencil"></i></a></td>
+                        <td>{{ rating.department }}</td>
+                        <td>{{ rating.hire_date }}</td>
+                        <td>{{ rating.avg_deals }}</td>
+                        <td>{{ rating.quarterly_rating }}</td>
+                        <td>{{ rating.properties }}</td>
+                        <td>{{ rating.scripts }}</td>
+                        <td>{{ rating.crm_cards }}</td>
+                        <td><span class="rating">{{ rating.avg_score }}★</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Модальное окно для редактирования значений -->
+    <div class="modal fade" id="editValuesModal" tabindex="-1" aria-labelledby="editValuesModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editValuesModalLabel">Значения для <span id="editUserName"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editValuesForm">
+                        <input type="hidden" id="editUserId" name="user_id">
+                        <div class="mb-3">
+                            <label for="editAvgDealsInput" class="form-label">Ср. кол-во сделок</label>
+                            <input type="number" class="form-control" id="editAvgDealsInput" step="0.1" min="0" max="5" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editQuarterlyRatingInput" class="form-label">∫ рейтинг</label>
+                            <input type="number" class="form-control" id="editQuarterlyRatingInput" step="0.1" min="0" max="5" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editPropertiesInput" class="form-label">Ассессмент брокера</label>
+                            <input type="number" class="form-control" id="editPropertiesInput" step="0.1" min="0" max="5" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editScriptsInput" class="form-label">Чек-лист звонка</label>
+                            <input type="number" class="form-control" id="editScriptsInput" step="0.1" min="0" max="5" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editCrmCardsInput" class="form-label">Зап. карт CRM</label>
+                            <input type="number" class="form-control" id="editCrmCardsInput" step="0.1" min="0" max="5" required>
+                        </div>
+                        <!-- Закомментированные поля -->
+                        <!-- <div class="mb-3">
+                            <label for="editCallDurationInput" class="form-label">Длит-ть диалога</label>
+                            <input type="number" class="form-control" id="editCallDurationInput" step="0.1" min="0" max="5" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editExperienceInput" class="form-label">Стаж</label>
+                            <input type="number" class="form-control" id="editExperienceInput" step="0.1" min="0" max="5" required>
+                        </div> -->
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для загрузки данных -->
+    <div class="modal fade" id="uploadDataModal" tabindex="-1" aria-labelledby="uploadDataModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadDataModalLabel">Загрузить данные</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="uploadDataForm" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="avgDealsFile" class="form-label">Загрузить ср. кол-во сделок</label>
+                            <input type="file" class="form-control" id="avgDealsFile" name="avgDealsFile" accept=".xlsx, .xls" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Отправить</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Обработчик формы редактирования значений
+document.getElementById('editValuesForm').addEventListener('submit', function (event) {
+    event.preventDefault();
+
+    const userId = document.getElementById('editUserId').value;
+    const quarterlyRating = document.getElementById('editQuarterlyRatingInput').value;
+    const avgDeals = document.getElementById('editAvgDealsInput').value;
+    const properties = document.getElementById('editPropertiesInput').value;
+    const scripts = document.getElementById('editScriptsInput').value;
+    const crmCards = document.getElementById('editCrmCardsInput').value;
+    // const callDuration = document.getElementById('editCallDurationInput').value;
+    // const experience = document.getElementById('editExperienceInput').value;
+
+    fetch('/api/update_rating', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            user_id: userId,
+            quarterly_rating: quarterlyRating,
+            avg_deals: avgDeals,
+            properties: properties,
+            scripts: scripts,
+            crm_cards: crmCards
+            // , call_duration: callDuration,
+            // experience: experience
+        })
+    }).then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        });
+});
+
+// Сортировка таблицы
+const table = document.querySelector('.sortable');
+const headers = table.querySelectorAll('th');
+const tableBody = table.querySelector('tbody');
+const rows = Array.from(tableBody.querySelectorAll('tr'));
+
+const directions = Array.from(headers).map(() => '');
+const transform = function (index, content) {
+    const type = headers[index].getAttribute('data-type');
+    switch (type) {
+        case 'number':
+            return parseFloat(content);
+        case 'string':
+        default:
+            return content;
+    }
+};
+
+const sortColumn = function (index) {
+    const direction = directions[index] || 'asc';
+    const multiplier = direction === 'asc' ? 1 : -1;
+    directions[index] = direction === 'asc' ? 'desc' : 'asc';
+
+    const newRows = Array.from(rows);
+    newRows.sort((rowA, rowB) => {
+        const cellA = rowA.querySelectorAll('td')[index].innerHTML;
+        const cellB = rowB.querySelectorAll('td')[index].innerHTML;
+
+        const a = transform(index, cellA);
+        const b = transform(index, cellB);
+
+        return a > b ? (1 * multiplier) : (-1 * multiplier);
+    });
+
+    [].forEach.call(rows, row => {
+        tableBody.removeChild(row);
+    });
+
+    newRows.forEach(newRow => {
+        tableBody.appendChild(newRow);
+    });
+
+    headers.forEach(header => {
+        header.classList.remove('asc', 'desc');
+    });
+    headers[index].classList.add(direction);
+    headers[index].querySelector('.arrow').style.borderColor = direction === 'asc' ? 'transparent transparent black transparent' : 'black transparent transparent transparent';
+};
+
+headers.forEach((header, index) => {
+    header.addEventListener('click', () => {
+        sortColumn(index);
+    });
+});
+
+// Поиск по сотрудникам
+document.getElementById('searchInput').addEventListener('keyup', function () {
+    const filter = this.value.toLowerCase();
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        const match = text.indexOf(filter) > -1;
+        row.style.display = match ? '' : 'none';
+    });
+});
+
+// Обработчик клика по ссылке редактирования значений
+document.querySelectorAll('.edit-values-link').forEach(link => {
+    link.addEventListener('click', function () {
+        const userId = this.getAttribute('data-id');
+        const fullName = this.getAttribute('data-fullname');
+        document.getElementById('editUserName').innerText = fullName;
+
+        fetch(`/api/get_rating?full_name=${fullName}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('editUserId').value = data.user_id;
+                document.getElementById('editQuarterlyRatingInput').value = data.quarterly_rating;
+                document.getElementById('editAvgDealsInput').value = data.avg_deals;
+                document.getElementById('editPropertiesInput').value = data.properties;
+                document.getElementById('editScriptsInput').value = data.scripts;
+                document.getElementById('editCrmCardsInput').value = data.crm_cards;
+                // document.getElementById('editCallDurationInput').value = data.call_duration;
+                // document.getElementById('editExperienceInput').value = data.experience;
+            });
+    });
+});
+
+// Обработчик кнопки очистки значений
+document.getElementById('clearValuesButton').addEventListener('click', function () {
+    if (confirm('Вы уверены, что хотите очистить все значения?')) {
+        fetch('/api/clear_values', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message);
+                }
+            });
+    }
+});
+
+// Обработчик формы загрузки данных
+document.getElementById('uploadDataForm').addEventListener('submit', function (event) {
+    event.preventDefault();
+
+    const formData = new FormData();
+    const fileInput = document.getElementById('avgDealsFile');
+    formData.append('file', fileInput.files[0]);
+
+    fetch('/api/upload_avg_deals', {
+        method: 'POST',
+        body: formData
+    }).then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Произошла ошибка при загрузке файла. Проверьте консоль для деталей.');
+        });
+});
+
+// Обновление ∫ рейтинга каждые 30 минут
+function updateIntegralRating() {
+    fetch('/api/update_integral_rating')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                console.error(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+}
+
+setInterval(updateIntegralRating, 1800000); // 30 минут в миллисекундах
+</script>
+{% endblock %}

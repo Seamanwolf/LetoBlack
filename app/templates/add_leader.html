@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Добавление руководителя</title>
+    <link rel="stylesheet" href="{{ url_for(\'static\', filename=\'css/common.css\') }}?v={{ range(1, 100000) | random }}">
+    <style>
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: calc(100vh - 70px);
+            padding: 0 20px;
+        }
+
+        .form-container {
+            border: none;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: white;
+            box-shadow: 0 2px 3px #ccc;
+            width: 48%;
+        }
+
+        form {
+            width: 100%;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        input[type="text"], input[type="password"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        .phone-container {
+            display: flex;
+            align-items: center;
+        }
+
+            .phone-container span {
+                padding: 10px;
+                background-color: #ccc;
+                border: 1px solid #ccc;
+                border-radius: 5px 0 0 5px;
+            }
+
+            .phone-container input {
+                flex: 1;
+                border-radius: 0 5px 5px 0;
+            }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            margin: 20px 0;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+            button:hover {
+                background-color: #0056b3;
+            }
+
+        .back-button {
+            display: flex;
+            align-items: center;
+            background-color: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+            .back-button i {
+                margin-right: 8px;
+            }
+
+            .back-button:hover {
+                background-color: #5a6268;
+            }
+
+        /* Styles for modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0, 0, 0);
+            background-color: rgba(0, 0, 0, 0.4);
+            padding-top: 60px;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+            .close:hover,
+            .close:focus {
+                color: black;
+                text-decoration: none;
+                cursor: pointer;
+            }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-container">
+            <h2>Добавить нового руководителя</h2>
+            <form action="{{ url_for('admin.add_leader') }}" method="post">
+                <label for="login">Логин:</label>
+                <input type="text" id="login" name="login" required>
+
+                <label for="full_name">Полное имя:</label>
+                <input type="text" id="full_name" name="full_name" required>
+
+                <label for="department">Департамент:</label>
+                <input type="text" id="department" name="department" required>
+
+                <label for="password">Пароль:</label>
+                <input type="password" id="password" name="password" required>
+
+                <label for="phone">Телефон:</label>
+                <div class="phone-container">
+                    <span>+7</span>
+                    <input type="text" id="phone" name="phone" placeholder="0000000000" pattern="\d{10}" required>
+                </div>
+                <input type="hidden" id="full_phone" name="full_phone">
+
+                <button type="submit">Добавить руководителя</button>
+            </form>
+            <a href="{{ url_for('show_leaders') }}" class="back-button"><i class="fas fa-arrow-left"></i>Назад к списку руководителей</a>
+        </div>
+    </div>
+
+    <!-- Modal for editing leader -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <form id="editForm" action="{{ url_for('admin.edit_leader') }}" method="post">
+                <h2>Редактировать руководителя</h2>
+                <label for="edit_login">Логин:</label>
+                <input type="text" id="edit_login" name="login" required>
+
+                <label for="edit_full_name">Полное имя:</label>
+                <input type="text" id="edit_full_name" name="full_name" required>
+
+                <label for="edit_department">Департамент:</label>
+                <input type="text" id="edit_department" name="department" required>
+
+                <label for="edit_phone">Телефон:</label>
+                <div class="phone-container">
+                    <span>+7</span>
+                    <input type="text" id="edit_phone" name="phone" placeholder="0000000000" pattern="\d{10}" required>
+                </div>
+                <input type="hidden" id="edit_full_phone" name="full_phone">
+
+                <button type="submit">Сохранить изменения</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('phone').addEventListener('input', function() {
+                const phone = this.value;
+                const fullPhone = '+7' + phone;
+                document.getElementById('full_phone').value = fullPhone;
+            });
+
+            // Modal functionality
+            const modal = document.getElementById("editModal");
+            const span = document.getElementsByClassName("close")[0];
+
+            document.getElementById('edit_phone').addEventListener('input', function() {
+                const phone = this.value;
+                const fullPhone = '+7' + phone;
+                document.getElementById('edit_full_phone').value = fullPhone;
+            });
+
+            span.onclick = function() {
+                modal.style.display = "none";
+            }
+
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    modal.style.display = "none";
+                }
+            }
+
+            window.showEditModal = function(leader) {
+                document.getElementById('edit_login').value = leader.login;
+                document.getElementById('edit_full_name').value = leader.full_name;
+                document.getElementById('edit_department').value = leader.department;
+                document.getElementById('edit_phone').value = leader.phone.slice(2);
+                document.getElementById('edit_full_phone').value = leader.phone;
+                document.getElementById('editForm').action = `{{ url_for('admin.edit_leader', id='') }}/${leader.id}`;
+                modal.style.display = "block";
+            }
+        });
+    </script>
+</body>
+</html>
