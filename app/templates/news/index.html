@@ -52,6 +52,40 @@
         padding: 3px 10px;
         font-size: 0.8rem;
     }
+    
+    .news-image {
+        width: 100%;
+        height: 180px;
+        object-fit: cover;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .news-placeholder {
+        width: 100%;
+        height: 180px;
+        background-color: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #6c757d;
+        font-size: 1.2rem;
+    }
+    
+    /* Стиль для превью загружаемого изображения */
+    #imagePreview {
+        max-width: 100%;
+        max-height: 200px;
+        margin-top: 10px;
+        border-radius: 5px;
+        display: none;
+    }
+    
+    /* Чекбокс для выбора всех ролей */
+    .role-check-container {
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #dee2e6;
+    }
 </style>
 {% endblock %}
 
@@ -105,71 +139,53 @@
     
     <!-- Список новостей -->
     <div class="row" id="news-container">
-        <!-- Пример новости -->
-        <div class="col-md-4 mb-4">
-            <div class="news-card">
-                <div class="news-header">
-                    <h5 class="mb-1">Важное объявление для всех сотрудников</h5>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="news-date">01.06.2024</span>
-                        <span class="news-category">Важное</span>
+        {% if news %}
+            {% for item in news %}
+            <div class="col-md-4 mb-4 news-item" data-category="{{ item.category }}">
+                <div class="news-card">
+                    {% if item.image %}
+                    <img src="{{ url_for('static', filename='images/news/' + item.image) }}" alt="{{ item.title }}" class="news-image">
+                    {% else %}
+                    <div class="news-placeholder">
+                        <i class="fas fa-newspaper fa-2x"></i>
                     </div>
-                </div>
-                <div class="news-body">
-                    <p>В связи с обновлением системы, все сотрудники должны пройти переобучение до конца месяца. Расписание тренингов будет отправлено по электронной почте.</p>
-                </div>
-                <div class="news-footer">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="news-author">Администрация</span>
-                        <button class="btn btn-sm btn-primary">Подробнее</button>
+                    {% endif %}
+                    <div class="news-header">
+                        <h5 class="mb-1">{{ item.title }}</h5>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="news-date">{{ item.created_at.strftime('%d.%m.%Y') if item.created_at else 'Нет даты' }}</span>
+                            <span class="news-category">{{ item.category }}</span>
+                        </div>
                     </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Пример новости -->
-        <div class="col-md-4 mb-4">
-            <div class="news-card">
-                <div class="news-header">
-                    <h5 class="mb-1">Поздравляем лучших сотрудников месяца</h5>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="news-date">25.05.2024</span>
-                        <span class="news-category">Компания</span>
+                    <div class="news-body">
+                        <p>{{ item.content|truncate(150) }}</p>
                     </div>
-                </div>
-                <div class="news-body">
-                    <p>По итогам прошлого месяца, лучшими сотрудниками стали: Иванов И.И., Петров П.П., Сидорова С.С. Все они будут премированы и награждены почетными грамотами.</p>
-                </div>
-                <div class="news-footer">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="news-author">Отдел персонала</span>
-                        <button class="btn btn-sm btn-primary">Подробнее</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Пример новости -->
-        <div class="col-md-4 mb-4">
-            <div class="news-card">
-                <div class="news-header">
-                    <h5 class="mb-1">Корпоративный пикник в эту субботу</h5>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="news-date">20.05.2024</span>
-                        <span class="news-category">События</span>
-                    </div>
-                </div>
-                <div class="news-body">
-                    <p>Приглашаем всех сотрудников на ежегодный корпоративный пикник, который состоится в эту субботу в 12:00 в городском парке. Будут организованы игры, конкурсы и барбекю.</p>
-                </div>
-                <div class="news-footer">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="news-author">HR-отдел</span>
-                        <button class="btn btn-sm btn-primary">Подробнее</button>
+                    <div class="news-footer">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="news-author">{{ item.author_name }}</span>
+                            <div>
+                                <a href="{{ url_for('news.view_news', news_id=item.id) }}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-eye"></i> Подробнее
+                                </a>
+                                {% if current_user.role == 'admin' %}
+                                <a href="{{ url_for('news.edit_news', news_id=item.id) }}" class="btn btn-sm btn-warning">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-danger delete-news" data-id="{{ item.id }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12 text-center py-5">
+                <p>Нет доступных новостей</p>
+            </div>
+        {% endif %}
     </div>
 </div>
 
@@ -183,14 +199,14 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
             </div>
             <div class="modal-body">
-                <form id="addNewsForm">
+                <form id="addNewsForm" action="{{ url_for('news.create_news') }}" method="POST" enctype="multipart/form-data">
                     <div class="mb-3">
                         <label for="newsTitle" class="form-label">Заголовок</label>
-                        <input type="text" class="form-control" id="newsTitle" required>
+                        <input type="text" class="form-control" id="newsTitle" name="newsTitle" required>
                     </div>
                     <div class="mb-3">
                         <label for="newsCategory" class="form-label">Категория</label>
-                        <select class="form-select" id="newsCategory">
+                        <select class="form-select" id="newsCategory" name="newsCategory">
                             <option value="important">Важное</option>
                             <option value="company">Компания</option>
                             <option value="events">События</option>
@@ -198,46 +214,170 @@
                     </div>
                     <div class="mb-3">
                         <label for="newsContent" class="form-label">Содержание</label>
-                        <textarea class="form-control" id="newsContent" rows="6" required></textarea>
+                        <textarea class="form-control" id="newsContent" name="newsContent" rows="6" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newsImage" class="form-label">Изображение</label>
+                        <input type="file" class="form-control" id="newsImage" name="newsImage" accept=".jpg,.jpeg,.png,.gif">
+                        <small class="form-text text-muted">Рекомендуемый размер изображения: 800x600px</small>
+                        <img id="imagePreview" src="#" alt="Предпросмотр">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Кому доступна новость</label>
+                        <div class="role-check-container">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="allRoles" name="all_roles">
+                                <label class="form-check-label" for="allRoles">
+                                    <strong>Все роли</strong>
+                                </label>
+                            </div>
+                        </div>
+                        <div id="rolesList">
+                            {% for role in roles %}
+                            <div class="form-check">
+                                <input class="form-check-input role-checkbox" type="checkbox" id="role{{ role.id }}" name="newsRoles" value="{{ role.id }}">
+                                <label class="form-check-label" for="role{{ role.id }}">
+                                    {{ role.name }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                <button type="button" class="btn btn-primary" id="saveNewsBtn">Опубликовать</button>
+                <button type="submit" form="addNewsForm" class="btn btn-primary">Опубликовать</button>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Форма для удаления новости -->
+<form id="deleteNewsForm" action="" method="POST" style="display: none;"></form>
 {% endif %}
 {% endblock %}
 
 {% block extra_js %}
 <script>
     $(document).ready(function() {
-        // Фильтрация новостей
-        $('#categoryFilter, #dateFilter, #searchFilter').on('change keyup', function() {
-            // Здесь будет код для фильтрации новостей
-            console.log('Фильтрация новостей');
+        // Предпросмотр изображения
+        $('#newsImage').change(function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    $('#imagePreview').attr('src', e.target.result).show();
+                }
+                reader.readAsDataURL(file);
+            } else {
+                $('#imagePreview').hide();
+            }
         });
         
-        // Сохранение новой новости
-        $('#saveNewsBtn').click(function() {
-            const title = $('#newsTitle').val();
-            const category = $('#newsCategory').val();
-            const content = $('#newsContent').val();
-            
-            if (!title || !content) {
-                alert('Заполните все обязательные поля');
-                return;
+        // Обработка чекбокса "Все роли"
+        $('#allRoles').change(function() {
+            if ($(this).is(':checked')) {
+                $('.role-checkbox').prop('disabled', true);
+            } else {
+                $('.role-checkbox').prop('disabled', false);
             }
+        });
+        
+        // Удаление новости
+        $('.delete-news').click(function() {
+            const newsId = $(this).data('id');
+            if (confirm('Вы уверены, что хотите удалить эту новость?')) {
+                const form = $('#deleteNewsForm');
+                form.attr('action', `/news/delete/${newsId}`);
+                form.submit();
+            }
+        });
+        
+        // Фильтрация новостей
+        $('#categoryFilter, #searchFilter').on('change keyup', function() {
+            const category = $('#categoryFilter').val();
+            const search = $('#searchFilter').val().toLowerCase();
             
-            // Здесь будет AJAX запрос для сохранения новости
-            console.log('Сохранение новости:', { title, category, content });
-            
-            // Временное решение - просто закрыть модальное окно
-            $('#addNewsModal').modal('hide');
-            alert('Новость успешно опубликована');
+            // Фильтрация через AJAX
+            $.ajax({
+                url: '/news/api/news',
+                method: 'GET',
+                data: { 
+                    category: category,
+                    search: search
+                },
+                success: function(data) {
+                    $('#news-container').empty();
+                    
+                    if (data.length === 0) {
+                        $('#news-container').html('<div class="col-12 text-center py-5"><p>Нет новостей, соответствующих фильтрам</p></div>');
+                        return;
+                    }
+                    
+                    data.forEach(function(item) {
+                        let imageHtml = '';
+                        if (item.image) {
+                            imageHtml = `<img src="/static/images/news/${item.image}" alt="${item.title}" class="news-image">`;
+                        } else {
+                            imageHtml = '<div class="news-placeholder"><i class="fas fa-newspaper fa-2x"></i></div>';
+                        }
+                        
+                        let adminButtons = '';
+                        if ({{ 'true' if current_user.role == 'admin' else 'false' }}) {
+                            adminButtons = `
+                                <a href="/news/edit/${item.id}" class="btn btn-sm btn-warning">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-danger delete-news" data-id="${item.id}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            `;
+                        }
+                        
+                        const newsCard = `
+                            <div class="col-md-4 mb-4 news-item" data-category="${item.category}">
+                                <div class="news-card">
+                                    ${imageHtml}
+                                    <div class="news-header">
+                                        <h5 class="mb-1">${item.title}</h5>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="news-date">${item.created_at}</span>
+                                            <span class="news-category">${item.category}</span>
+                                        </div>
+                                    </div>
+                                    <div class="news-body">
+                                        <p>${item.content.substring(0, 150)}${item.content.length > 150 ? '...' : ''}</p>
+                                    </div>
+                                    <div class="news-footer">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="news-author">${item.author_name || 'Админ'}</span>
+                                            <div>
+                                                <a href="/news/view/${item.id}" class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-eye"></i> Подробнее
+                                                </a>
+                                                ${adminButtons}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        $('#news-container').append(newsCard);
+                    });
+                    
+                    // Повторно привязываем события к новым элементам
+                    $('.delete-news').click(function() {
+                        const newsId = $(this).data('id');
+                        if (confirm('Вы уверены, что хотите удалить эту новость?')) {
+                            const form = $('#deleteNewsForm');
+                            form.attr('action', `/news/delete/${newsId}`);
+                            form.submit();
+                        }
+                    });
+                }
+            });
         });
     });
 </script>
