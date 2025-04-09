@@ -63,7 +63,7 @@
             text-align: center;
             width: 100%;
             display: block;
-            padding: 0 2px;
+            padding: 0;
             margin: 0 auto;
         }
 
@@ -204,10 +204,6 @@
             <i class="fas fa-users"></i>
             <span>Персонал</span>
         </a>
-        <a href="{{ url_for('admin.personnel_dashboard') }}" {% if request.endpoint == 'admin.personnel_dashboard' %}class="active"{% endif %}>
-            <i class="fas fa-chart-bar"></i>
-            <span>Дашборд персонала</span>
-        </a>
         <a href="{{ url_for('rating.show_rating') }}" {% if request.endpoint == 'rating.show_rating' %}class="active"{% endif %}>
             <i class="fas fa-star"></i>
             <span>Рейтинг</span>
@@ -224,17 +220,17 @@
             <i class="fas fa-desktop"></i>
             <span>IT-Tech</span>
         </a>
-        <a href="{{ url_for('userlist.manage_notifications') }}" {% if request.endpoint == 'userlist.manage_notifications' %}class="active"{% endif %}>
-            <i class="fas fa-bell"></i>
-            <span>Уведомления</span>
+        <a href="{{ url_for('news.index') }}" {% if request.endpoint and request.endpoint.startswith('news.') %}class="active"{% endif %}>
+            <i class="fas fa-newspaper"></i>
+            <span>Новости</span>
         </a>
         <a href="{{ url_for('vats.index') }}" {% if request.endpoint and request.endpoint.startswith('vats.') %}class="active"{% endif %}>
             <i class="fas fa-phone-alt"></i>
-            <span>Ватс</span>
+            <span>ВАТС</span>
         </a>
         <a href="{{ url_for('avito.avito_category', category='Вторички') }}" {% if request.endpoint and request.endpoint.startswith('avito.') %}class="active"{% endif %}>
             <i class="fas fa-home"></i>
-            <span>Авито Про</span>
+            <span>Авито-Про</span>
         </a>
         {% if current_user.role == 'admin' %}
         <a href="{{ url_for('admin.settings') }}" {% if request.endpoint == 'admin.settings' %}class="active"{% endif %}>
@@ -242,10 +238,6 @@
             <span>Настройки</span>
         </a>
         {% endif %}
-        <a href="{{ url_for('userlist.logout') }}">
-            <i class="fas fa-sign-out-alt"></i>
-            <span>Выход</span>
-        </a>
     </div>
 
     <!-- Верхняя панель -->

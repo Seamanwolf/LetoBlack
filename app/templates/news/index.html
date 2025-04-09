@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+
+{% block title %}Новости{% endblock %}
+{% block page_title %}Новости{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Стили для карточек новостей */
+    .news-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        margin-bottom: 20px;
+        overflow: hidden;
+        transition: transform 0.3s;
+    }
+    
+    .news-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .news-header {
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .news-body {
+        padding: 15px;
+    }
+    
+    .news-footer {
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-top: 1px solid #dee2e6;
+    }
+    
+    .news-date {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    
+    .news-author {
+        font-weight: bold;
+        color: #3498db;
+    }
+    
+    .news-category {
+        display: inline-block;
+        background-color: #3498db;
+        color: white;
+        border-radius: 20px;
+        padding: 3px 10px;
+        font-size: 0.8rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Заголовок и кнопки управления -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Новости компании</h1>
+        {% if current_user.role == 'admin' %}
+        <div>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addNewsModal">
+                <i class="fas fa-plus"></i> Добавить новость
+            </button>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Фильтры -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Фильтры</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="categoryFilter">Категория</label>
+                        <select class="form-control" id="categoryFilter">
+                            <option value="all">Все</option>
+                            <option value="important">Важное</option>
+                            <option value="company">Компания</option>
+                            <option value="events">События</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="dateFilter">Дата публикации</label>
+                        <input type="date" class="form-control" id="dateFilter">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="searchFilter">Поиск</label>
+                        <input type="text" class="form-control" id="searchFilter" placeholder="Введите текст для поиска">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Список новостей -->
+    <div class="row" id="news-container">
+        <!-- Пример новости -->
+        <div class="col-md-4 mb-4">
+            <div class="news-card">
+                <div class="news-header">
+                    <h5 class="mb-1">Важное объявление для всех сотрудников</h5>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="news-date">01.06.2024</span>
+                        <span class="news-category">Важное</span>
+                    </div>
+                </div>
+                <div class="news-body">
+                    <p>В связи с обновлением системы, все сотрудники должны пройти переобучение до конца месяца. Расписание тренингов будет отправлено по электронной почте.</p>
+                </div>
+                <div class="news-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="news-author">Администрация</span>
+                        <button class="btn btn-sm btn-primary">Подробнее</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Пример новости -->
+        <div class="col-md-4 mb-4">
+            <div class="news-card">
+                <div class="news-header">
+                    <h5 class="mb-1">Поздравляем лучших сотрудников месяца</h5>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="news-date">25.05.2024</span>
+                        <span class="news-category">Компания</span>
+                    </div>
+                </div>
+                <div class="news-body">
+                    <p>По итогам прошлого месяца, лучшими сотрудниками стали: Иванов И.И., Петров П.П., Сидорова С.С. Все они будут премированы и награждены почетными грамотами.</p>
+                </div>
+                <div class="news-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="news-author">Отдел персонала</span>
+                        <button class="btn btn-sm btn-primary">Подробнее</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Пример новости -->
+        <div class="col-md-4 mb-4">
+            <div class="news-card">
+                <div class="news-header">
+                    <h5 class="mb-1">Корпоративный пикник в эту субботу</h5>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="news-date">20.05.2024</span>
+                        <span class="news-category">События</span>
+                    </div>
+                </div>
+                <div class="news-body">
+                    <p>Приглашаем всех сотрудников на ежегодный корпоративный пикник, который состоится в эту субботу в 12:00 в городском парке. Будут организованы игры, конкурсы и барбекю.</p>
+                </div>
+                <div class="news-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="news-author">HR-отдел</span>
+                        <button class="btn btn-sm btn-primary">Подробнее</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для добавления новости -->
+{% if current_user.role == 'admin' %}
+<div class="modal fade" id="addNewsModal" tabindex="-1" aria-labelledby="addNewsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addNewsModalLabel">Добавить новость</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addNewsForm">
+                    <div class="mb-3">
+                        <label for="newsTitle" class="form-label">Заголовок</label>
+                        <input type="text" class="form-control" id="newsTitle" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newsCategory" class="form-label">Категория</label>
+                        <select class="form-select" id="newsCategory">
+                            <option value="important">Важное</option>
+                            <option value="company">Компания</option>
+                            <option value="events">События</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newsContent" class="form-label">Содержание</label>
+                        <textarea class="form-control" id="newsContent" rows="6" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="saveNewsBtn">Опубликовать</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Фильтрация новостей
+        $('#categoryFilter, #dateFilter, #searchFilter').on('change keyup', function() {
+            // Здесь будет код для фильтрации новостей
+            console.log('Фильтрация новостей');
+        });
+        
+        // Сохранение новой новости
+        $('#saveNewsBtn').click(function() {
+            const title = $('#newsTitle').val();
+            const category = $('#newsCategory').val();
+            const content = $('#newsContent').val();
+            
+            if (!title || !content) {
+                alert('Заполните все обязательные поля');
+                return;
+            }
+            
+            // Здесь будет AJAX запрос для сохранения новости
+            console.log('Сохранение новости:', { title, category, content });
+            
+            // Временное решение - просто закрыть модальное окно
+            $('#addNewsModal').modal('hide');
+            alert('Новость успешно опубликована');
+        });
+    });
+</script>
+{% endblock %} 

@@ -57,6 +57,9 @@ def create_app(config_class=Config):
     from app.rating.rating import rating_bp
     from app.itinvent.itinvent import itinvent_bp
     from app.userlist.userlist import userlist_bp
+    from app.news import news_bp
+    from app.routes import login_routes_bp
+    from app.routes.api import api_bp
     
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
@@ -71,6 +74,11 @@ def create_app(config_class=Config):
     app.register_blueprint(rating_bp)
     app.register_blueprint(itinvent_bp)
     app.register_blueprint(userlist_bp)
+    app.register_blueprint(login_routes_bp)
+    app.register_blueprint(admin_routes_bp, url_prefix='/admin')
+    app.register_blueprint(api_bp, url_prefix='/api')
+    app.register_blueprint(news_bp, url_prefix='/news')
+    app.register_blueprint(admin_bp, url_prefix='/admin_old')
     
     # Импорт и регистрация CLI команд
     from app import commands
