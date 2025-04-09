@@ -21,6 +21,11 @@ def create_app(config_class=Config):
                 static_url_path=config_class.STATIC_URL_PATH)
     app.config.from_object(config_class)
     
+    # Создаем директорию для статических файлов, если она не существует
+    static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), config_class.STATIC_FOLDER)
+    images_dir = os.path.join(static_dir, 'images')
+    os.makedirs(images_dir, exist_ok=True)
+    
     # Инициализация расширений с приложением
     login_manager.init_app(app)
     

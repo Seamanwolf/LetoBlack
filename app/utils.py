@@ -14,6 +14,8 @@ import logging
 from dotenv import load_dotenv
 import pymysql
 from pymysql.cursors import Cursor
+from werkzeug.utils import secure_filename
+from PIL import Image
 
 utils_bp = Blueprint('utils', __name__)
 
@@ -108,6 +110,15 @@ def login_required(f):
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated:
             flash("Пожалуйста, авторизуйтесь для доступа к этой странице.", "danger")
+            return redirect(url_for('auth.login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or current_user.role != 'admin':
+            flash('У вас нет прав для доступа к этой странице', 'error')
             return redirect(url_for('auth.login'))
         return f(*args, **kwargs)
     return decorated_function
@@ -500,4 +511,68 @@ class DBConnectionManager:
                 self.connection.close()
             except Exception as e:
                 logger.error(f"Ошибка при закрытии соединения: {e}")
+
+def save_uploaded_file(file, target_dir, filename):
+    """
+    Сохраняет загруженный файл с заданным именем в указанную директорию.
+    
+    Args:
+        file: FileStorage объект из Flask
+        target_dir: директория для сохранения
+        filename: желаемое имя файла
+    
+    Returns:
+        str: путь к сохраненному файлу
+    """
+    # Создаем директорию, если она не существует
+    if not os.path.exists(target_dir):
+        os.makedirs(target_dir, exist_ok=True)
+        
+    file_path = os.path.join(target_dir, filename)
+    
+    try:
+        # Открываем изображение с помощью PIL
+        img = Image.open(file)
+        
+        # Конвертируем в нужный формат
+        if filename.endswith('.bmp'):
+            img.save(file_path, 'BMP')
+        elif filename.endswith('.jpg') or filename.endswith('.jpeg'):
+            img.save(file_path, 'JPEG')
+        elif filename.endswith('.png'):
+            img.save(file_path, 'PNG')
+        else:
+            # Если формат не поддерживается, сохраняем как есть
+            file.save(file_path)
+            
+        return file_path
+    except Exception as e:
+        current_app.logger.error(f"Ошибка при сохранении файла: {str(e)}")
+        raise
+
+def save_logo(file):
+    """
+    Сохраняет логотип компании.
+    
+    Args:
+        file: FileStorage объект из Flask
+    
+    Returns:
+        str: путь к сохраненному файлу
+    """
+    static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'images')
+    return save_uploaded_file(file, static_dir, 'logo.bmp')
+
+def save_background(file):
+    """
+    Сохраняет фоновое изображение.
+    
+    Args:
+        file: FileStorage объект из Flask
+    
+    Returns:
+        str: путь к сохраненному файлу
+    """
+    images_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'images')
+    return save_uploaded_file(file, images_dir, 'real_estate_bg.jpg')
 

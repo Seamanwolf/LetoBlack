@@ -4,6 +4,9 @@ from werkzeug.security import check_password_hash
 from app.utils import create_db_connection
 from app.models.user import User
 from datetime import datetime
+from os import path
+from flask import current_app
+import time
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -61,7 +64,21 @@ def login():
             cursor.close()
             connection.close()
     
-    return render_template('auth/login.html')
+    # Проверяем наличие логотипа
+    logo_png_path = path.join(current_app.static_folder, 'images/logo.png')
+    logo_bmp_path = path.join(current_app.static_folder, 'images/logo.bmp')
+    
+    logo_exists = path.exists(logo_png_path)
+    logo_url = url_for('static', filename='images/logo.png')
+    
+    if not logo_exists and path.exists(logo_bmp_path):
+        logo_exists = True
+        logo_url = url_for('static', filename='images/logo.bmp')
+    
+    # Добавляем метку времени для предотвращения кеширования
+    now = int(time.time())
+    
+    return render_template('auth/login.html', logo_url=logo_url if logo_exists else None, now=now)
 
 @auth_bp.route('/logout')
 @login_required
@@ -73,7 +90,7 @@ def logout():
         cursor = connection.cursor()
         
         try:
-            cursor.execute("UPDATE User SET status = 'offline' WHERE id = %s", (current_user.id,))
+            cursor.execute("UPDATE User SET status = 'Офлайн' WHERE id = %s", (current_user.id,))
             connection.commit()
         finally:
             cursor.close()

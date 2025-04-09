@@ -76,7 +76,7 @@ def assign_numbers():
         
         # Добавляем новые назначения
         for number_id in number_ids:
-        cursor.execute("""
+            cursor.execute("""
                 INSERT INTO operator_numbers (operator_id, phone_id)
                 VALUES (%s, %s)
             """, (operator_id, number_id))

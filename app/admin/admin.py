@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_file, send_from_directory, abort, current_app
 from app.admin import admin_bp
-from app.utils import create_db_connection, login_required, get_department_weekly_stats, get_notifications_count
+from app.utils import create_db_connection, login_required, admin_required, get_department_weekly_stats, get_notifications_count, save_logo, save_background
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_required as flask_login_required, current_user
@@ -9,11 +9,40 @@ from app.backoffice import add_backoffice_staff, update_backoffice_staff, delete
 import os
 import traceback
 from datetime import datetime, date
+from os import path, makedirs
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 LOGO_PATH = '/home/LetoBlack/static/logo.bmp'
+
+@admin_bp.route('/delete_logo', methods=['POST'])
+@login_required
+def delete_logo():
+    try:
+        logo_path = os.path.join(current_app.static_folder, 'images', 'logo.bmp')
+        if os.path.exists(logo_path):
+            os.remove(logo_path)
+            flash('Логотип успешно удален', 'success')
+        else:
+            flash('Логотип не найден', 'warning')
+    except Exception as e:
+        flash(f'Ошибка при удалении логотипа: {str(e)}', 'danger')
+    return redirect(url_for('admin.settings'))
+
+@admin_bp.route('/delete_background', methods=['POST'])
+@login_required
+def delete_background():
+    try:
+        bg_path = os.path.join(current_app.static_folder, 'images', 'real_estate_bg.jpg')
+        if os.path.exists(bg_path):
+            os.remove(bg_path)
+            flash('Фоновое изображение успешно удалено', 'success')
+        else:
+            flash('Фоновое изображение не найдено', 'warning')
+    except Exception as e:
+        flash(f'Ошибка при удалении фонового изображения: {str(e)}', 'danger')
+    return redirect(url_for('admin.settings'))
 
 @admin_bp.route('/admin/dashboard')
 @login_required
@@ -108,32 +137,58 @@ def save_ldap():
 
 @admin_bp.route('/upload_logo', methods=['POST'])
 @login_required
+@admin_required
 def upload_logo():
-    # Проверяем, есть ли файл в запросе
     if 'logo' not in request.files:
-        flash('Нет файла для загрузки')
-        return redirect(url_for('settings'))
-
+        flash('Файл не выбран', 'error')
+        return redirect(url_for('admin.settings'))
+        
     file = request.files['logo']
-
-    # Проверяем, выбран ли файл
     if file.filename == '':
-        flash('Файл не выбран')
-        return redirect(url_for('settings'))
+        flash('Файл не выбран', 'error')
+        return redirect(url_for('admin.settings'))
+        
+    try:
+        save_logo(file)
+        flash('Логотип успешно загружен', 'success')
+    except Exception as e:
+        flash(f'Ошибка при загрузке логотипа: {str(e)}', 'error')
+        
+    return redirect(url_for('admin.settings'))
 
-    # Проверяем, что файл имеет разрешение bmp
-    if file and file.filename.endswith('.bmp'):
-        file.save(LOGO_PATH)  # Сохраняем файл по указанному пути с именем logo.bmp
-        flash('Логотип успешно загружен и сохранен как logo.bmp')
-    else:
-        flash('Неправильный формат файла. Загрузите файл с расширением .bmp')
-
-    return redirect(url_for('settings'))
+@admin_bp.route('/upload_background', methods=['POST'])
+@login_required
+@admin_required
+def upload_background():
+    if 'background' not in request.files:
+        flash('Файл не выбран', 'error')
+        return redirect(url_for('admin.settings'))
+        
+    file = request.files['background']
+    if file.filename == '':
+        flash('Файл не выбран', 'error')
+        return redirect(url_for('admin.settings'))
+        
+    try:
+        save_background(file)
+        flash('Фоновое изображение успешно загружено', 'success')
+    except Exception as e:
+        flash(f'Ошибка при загрузке фонового изображения: {str(e)}', 'error')
+        
+    return redirect(url_for('admin.settings'))
 
 @admin_bp.route('/settings')
 @login_required
+@admin_required
 def settings():
-    return render_template('settings.html')
+    """Страница настроек системы"""
+    # Получаем текущие настройки
+    logo_url = url_for('static', filename='images/logo.bmp')
+    background_url = url_for('static', filename='images/real_estate_bg.jpg')
+    
+    return render_template('admin/settings.html',
+                         logo_url=logo_url if path.exists(path.join(current_app.static_folder, 'images/logo.bmp')) else None,
+                         background_url=background_url if path.exists(path.join(current_app.static_folder, 'images/real_estate_bg.jpg')) else None)
 
 @admin_bp.route('/api/update_admin', methods=['POST'])
 @login_required

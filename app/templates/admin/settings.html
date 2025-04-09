@@ -1,81 +1,205 @@
 {% extends "base.html" %}
 
-{% block title %}Настройки администратора{% endblock %}
+{% block title %}Настройки системы{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
+<style>
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    .btn-xs {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.7rem;
+    }
+    .btn i {
+        font-size: 0.8rem;
+        margin-right: 3px;
+    }
+    
+    /* Стили для input[type="file"] */
+    .custom-file-input {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+    }
+    
+    .custom-file-input input[type="file"] {
+        position: absolute;
+        left: 0;
+        top: 0;
+        opacity: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+    }
+    
+    .custom-file-label {
+        display: block;
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 400;
+        line-height: 1.5;
+        color: #495057;
+        background-color: #fff;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        text-align: center;
+        cursor: pointer;
+    }
+    
+    .custom-file-label:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .custom-file-label i {
+        margin-right: 5px;
+    }
+
+    /* Стили для меню */
+    .settings-menu {
+        background-color: #f8f9fa;
+        border-radius: 0.25rem;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .settings-menu ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+    }
+    
+    .settings-menu li {
+        margin-right: 15px;
+        margin-bottom: 10px;
+    }
+    
+    .settings-menu a {
+        display: inline-block;
+        padding: 8px 15px;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        color: #333;
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+    }
+    
+    .settings-menu a:hover {
+        background-color: #e9ecef;
+        border-color: #ced4da;
+    }
+    
+    .settings-menu a.active {
+        background-color: #007bff;
+        border-color: #007bff;
+        color: white;
+    }
+    
+    .settings-menu i {
+        margin-right: 5px;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h1 class="mb-4">Настройки администратора</h1>
+    <h2>Настройки системы</h2>
     
-    <div class="row">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Общие настройки</h5>
-                </div>
-                <div class="card-body">
-                    <form id="generalSettingsForm">
-                        <div class="mb-3">
-                            <label for="siteName" class="form-label">Название сайта</label>
-                            <input type="text" class="form-control" id="siteName" name="siteName" value="{{ config.SITE_NAME }}">
-                        </div>
-                        <div class="mb-3">
-                            <label for="adminEmail" class="form-label">Email администратора</label>
-                            <input type="email" class="form-control" id="adminEmail" name="adminEmail" value="{{ config.ADMIN_EMAIL }}">
-                        </div>
-                        <button type="submit" class="btn btn-primary">Сохранить</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Настройки безопасности</h5>
-                </div>
-                <div class="card-body">
-                    <form id="securitySettingsForm">
-                        <div class="mb-3">
-                            <label for="sessionTimeout" class="form-label">Таймаут сессии (минуты)</label>
-                            <input type="number" class="form-control" id="sessionTimeout" name="sessionTimeout" value="{{ config.SESSION_TIMEOUT }}">
-                        </div>
-                        <div class="mb-3">
-                            <label for="maxLoginAttempts" class="form-label">Максимальное количество попыток входа</label>
-                            <input type="number" class="form-control" id="maxLoginAttempts" name="maxLoginAttempts" value="{{ config.MAX_LOGIN_ATTEMPTS }}">
-                        </div>
-                        <button type="submit" class="btn btn-primary">Сохранить</button>
-                    </form>
-                </div>
-            </div>
-        </div>
+    <!-- Меню настроек -->
+    <div class="settings-menu">
+        <ul>
+            <li><a href="{{ url_for('admin.settings') }}" class="active"><i class="fas fa-cog"></i> Общие настройки</a></li>
+            <li><a href="#"><i class="fas fa-users"></i> Пользователи</a></li>
+            <li><a href="#"><i class="fas fa-database"></i> База данных</a></li>
+            <li><a href="#"><i class="fas fa-shield-alt"></i> Безопасность</a></li>
+            <li><a href="#"><i class="fas fa-bell"></i> Уведомления</a></li>
+            <li><a href="#"><i class="fas fa-file-alt"></i> Логи системы</a></li>
+        </ul>
     </div>
     
     <div class="row mt-4">
-        <div class="col-md-12">
-            <div class="card">
+        <!-- Загрузка логотипа -->
+        <div class="col-md-6">
+            <div class="card h-100">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">Настройки уведомлений</h5>
+                    <h5 class="card-title mb-0">Загрузка логотипа</h5>
                 </div>
                 <div class="card-body">
-                    <form id="notificationSettingsForm">
+                    <form action="{{ url_for('admin_routes.upload_logo') }}" method="post" enctype="multipart/form-data" class="mb-3">
                         <div class="mb-3">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="emailNotifications" name="emailNotifications" {% if config.EMAIL_NOTIFICATIONS %}checked{% endif %}>
-                                <label class="form-check-label" for="emailNotifications">Включить email-уведомления</label>
+                            <label class="form-label">Выберите файл логотипа</label>
+                            <div class="custom-file-input">
+                                <input type="file" class="form-control" id="logo" name="logo" accept=".bmp,.jpg,.jpeg,.png" required>
+                                <label for="logo" class="custom-file-label">
+                                    <i class="fas fa-file-image"></i> Выберите файл
+                                </label>
                             </div>
+                            <div class="form-text">Поддерживаемые форматы: BMP, JPG, JPEG, PNG (рекомендуется PNG для прозрачности)</div>
                         </div>
-                        <div class="mb-3">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="smsNotifications" name="smsNotifications" {% if config.SMS_NOTIFICATIONS %}checked{% endif %}>
-                                <label class="form-check-label" for="smsNotifications">Включить SMS-уведомления</label>
-                            </div>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                        <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-upload"></i> Загрузить</button>
                     </form>
+                    
+                    <div class="current-logo mt-3">
+                        <h6>Текущий логотип:</h6>
+                        <div class="logo-preview" style="padding: 10px; border: 1px dashed #ccc; background: repeating-linear-gradient(45deg, #f0f0f0, #f0f0f0 10px, #e0e0e0 10px, #e0e0e0 20px); display: flex; justify-content: center; align-items: center; height: 120px;">
+                            {% if logo_url %}
+                            <img src="/static/images/logo.png?t={{ now }}" alt="Текущий логотип" class="img-fluid" style="max-height: 100px; max-width: 100%;" onerror="this.onerror=null; this.src='/static/images/logo_backup.png?t={{ now }}'; setTimeout(() => { if (this.naturalWidth === 0) { this.style.display = 'none'; this.parentNode.innerHTML += '<p class=\'text-muted\'>Логотип не загружен или повреждён</p>'; } }, 500);">
+                            {% else %}
+                            <p class="text-muted">Логотип не загружен</p>
+                            {% endif %}
+                        </div>
+                        {% if logo_url %}
+                        <form action="{{ url_for('admin_routes.delete_logo') }}" method="post" class="d-inline mt-4">
+                            <button type="submit" class="btn btn-danger btn-xs"><i class="fas fa-trash"></i> Удалить</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Загрузка фонового изображения -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Загрузка фонового изображения</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('admin_routes.upload_background') }}" method="post" enctype="multipart/form-data" class="mb-3">
+                        <div class="mb-3">
+                            <label class="form-label">Выберите фоновое изображение</label>
+                            <div class="custom-file-input">
+                                <input type="file" class="form-control" id="background" name="background" accept=".jpg,.jpeg,.png" required>
+                                <label for="background" class="custom-file-label">
+                                    <i class="fas fa-file-image"></i> Выберите файл
+                                </label>
+                            </div>
+                            <div class="form-text">Поддерживаемые форматы: JPG, JPEG, PNG</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-upload"></i> Загрузить</button>
+                    </form>
+                    
+                    <div class="current-background mt-3">
+                        <h6>Текущий фон:</h6>
+                        <div class="background-preview">
+                            {% if background_url %}
+                            <img src="/static/images/real_estate_bg.jpg" alt="Текущий фон" class="img-fluid" style="max-height: 150px; width: 100%; object-fit: cover;">
+                            {% else %}
+                            <p class="text-muted">Фоновое изображение не загружено</p>
+                            {% endif %}
+                        </div>
+                        {% if background_url %}
+                        <form action="{{ url_for('admin_routes.delete_background') }}" method="post" class="d-inline mt-4">
+                            <button type="submit" class="btn btn-danger btn-xs"><i class="fas fa-trash"></i> Удалить</button>
+                        </form>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
@@ -84,26 +208,59 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Обработка формы общих настроек
-    document.getElementById('generalSettingsForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        // Здесь будет код для сохранения общих настроек
-        alert('Общие настройки сохранены');
-    });
+    // Обновление текста кнопки выбора файла
+    function updateFileLabel(input) {
+        const label = input.nextElementSibling;
+        if (input.files.length > 0) {
+            label.innerHTML = `<i class="fas fa-file-image"></i> ${input.files[0].name}`;
+        } else {
+            label.innerHTML = `<i class="fas fa-file-image"></i> Выберите файл`;
+        }
+    }
     
-    // Обработка формы настроек безопасности
-    document.getElementById('securitySettingsForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        // Здесь будет код для сохранения настроек безопасности
-        alert('Настройки безопасности сохранены');
-    });
-    
-    // Обработка формы настроек уведомлений
-    document.getElementById('notificationSettingsForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        // Здесь будет код для сохранения настроек уведомлений
-        alert('Настройки уведомлений сохранены');
-    });
+    // Предпросмотр логотипа
+    const logoInput = document.getElementById('logo');
+    if (logoInput) {
+        logoInput.addEventListener('change', function(e) {
+            updateFileLabel(this);
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.querySelector('.logo-preview img');
+                    if (preview) {
+                        preview.src = e.target.result;
+                    } else {
+                        const logoPreview = document.querySelector('.logo-preview');
+                        logoPreview.innerHTML = `<img src="${e.target.result}" alt="Предпросмотр логотипа" class="img-fluid" style="max-height: 100px;">`;
+                    }
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    // Предпросмотр фона
+    const backgroundInput = document.getElementById('background');
+    if (backgroundInput) {
+        backgroundInput.addEventListener('change', function(e) {
+            updateFileLabel(this);
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.querySelector('.background-preview img');
+                    if (preview) {
+                        preview.src = e.target.result;
+                    } else {
+                        const bgPreview = document.querySelector('.background-preview');
+                        bgPreview.innerHTML = `<img src="${e.target.result}" alt="Предпросмотр фона" class="img-fluid" style="max-height: 150px; width: 100%; object-fit: cover;">`;
+                    }
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+    }
 });
 </script>
 {% endblock %} 
