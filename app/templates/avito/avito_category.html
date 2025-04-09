@@ -1,0 +1,489 @@
+{% extends "base.html" %}
+
+{% block title %}Авито {{ category }}{% endblock %}
+{% block page_title %}Авито {{ category }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Стили для корректного отображения блоков на всю ширину страницы */
+    .container-fluid {
+        width: 100%;
+        padding-right: 20px;
+        padding-left: 20px;
+    }
+    
+    .main-content {
+        margin-left: 60px;
+        width: calc(100% - 60px);
+        max-width: 100%;
+        padding: 80px 20px 30px 20px;
+    }
+    
+    /* Стили для карточек с объявлениями */
+    .ad-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        margin-bottom: 20px;
+        overflow: hidden;
+        transition: transform 0.3s;
+    }
+    
+    .ad-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .ad-header {
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .ad-body {
+        padding: 15px;
+    }
+    
+    .ad-footer {
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-top: 1px solid #dee2e6;
+    }
+    
+    .phone-badge {
+        display: inline-block;
+        background-color: #3498db;
+        color: white;
+        border-radius: 20px;
+        padding: 5px 12px;
+        margin: 5px;
+        font-size: 13px;
+    }
+    
+    .category-tabs {
+        margin-bottom: 20px;
+    }
+    
+    .category-tabs .nav-link {
+        color: #2c3e50;
+        padding: 10px 20px;
+        border-radius: 5px 5px 0 0;
+    }
+    
+    .category-tabs .nav-link.active {
+        background-color: #3498db;
+        color: white;
+    }
+    
+    .stats-card {
+        border-radius: 10px;
+        background-color: white;
+        margin-bottom: 20px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+    
+    .stats-number {
+        font-size: 36px;
+        font-weight: bold;
+        color: #2c3e50;
+    }
+    
+    .stats-label {
+        color: #7f8c8d;
+        font-size: 14px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Заголовок и кнопки управления -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Авито - {{ category }}</h1>
+        <div>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addNumberModal">
+                <i class="fas fa-plus"></i> Добавить номер
+            </button>
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#bulkUploadModal">
+                <i class="fas fa-upload"></i> Массовая загрузка
+            </button>
+        </div>
+    </div>
+    
+    <!-- Вкладки категорий -->
+    <ul class="nav nav-tabs category-tabs">
+        <li class="nav-item">
+            <a class="nav-link {% if category == 'Вторички' %}active{% endif %}" href="{{ url_for('avito.avito_category', category='Вторички') }}">Вторички</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if category == 'Новостройки' %}active{% endif %}" href="{{ url_for('avito.avito_category', category='Новостройки') }}">Новостройки</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if category == 'Загородная' %}active{% endif %}" href="{{ url_for('avito.avito_category', category='Загородная') }}">Загородная</a>
+        </li>
+    </ul>
+    
+    <!-- Статистика -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-number" id="total-ads">{{ grouped_numbers|length }}</div>
+                <div class="stats-label">Всего объявлений</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-number" id="total-phones">0</div>
+                <div class="stats-label">Всего телефонов</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-number" id="active-ads">0</div>
+                <div class="stats-label">Активных объявлений</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-number" id="inactive-ads">0</div>
+                <div class="stats-label">Неактивных объявлений</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Фильтры -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Фильтры</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="statusFilter">Статус</label>
+                        <select class="form-control" id="statusFilter">
+                            <option value="all">Все</option>
+                            <option value="active">Активные</option>
+                            <option value="inactive">Неактивные</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="phoneFilter">Поиск по номеру</label>
+                        <input type="text" class="form-control" id="phoneFilter" placeholder="Введите номер телефона">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="dateFilter">Дата публикации</label>
+                        <input type="date" class="form-control" id="dateFilter">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Список объявлений -->
+    <div class="row" id="ads-container">
+        {% for ad_id, ad_info in grouped_numbers.items() %}
+        <div class="col-md-4 mb-4 ad-item" data-status="{{ ad_info.status|default('active') }}" data-phone="{{ ad_info.phone }}">
+            <div class="ad-card">
+                <div class="ad-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">ID: {{ ad_id }}</h5>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input status-toggle" type="checkbox" id="status-{{ ad_id }}" 
+                               data-id="{{ ad_id }}" {% if ad_info.status|default('active') == 'active' %}checked{% endif %}>
+                        <label class="form-check-label" for="status-{{ ad_id }}">
+                            {% if ad_info.status|default('active') == 'active' %}
+                                <span class="text-success">Активно</span>
+                            {% else %}
+                                <span class="text-danger">Неактивно</span>
+                            {% endif %}
+                        </label>
+                    </div>
+                </div>
+                <div class="ad-body">
+                    <p><strong>Телефон:</strong> <span class="phone-badge">{{ ad_info.phone }}</span></p>
+                    <p><strong>Дата публикации:</strong> {{ ad_info.created_at|default('Н/Д') }}</p>
+                    <p><strong>Последнее обновление:</strong> {{ ad_info.updated_at|default('Н/Д') }}</p>
+                    <p><strong>Количество просмотров:</strong> {{ ad_info.views|default(0) }}</p>
+                </div>
+                <div class="ad-footer">
+                    <button type="button" class="btn btn-sm btn-primary edit-ad" data-id="{{ ad_id }}">
+                        <i class="fas fa-edit"></i> Редактировать
+                    </button>
+                    <button type="button" class="btn btn-sm btn-danger delete-ad" data-id="{{ ad_id }}">
+                        <i class="fas fa-trash"></i> Удалить
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Модальное окно для добавления номера -->
+<div class="modal fade" id="addNumberModal" tabindex="-1" aria-labelledby="addNumberModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addNumberModalLabel">Добавить номер</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addNumberForm">
+                    <div class="mb-3">
+                        <label for="phoneNumber" class="form-label">Номер телефона</label>
+                        <input type="text" class="form-control" id="phoneNumber" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="adStatus" class="form-label">Статус</label>
+                        <select class="form-select" id="adStatus">
+                            <option value="active">Активно</option>
+                            <option value="inactive">Неактивно</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="saveNumberBtn">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для массовой загрузки -->
+<div class="modal fade" id="bulkUploadModal" tabindex="-1" aria-labelledby="bulkUploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bulkUploadModalLabel">Массовая загрузка номеров</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <form id="bulkUploadForm">
+                    <div class="mb-3">
+                        <label for="phoneNumbers" class="form-label">Номера телефонов</label>
+                        <textarea class="form-control" id="phoneNumbers" rows="10" placeholder="Введите номера, каждый с новой строки" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="bulkStatus" class="form-label">Статус для всех номеров</label>
+                        <select class="form-select" id="bulkStatus">
+                            <option value="active">Активно</option>
+                            <option value="inactive">Неактивно</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="bulkUploadBtn">Загрузить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для редактирования объявления -->
+<div class="modal fade" id="editAdModal" tabindex="-1" aria-labelledby="editAdModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editAdModalLabel">Редактировать объявление</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editAdForm">
+                    <input type="hidden" id="editAdId">
+                    <div class="mb-3">
+                        <label for="editPhoneNumber" class="form-label">Номер телефона</label>
+                        <input type="text" class="form-control" id="editPhoneNumber" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editAdStatus" class="form-label">Статус</label>
+                        <select class="form-select" id="editAdStatus">
+                            <option value="active">Активно</option>
+                            <option value="inactive">Неактивно</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="updateAdBtn">Сохранить изменения</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Подсчет статистики
+        function updateStats() {
+            const totalAds = $('.ad-item').length;
+            const totalPhones = new Set();
+            const activeAds = $('.ad-item[data-status="active"]').length;
+            const inactiveAds = totalAds - activeAds;
+            
+            $('.ad-item').each(function() {
+                totalPhones.add($(this).data('phone'));
+            });
+            
+            $('#total-ads').text(totalAds);
+            $('#total-phones').text(totalPhones.size);
+            $('#active-ads').text(activeAds);
+            $('#inactive-ads').text(inactiveAds);
+        }
+        
+        // Фильтрация объявлений
+        $('#statusFilter, #phoneFilter, #dateFilter').on('change keyup', function() {
+            const statusFilter = $('#statusFilter').val();
+            const phoneFilter = $('#phoneFilter').val().toLowerCase();
+            const dateFilter = $('#dateFilter').val();
+            
+            $('.ad-item').each(function() {
+                let show = true;
+                const status = $(this).data('status');
+                const phone = $(this).data('phone').toString();
+                
+                // Фильтр по статусу
+                if (statusFilter !== 'all' && status !== statusFilter) {
+                    show = false;
+                }
+                
+                // Фильтр по номеру телефона
+                if (phoneFilter && !phone.includes(phoneFilter)) {
+                    show = false;
+                }
+                
+                // Фильтр по дате (в реальном приложении нужно будет преобразовать даты)
+                // if (dateFilter && адрес_создан_дата != dateFilter) {
+                //     show = false;
+                // }
+                
+                if (show) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        });
+        
+        // Переключение статуса объявления
+        $('.status-toggle').change(function() {
+            const adId = $(this).data('id');
+            const isActive = $(this).is(':checked');
+            const status = isActive ? 'active' : 'inactive';
+            const statusText = isActive ? 'Активно' : 'Неактивно';
+            const statusClass = isActive ? 'text-success' : 'text-danger';
+            
+            // В реальном приложении здесь будет AJAX запрос к бэкенду для обновления статуса
+            
+            // Обновление отображения статуса
+            $(this).closest('.ad-card').find('.form-check-label span')
+                .removeClass('text-success text-danger')
+                .addClass(statusClass)
+                .text(statusText);
+                
+            $(this).closest('.ad-item').attr('data-status', status);
+            
+            // Обновление статистики
+            updateStats();
+        });
+        
+        // Редактирование объявления
+        $('.edit-ad').click(function() {
+            const adId = $(this).data('id');
+            const adCard = $(this).closest('.ad-card');
+            const phone = adCard.find('.phone-badge').text();
+            const status = adCard.find('.status-toggle').is(':checked') ? 'active' : 'inactive';
+            
+            $('#editAdId').val(adId);
+            $('#editPhoneNumber').val(phone);
+            $('#editAdStatus').val(status);
+            
+            $('#editAdModal').modal('show');
+        });
+        
+        // Сохранение изменений объявления
+        $('#updateAdBtn').click(function() {
+            const adId = $('#editAdId').val();
+            const phone = $('#editPhoneNumber').val();
+            const status = $('#editAdStatus').val();
+            
+            // В реальном приложении здесь будет AJAX запрос к бэкенду для обновления данных
+            
+            // Обновление отображения в интерфейсе
+            const adCard = $(`[data-id="${adId}"]`).closest('.ad-card');
+            adCard.find('.phone-badge').text(phone);
+            
+            const statusToggle = adCard.find('.status-toggle');
+            statusToggle.prop('checked', status === 'active');
+            statusToggle.change(); // Триггер события для обновления отображения
+            
+            $('#editAdModal').modal('hide');
+        });
+        
+        // Удаление объявления
+        $('.delete-ad').click(function() {
+            const adId = $(this).data('id');
+            
+            if (confirm('Вы уверены, что хотите удалить это объявление?')) {
+                // В реальном приложении здесь будет AJAX запрос к бэкенду для удаления
+                
+                // Удаление карточки из интерфейса
+                $(this).closest('.ad-item').remove();
+                
+                // Обновление статистики
+                updateStats();
+            }
+        });
+        
+        // Добавление нового номера
+        $('#saveNumberBtn').click(function() {
+            const phone = $('#phoneNumber').val();
+            const status = $('#adStatus').val();
+            
+            if (!phone) {
+                alert('Введите номер телефона');
+                return;
+            }
+            
+            // В реальном приложении здесь будет AJAX запрос к бэкенду для добавления
+            
+            // Можно добавить новую карточку в интерфейс
+            // const newAdCard = `...`;
+            // $('#ads-container').prepend(newAdCard);
+            
+            $('#addNumberModal').modal('hide');
+            alert('Номер успешно добавлен');
+            
+            // Обновление статистики
+            // updateStats();
+        });
+        
+        // Массовая загрузка номеров
+        $('#bulkUploadBtn').click(function() {
+            const numbersText = $('#phoneNumbers').val();
+            const status = $('#bulkStatus').val();
+            
+            if (!numbersText) {
+                alert('Введите номера телефонов');
+                return;
+            }
+            
+            const numbers = numbersText.split('\n').map(n => n.trim()).filter(n => n);
+            
+            // В реальном приложении здесь будет AJAX запрос к бэкенду для массовой загрузки
+            
+            $('#bulkUploadModal').modal('hide');
+            alert(`Успешно загружено ${numbers.length} номеров`);
+        });
+        
+        // Инициализация
+        updateStats();
+    });
+</script>
+{% endblock %} 
