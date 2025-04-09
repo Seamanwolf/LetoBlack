@@ -756,7 +756,7 @@ def add_broker():
                 if not dept_result:
                     return jsonify({'success': False, 'message': 'Отдел не найден'}), 404
                 department = dept_result['name']
-                except ValueError:
+            except ValueError:
                 return jsonify({'success': False, 'message': 'Неверный ID отдела'}), 400
             except Exception as e:
                 logger.error(f"Ошибка при получении отдела: {str(e)}")
@@ -1048,9 +1048,9 @@ def delete_employee_api():
     # Пробуем получить ID из разных источников, так как jQuery может отправлять данные по-разному
     employee_id = request.args.get('id') or request.form.get('id')
     logger.debug(f"Запрошено удаление сотрудника с ID: {employee_id}")
-        
-        if not employee_id:
-            logger.warning("ID сотрудника не указан в запросе")
+    
+    if not employee_id:
+        logger.warning("ID сотрудника не указан в запросе")
         return jsonify({'success': False, 'message': 'ID сотрудника не указан'})
     
     try:
@@ -1143,9 +1143,9 @@ def personnel_dashboard():
         return redirect(url_for('main.index'))
     
     connection = get_db_connection()
-        cursor = connection.cursor(dictionary=True)
-        
-        # Получение статистики
+    cursor = connection.cursor(dictionary=True)
+    
+    # Получение статистики
     cursor.execute("SELECT COUNT(*) as total FROM User WHERE status != 'fired'")
     total_employees = cursor.fetchone()['total']
     
@@ -1159,24 +1159,21 @@ def personnel_dashboard():
     departments_count = cursor.fetchone()['departments']
     
     # Получение данных для графиков
-    # Динамика численности персонала за последние 30 дней
     cursor.execute("""
         SELECT DATE(created_at) as date, COUNT(*) as count 
-            FROM User
+        FROM User
         WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
         GROUP BY DATE(created_at)
         ORDER BY date
     """)
     staff_dynamics = cursor.fetchall()
     
-    # Преобразование данных для графика
     dates = []
     staff_counts = []
     for item in staff_dynamics:
         dates.append(item['date'].strftime('%d.%m'))
         staff_counts.append(item['count'])
     
-    # Распределение по отделам
     cursor.execute("""
         SELECT d.name, COUNT(u.id) as count
         FROM Department d
@@ -1191,10 +1188,9 @@ def personnel_dashboard():
         department_names.append(item['name'])
         department_counts.append(item['count'])
     
-    # Последние наймы
     cursor.execute("""
         SELECT u.full_name, d.name as department, u.position, u.created_at as hire_date
-                FROM User u
+        FROM User u
         JOIN Department d ON u.department_id = d.id
         WHERE u.status != 'fired'
         ORDER BY u.created_at DESC
@@ -1202,32 +1198,31 @@ def personnel_dashboard():
     """)
     recent_hires = cursor.fetchall()
     
-    # Последние увольнения
     cursor.execute("""
         SELECT u.full_name, d.name as department, u.position, u.fire_date
-                    FROM User u
+        FROM User u
         JOIN Department d ON u.department_id = d.id
         WHERE u.status = 'fired' AND u.fire_date IS NOT NULL
-                    ORDER BY u.fire_date DESC
+        ORDER BY u.fire_date DESC
         LIMIT 5
     """)
     recent_fires = cursor.fetchall()
     
-            cursor.close()
+    cursor.close()
     connection.commit()
-            connection.close()
-
+    connection.close()
+    
     return render_template('admin/personnel_dashboard.html',
-                          total_employees=total_employees,
-                          active_employees=active_employees,
-                          fired_employees=fired_employees,
-                          departments_count=departments_count,
-                          dates=dates,
-                          staff_counts=staff_counts,
-                          department_names=department_names,
-                          department_counts=department_counts,
-                          recent_hires=recent_hires,
-                          recent_fires=recent_fires)
+                         total_employees=total_employees,
+                         active_employees=active_employees,
+                         fired_employees=fired_employees,
+                         departments_count=departments_count,
+                         dates=dates,
+                         staff_counts=staff_counts,
+                         department_names=department_names,
+                         department_counts=department_counts,
+                         recent_hires=recent_hires,
+                         recent_fires=recent_fires)
 
 @admin_bp.route('/admin/personnel')
 @login_required
@@ -1236,7 +1231,7 @@ def personnel():
     if current_user.role != 'admin':
         flash('У вас нет доступа к этой странице', 'danger')
         return redirect(url_for('main.index'))
-        
+    
     try:
         conn = create_db_connection()
         cursor = conn.cursor(dictionary=True)
@@ -1271,7 +1266,7 @@ def personnel():
         # Создаем словарь с количеством сотрудников по отделам
         employees_by_department = {}
         for department in departments:
-        cursor.execute("""
+            cursor.execute("""
                 SELECT COUNT(*) as count
                 FROM User
                 WHERE department_id = %s AND role != 'admin'
