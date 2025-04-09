@@ -58,7 +58,8 @@ def create_app(config_class=Config):
     from app.itinvent.itinvent import itinvent_bp
     from app.userlist.userlist import userlist_bp
     from app.news import news_bp
-    from app.routes import login_routes_bp
+    from app.routes.auth import auth_bp
+    from app.routes.admin import admin_routes_bp
     from app.routes.api import api_bp
     
     app.register_blueprint(main_bp)
