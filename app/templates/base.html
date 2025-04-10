@@ -191,9 +191,128 @@
             margin-right: auto;
             margin-left: auto;
         }
+        
+        /* Toast уведомления */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        
+        .toast {
+            min-width: 250px;
+            margin-bottom: 10px;
+            background-color: white;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            animation: slideIn 0.3s ease-in-out;
+        }
+        
+        .toast.success {
+            border-left: 4px solid #28a745;
+        }
+        
+        .toast.error {
+            border-left: 4px solid #dc3545;
+        }
+        
+        .toast.info {
+            border-left: 4px solid #17a2b8;
+        }
+        
+        .toast.warning {
+            border-left: 4px solid #ffc107;
+        }
+        
+        .toast-header {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            background-color: rgba(0, 0, 0, 0.03);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .toast-body {
+            padding: 12px;
+        }
+        
+        .toast-title {
+            font-weight: 600;
+            margin-right: auto;
+        }
+        
+        .toast-close {
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+        
+        .toast-close:hover {
+            opacity: 1;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+            }
+        }
+        
+        /* Стили для кнопок */
+        .btn-icon {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        
+        .btn-icon.btn-sm {
+            width: 30px;
+            height: 30px;
+            font-size: 0.875rem;
+        }
+        
+        .btn-icon.btn-lg {
+            width: 48px;
+            height: 48px;
+            font-size: 1.25rem;
+        }
+        
+        /* Стиль для кнопки добавления */
+        .btn-add {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            border-radius: 0.2rem;
+        }
     </style>
 </head>
 <body>
+    <!-- Контейнер для toast уведомлений -->
+    <div class="toast-container"></div>
+    
     <!-- Боковая панель -->
     <div class="sidebar">
         {% set accessible_modules = get_accessible_modules() %}

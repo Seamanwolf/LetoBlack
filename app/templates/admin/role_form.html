@@ -10,12 +10,12 @@
         <div class="col-md-12">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h2>{% if is_new %}Создание новой роли{% else %}Редактирование роли: {{ role.display_name }}{% endif %}</h2>
-                <a href="{{ url_for('admin.roles_list') }}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Назад к списку ролей
+                <a href="{{ url_for('admin.roles_list') }}" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-arrow-left"></i> Назад к списку
                 </a>
             </div>
             
-            <form method="POST" action="{{ url_for('admin.role_create') if is_new else url_for('admin.role_edit', role_id=role.id) }}">
+            <form method="POST" action="{{ url_for('admin.role_create') if is_new else url_for('admin.role_edit', role_id=role.id) }}" id="roleForm">
                 <div class="row">
                     <!-- Основная информация о роли -->
                     <div class="col-md-4">
@@ -25,14 +25,15 @@
                             </div>
                             <div class="card-body">
                                 <div class="form-group mb-3">
-                                    <label for="name">Системное имя</label>
+                                    <label for="name">Системное имя <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" id="name" name="name" value="{{ role.name if role else '' }}" {% if not is_new %}readonly{% endif %} required>
-                                    <small class="form-text text-muted">Используется в системе. Только латинские буквы, цифры и подчеркивания.</small>
+                                    <small class="form-text text-muted">Используется в системе. <strong>Только латинские буквы</strong>, цифры и подчеркивания (например, "admin", "manager").</small>
                                 </div>
                                 
                                 <div class="form-group mb-3">
-                                    <label for="display_name">Отображаемое имя</label>
+                                    <label for="display_name">Отображаемое имя <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" id="display_name" name="display_name" value="{{ role.display_name if role else '' }}" {% if role and role.is_system %}readonly{% endif %} required>
+                                    <small class="form-text text-muted">Имя роли, отображаемое в интерфейсе. <strong>Рекомендуется использовать кириллицу</strong> (например, "Администратор", "Менеджер").</small>
                                 </div>
                                 
                                 {% if is_new %}
@@ -152,6 +153,53 @@
 
 {% block scripts %}
 <script>
+    // Функция для отображения toast-уведомлений
+    function showToast(title, message, type = 'info') {
+        const toastId = 'toast-' + Date.now();
+        const toast = `
+            <div class="toast ${type}" id="${toastId}">
+                <div class="toast-header">
+                    <span class="toast-title">${title}</span>
+                    <button class="toast-close">&times;</button>
+                </div>
+                <div class="toast-body">
+                    ${message}
+                </div>
+            </div>
+        `;
+        
+        $('.toast-container').append(toast);
+        
+        // Автоматическое скрытие через 5 секунд
+        setTimeout(function() {
+            $(`#${toastId}`).css('animation', 'fadeOut 0.3s').on('animationend', function() {
+                $(this).remove();
+            });
+        }, 5000);
+        
+        // Обработчик закрытия
+        $(`#${toastId} .toast-close`).click(function() {
+            $(`#${toastId}`).css('animation', 'fadeOut 0.3s').on('animationend', function() {
+                $(this).remove();
+            });
+        });
+    }
+    
+    // Функция для транслитерации кириллицы в латиницу
+    function transliterate(text) {
+        const map = {
+            'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'e', 'ж': 'zh',
+            'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n', 'о': 'o',
+            'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u', 'ф': 'f', 'х': 'h', 'ц': 'ts',
+            'ч': 'ch', 'ш': 'sh', 'щ': 'sch', 'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu',
+            'я': 'ya', ' ': '_', '-': '_'
+        };
+        
+        return text.toLowerCase().split('').map(char => {
+            return map[char] || char;
+        }).join('').replace(/[^a-z0-9_]/g, '');
+    }
+
     $(document).ready(function() {
         // Запрещаем использование пробелов и специальных символов в системном имени
         $('#name').on('keypress', function(e) {
@@ -166,13 +214,38 @@
         // Преобразуем отображаемое имя в системное при создании новой роли
         $('#display_name').on('input', function() {
             if ($('#name').val() === '' && !$('#name').prop('readonly')) {
-                var displayName = $(this).val().toLowerCase();
-                var systemName = displayName
-                    .replace(/[^a-z0-9\s_]/g, '') // Только латинские буквы, цифры, пробелы и подчеркивания
-                    .replace(/\s+/g, '_');        // Заменяем пробелы на подчеркивания
+                var displayName = $(this).val();
+                var systemName = transliterate(displayName);
                 
                 $('#name').val(systemName);
             }
+        });
+        
+        // Обработка отправки формы с уведомлениями
+        $('#roleForm').on('submit', function(e) {
+            e.preventDefault();
+            const form = $(this);
+            const url = form.attr('action');
+            
+            $.ajax({
+                type: 'POST',
+                url: url,
+                data: form.serialize(),
+                success: function(response) {
+                    if (response.success) {
+                        showToast('Успешно', 'Данные роли успешно сохранены', 'success');
+                        // Перенаправление на страницу с ролями через 1 секунду
+                        setTimeout(function() {
+                            window.location.href = "{{ url_for('admin.roles_list') }}";
+                        }, 1000);
+                    } else {
+                        showToast('Ошибка', response.message || 'Произошла ошибка при сохранении роли', 'error');
+                    }
+                },
+                error: function() {
+                    showToast('Ошибка', 'Произошла ошибка при отправке данных', 'error');
+                }
+            });
         });
     });
 </script>

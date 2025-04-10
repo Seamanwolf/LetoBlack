@@ -50,22 +50,35 @@ def role_create():
         # Проверка на существование роли с таким именем
         existing_role = role_dao.get_role_by_name(name)
         if existing_role:
-            flash(f'Роль с именем "{name}" уже существует', 'danger')
-            return render_template(
-                'admin/role_form.html',
-                role=None,
-                is_new=True,
-                active_page='roles'
-            )
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': f'Роль с именем "{name}" уже существует'})
+            else:
+                flash(f'Роль с именем "{name}" уже существует', 'danger')
+                return render_template(
+                    'admin/role_form.html',
+                    role=None,
+                    is_new=True,
+                    active_page='roles'
+                )
         
         # Создаем новую роль
         role_id = role_dao.create_role(name, display_name, description, role_type)
         
         if role_id:
-            flash('Роль успешно создана', 'success')
-            return redirect(url_for('admin.role_edit', role_id=role_id))
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({
+                    'success': True, 
+                    'message': 'Роль успешно создана',
+                    'redirect': url_for('admin.role_edit', role_id=role_id)
+                })
+            else:
+                flash('Роль успешно создана', 'success')
+                return redirect(url_for('admin.role_edit', role_id=role_id))
         else:
-            flash('Ошибка при создании роли', 'danger')
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': 'Ошибка при создании роли'})
+            else:
+                flash('Ошибка при создании роли', 'danger')
     
     return render_template(
         'admin/role_form.html',
@@ -88,8 +101,11 @@ def role_edit(role_id):
     role = role_dao.get_role_by_id(role_id)
     
     if not role:
-        flash('Роль не найдена', 'danger')
-        return redirect(url_for('admin.roles_list'))
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'message': 'Роль не найдена'})
+        else:
+            flash('Роль не найдена', 'danger')
+            return redirect(url_for('admin.roles_list'))
     
     # Получаем список всех модулей
     modules = role_dao.get_all_modules()
@@ -98,17 +114,19 @@ def role_edit(role_id):
     permissions = role_dao.get_role_permissions(role_id)
     
     if request.method == 'POST':
+        success = True
+        message = 'Роль успешно обновлена'
+        
         # Если роль системная, можно менять только описание
         if not role.get('is_system'):
             display_name = request.form.get('display_name')
             description = request.form.get('description')
             
-            success = role_dao.update_role(role_id, display_name, description)
+            update_success = role_dao.update_role(role_id, display_name, description)
             
-            if success:
-                flash('Роль успешно обновлена', 'success')
-            else:
-                flash('Ошибка при обновлении роли', 'danger')
+            if not update_success:
+                success = False
+                message = 'Ошибка при обновлении роли'
         
         # Обрабатываем изменения разрешений
         for module in modules:
@@ -120,10 +138,22 @@ def role_edit(role_id):
             can_edit = request.form.get(f'{prefix}edit') == 'on'
             can_delete = request.form.get(f'{prefix}delete') == 'on'
             
-            role_dao.set_role_permissions(role_id, module_id, can_view, can_create, can_edit, can_delete)
+            perm_success = role_dao.set_role_permissions(role_id, module_id, can_view, can_create, can_edit, can_delete)
+            
+            if not perm_success:
+                success = False
+                message = 'Ошибка при обновлении разрешений'
         
-        flash('Разрешения успешно обновлены', 'success')
-        return redirect(url_for('admin.role_edit', role_id=role_id))
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({
+                'success': success,
+                'message': message,
+                'redirect': url_for('admin.roles_list') if success else None
+            })
+        else:
+            flash(message, 'success' if success else 'danger')
+            if success:
+                return redirect(url_for('admin.roles_list'))
     
     return render_template(
         'admin/role_form.html',
