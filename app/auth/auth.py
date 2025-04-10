@@ -100,8 +100,8 @@ def login():
                     redirect_url = url_for('hr.candidates_list')
                 elif user.role == 'user':
                     # Для тестовой роли "user" проверяем доступ к модулям ВАТС и Колл-центр
-                    ватс_url = "/vats"
-                    callcenter_url = "/callcenter"
+                    ватс_url = "/vats"  # согласно данным из базы для модуля ВАТС (id=11)
+                    callcenter_url = "/vats"  # согласно данным из базы для модуля Колл-центр (id=6)
                     
                     # Сначала проверяем доступ к Колл-центру
                     if modules and any(m['name'] == 'Колл-центр' for m in modules):
