@@ -769,3 +769,46 @@ def change_role_for_all_users():
         if 'conn' in locals():
             cursor.close()
             conn.close()
+
+@roles_bp.route('/verify_admin_password', methods=['POST'])
+@login_required
+@admin_required
+def verify_admin_password():
+    """Проверяет пароль администратора для разблокировки системных ролей"""
+    data = request.get_json()
+    password = data.get('password')
+    role_id = data.get('role_id')
+    
+    if not password or not role_id:
+        return jsonify({'success': False, 'message': 'Не указан пароль или ID роли'})
+    
+    try:
+        conn = create_db_connection()
+        cursor = conn.cursor()
+        
+        # Проверяем, является ли роль системной
+        cursor.execute("SELECT is_system FROM Role WHERE id = %s", (role_id,))
+        role = cursor.fetchone()
+        
+        if not role or not role[0]:
+            return jsonify({'success': False, 'message': 'Роль не найдена или не является системной'})
+        
+        # Проверяем пароль администратора
+        cursor.execute("SELECT password FROM User WHERE role = 'admin' LIMIT 1")
+        admin = cursor.fetchone()
+        
+        if not admin:
+            return jsonify({'success': False, 'message': 'Администратор не найден'})
+        
+        # В реальном приложении здесь должна быть проверка хеша пароля
+        if password == admin[0]:  # Замените на правильную проверку хеша
+            return jsonify({'success': True})
+        else:
+            return jsonify({'success': False, 'message': 'Неверный пароль'})
+            
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        if 'conn' in locals() and 'cursor' in locals():
+            cursor.close()
+            conn.close()

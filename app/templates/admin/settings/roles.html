@@ -104,6 +104,32 @@
     .modal {
         background-color: rgba(0, 0, 0, 0.5);
     }
+    
+    .system-role-row {
+        background-color: #e3f2fd !important;
+    }
+    .system-role-row td {
+        position: relative;
+    }
+    .system-role-row .lock-icon {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #1976d2;
+        cursor: pointer;
+    }
+    .btn-group {
+        position: relative;
+    }
+    .btn-group .btn {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+    .btn-group.unlocked .btn {
+        opacity: 1;
+        pointer-events: auto;
+    }
 </style>
 
 <!-- Контейнер для toast-уведомлений -->
@@ -176,7 +202,7 @@
             </thead>
             <tbody>
                 {% for role in roles %}
-                <tr>
+                <tr class="{% if role.is_system %}system-role-row{% endif %}">
                     <td>{{ role.id }}</td>
                     <td>{{ role.name }}</td>
                     <td>{{ role.display_name }}</td>
@@ -191,31 +217,34 @@
                     </td>
                     <td>{{ role.description }}</td>
                     <td>
-                        <div class="btn-group">
-                                            <button type="button" class="btn btn-sm btn-outline-primary btn-icon edit-role" 
+                        <div class="btn-group {% if not role.is_system %}unlocked{% endif %}" data-role-id="{{ role.id }}">
+                            <button type="button" class="btn btn-sm btn-outline-primary btn-icon edit-role" 
                                     data-role-id="{{ role.id }}"
                                     data-role-name="{{ role.name }}"
                                     data-role-display="{{ role.display_name }}"
                                     data-role-type="{{ role.type }}"
                                     data-role-desc="{{ role.description }}"
-                                                    data-role-system="{{ role.is_system }}"
-                                                    title="Редактировать роль">
-                                                <i class="fas fa-pencil-alt"></i>
+                                    data-role-system="{{ role.is_system }}"
+                                    title="Редактировать роль">
+                                <i class="fas fa-pencil-alt"></i>
                             </button>
                             {% if not role.is_system %}
-                                            <button type="button" class="btn btn-sm btn-outline-danger btn-icon delete-role" 
+                            <button type="button" class="btn btn-sm btn-outline-danger btn-icon delete-role" 
                                     data-role-id="{{ role.id }}" 
-                                                    data-role-name="{{ role.display_name }}"
-                                                    title="Удалить роль">
-                                                <i class="fas fa-trash-alt"></i>
+                                    data-role-name="{{ role.display_name }}"
+                                    title="Удалить роль">
+                                <i class="fas fa-trash-alt"></i>
                             </button>
                             {% endif %}
-                                            <button type="button" class="btn btn-sm btn-outline-info btn-icon edit-permissions" 
+                            <button type="button" class="btn btn-sm btn-outline-info btn-icon edit-permissions" 
                                     data-role-id="{{ role.id }}"
-                                                    data-role-name="{{ role.display_name }}"
-                                                    title="Управление разрешениями">
-                                                <i class="fas fa-key"></i>
+                                    data-role-name="{{ role.display_name }}"
+                                    title="Управление разрешениями">
+                                <i class="fas fa-key"></i>
                             </button>
+                            {% if role.is_system %}
+                            <i class="fas fa-lock lock-icon" title="Разблокировать для редактирования"></i>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>
@@ -492,6 +521,28 @@
     </div>
 </div>
 
+<!-- Модальное окно для ввода пароля администратора -->
+<div class="modal fade" id="adminPasswordModal" tabindex="-1" aria-labelledby="adminPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="adminPasswordModalLabel">Подтверждение пароля администратора</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="adminPassword" class="form-label">Введите пароль администратора</label>
+                    <input type="password" class="form-control" id="adminPassword" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="confirmAdminPassword">Подтвердить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -508,124 +559,136 @@ document.addEventListener('DOMContentLoaded', function() {
     
     console.log('Инициализация обработчиков событий для страницы ролей');
     
+    // --- Начало: Логика модального окна пароля администратора ---
+    let adminPasswordCallback = null;
+    const adminPasswordModalEl = document.getElementById('adminPasswordModal');
+    const adminPasswordModal = new bootstrap.Modal(adminPasswordModalEl);
+    const adminPasswordField = document.getElementById('adminPassword');
+
+    function showAdminPasswordModal(callback) {
+        adminPasswordCallback = callback;
+        adminPasswordModal.show();
+    }
+
+    $('#confirmAdminPassword').on('click', function() {
+        const password = adminPasswordField.value;
+        if (!password) {
+            showToast('Пожалуйста, введите пароль администратора', 'error');
+            return;
+        }
+        
+        if (adminPasswordCallback) {
+            adminPasswordCallback(password); // Вызываем колбэк с паролем
+            adminPasswordModal.hide();
+        }
+    });
+
+    // Очистка поля и колбэка при закрытии модального окна
+    adminPasswordModalEl.addEventListener('hidden.bs.modal', function () {
+        adminPasswordField.value = '';
+        adminPasswordCallback = null;
+    });
+    // --- Конец: Логика модального окна пароля администратора ---
+    
     // Автоматическое создание системного имени из отображаемого имени
-        $('#roleDisplayName').on('input', function() {
-            var displayName = $(this).val().toLowerCase();
-            var systemName = displayName
-                .replace(/[^a-z0-9\s_]/g, '')
-                .replace(/\s+/g, '_');
-            $('#roleName').val(systemName);
-        });
+    $('#roleDisplayName').on('input', function() {
+        var displayName = $(this).val().toLowerCase();
+        var systemName = displayName
+            .replace(/[^a-z0-9\s_]/g, '')
+            .replace(/\s+/g, '_');
+        $('#roleName').val(systemName);
+    });
         
     // Обработчик для редактирования роли
     $('.edit-role').on('click', function() {
         console.log('Клик по кнопке редактирования роли');
-            var roleId = $(this).data('role-id');
-            var roleName = $(this).data('role-name');
-            var roleDisplay = $(this).data('role-display');
-            var roleType = $(this).data('role-type');
-            var roleDesc = $(this).data('role-desc');
+        var roleId = $(this).data('role-id');
+        var roleName = $(this).data('role-name');
+        var roleDisplay = $(this).data('role-display');
+        var roleType = $(this).data('role-type');
+        var roleDesc = $(this).data('role-desc');
         var isSystem = $(this).data('role-system') === 'True' || $(this).data('role-system') === true;
-            
-            $('#editRoleId').val(roleId);
-            $('#editRoleName').val(roleName);
-            $('#editRoleDisplayName').val(roleDisplay);
-            $('#editRoleType').val(roleType);
-            $('#editRoleDescription').val(roleDesc);
-            
+        
+        $('#editRoleId').val(roleId);
+        $('#editRoleName').val(roleName);
+        $('#editRoleDisplayName').val(roleDisplay);
+        $('#editRoleType').val(roleType);
+        $('#editRoleDescription').val(roleDesc);
+        
         // Для системных ролей отключаем возможность редактирования некоторых полей
-            if (isSystem) {
-                $('#editRoleDisplayName').prop('readonly', true);
-                $('#editRoleType').prop('disabled', true);
+        if (isSystem) {
+            $('#editRoleDisplayName').prop('readonly', true);
+            $('#editRoleType').prop('disabled', true);
             $('#systemRoleWarning').removeClass('d-none');
-            } else {
-                $('#editRoleDisplayName').prop('readonly', false);
-                $('#editRoleType').prop('disabled', false);
+        } else {
+            $('#editRoleDisplayName').prop('readonly', false);
+            $('#editRoleType').prop('disabled', false);
             $('#systemRoleWarning').addClass('d-none');
-            }
-            
+        }
+        
         var editModal = new bootstrap.Modal(document.getElementById('editRoleModal'));
         editModal.show();
-        });
+    });
         
-    // Обработчик для удаления роли
+    // Обработчик для кнопки удаления роли
     $('.delete-role').on('click', function() {
         console.log('Клик по кнопке удаления роли');
-            var roleId = $(this).data('role-id');
-            var roleName = $(this).data('role-name');
-            
-        // Показываем модальное окно подтверждения
-            $('#deleteRoleId').val(roleId);
-            $('#deleteRoleName').text(roleName);
-            
-        var deleteModal = new bootstrap.Modal(document.getElementById('deleteRoleModal'));
-        deleteModal.show();
-    });
-    
-    // Обработчик формы удаления роли
-    $('#deleteRoleForm').on('submit', function(e) {
-        e.preventDefault();
-        var roleId = $('#deleteRoleId').val();
-        var roleName = $('#deleteRoleName').text();
+        var roleId = $(this).data('role-id');
+        var roleName = $(this).data('role-name');
         
-        // Пытаемся удалить роль
-        $.ajax({
-            url: '{{ url_for("roles.delete_role") }}',
-            type: 'POST',
-            data: { role_id: roleId },
-            success: function(response) {
-                if (response.success) {
-                    showToast('Роль успешно удалена', 'success');
-                    // Удаляем строку из таблицы
-                    $(`button[data-role-id="${roleId}"]`).closest('tr').fadeOut(300, function() {
-                        $(this).remove();
-                    });
-                } else {
-                    if (response.error === 'role_has_users') {
-                        // Показываем toast-уведомление с кнопкой
-                        showToastWithAction('Невозможно удалить роль, так как она используется', 'error', 'Посмотреть список', function() {
-                            // Получаем ID роли из скрытого поля
-                            const roleId = $('#permissionRoleId').val();
+        // Запрашиваем пароль администратора
+        showAdminPasswordModal(function(adminPassword) {
+            // Пытаемся удалить роль после получения пароля
+            $.ajax({
+                url: '{{ url_for("roles.delete_role") }}',
+                type: 'POST',
+                data: { 
+                    role_id: roleId,
+                    admin_password: adminPassword // Добавляем пароль
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showToast('Роль "' + roleName + '" успешно удалена', 'success');
+                        // Удаляем строку из таблицы
+                        $(`button.delete-role[data-role-id="${roleId}"]`).closest('tr').fadeOut(300, function() {
+                            $(this).remove();
+                        });
+                    } else {
+                        if (response.error === 'role_has_users') {
+                            // Показываем модальное окно с пользователями и опциями
+                            $('#deleteRoleUsersName').text(roleName);
+                            // Сохраняем ID роли для использования в модальном окне
+                            $('#roleUsersDeleteModal').data('role-id', roleId); 
                             
-                            // Открываем модальное окно с пользователями
-                            $('#roleUsersList').removeClass('d-none');
-                            loadRoleUsersForDelete(roleId);
-                            
+                            // Загружаем пользователей и показываем модальное окно
+                            loadRoleUsersForDelete(roleId); 
                             var roleUsersDeleteModal = new bootstrap.Modal(document.getElementById('roleUsersDeleteModal'));
                             roleUsersDeleteModal.show();
-                        });
-                        
-                        // Показываем модальное окно с пользователями
-                        $('#deleteRoleUsersName').text(roleName);
-                        $('#permissionRoleId').val(roleId);
-                        
-                        // Закрываем модальное окно подтверждения
-                        $('#deleteRoleModal').modal('hide');
-                        
-                        // Открываем модальное окно с пользователями
-                        var roleUsersDeleteModal = new bootstrap.Modal(document.getElementById('roleUsersDeleteModal'));
-                        roleUsersDeleteModal.show();
-                    } else {
-                        showToast(response.message || 'Произошла ошибка при удалении роли', 'error');
+                            
+                            showToast('Невозможно удалить роль "' + roleName + '", так как она назначена пользователям.', 'warning');
+                        } else {
+                             showToast(response.message || 'Произошла ошибка при удалении роли "' + roleName + '"', 'error');
+                        }
                     }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Ошибка при удалении роли:', error);
+                    const errorMsg = xhr.responseJSON?.message || xhr.responseJSON?.error || 'Неизвестная ошибка';
+                    showToast('Произошла ошибка при удалении роли "' + roleName + '": ' + errorMsg, 'error');
                 }
-            },
-            error: function(xhr, status, error) {
-                console.error('Ошибка при удалении роли:', error);
-                showToast('Произошла ошибка при удалении роли: ' + error, 'error');
-            }
+            });
         });
     });
     
     // Обработчик для редактирования разрешений роли
     $('.edit-permissions').on('click', function() {
         console.log('Клик по кнопке редактирования разрешений');
-            var roleId = $(this).data('role-id');
-            var roleName = $(this).data('role-name');
-            
-            $('#permissionRoleId').val(roleId);
-            $('#permissionRoleName').text(roleName);
-            
+        var roleId = $(this).data('role-id');
+        var roleName = $(this).data('role-name');
+        
+        $('#permissionRoleId').val(roleId);
+        $('#permissionRoleName').text(roleName);
+        
         // Загружаем данные разрешений для роли
         $.getJSON('/admin/settings/roles/get_role_permissions/' + roleId, function(roleData) {
             // Загружаем список всех модулей
@@ -759,26 +822,30 @@ document.addEventListener('DOMContentLoaded', function() {
     // Показать список пользователей при попытке удаления роли
     $('#viewRoleUsers').on('click', function() {
         $('#roleUsersList').removeClass('d-none');
-        loadRoleUsersForDelete($('#permissionRoleId').val());
+        const roleId = $('#roleUsersDeleteModal').data('role-id'); // Берем ID из data атрибута модалки
+        if (roleId) {
+            loadRoleUsersForDelete(roleId);
+        } else {
+            console.error('Role ID not found in modal data for viewRoleUsers');
+        }
     });
     
     // Смена роли для всех пользователей при попытке удаления
     $('#changeRoleForAllUsers').on('click', function() {
-        const roleId = $('#permissionRoleId').val();
+        const roleId = $('#roleUsersDeleteModal').data('role-id'); // Берем ID из data атрибута модалки
+        if (!roleId) {
+             console.error('Role ID not found in modal data for changeRoleForAllUsers');
+             showToast('Ошибка: ID роли не найден.', 'error');
+             return;
+        }
         
         // Загружаем список доступных ролей
         $.getJSON('/admin/settings/roles/get_available_roles', function(data) {
-            const select = $('#newRoleSelect');
-            select.empty();
-            
-            data.roles.forEach(function(role) {
-                if (role.id != roleId) {
-                    select.append(`<option value="${role.id}">${role.display_name}</option>`);
-                }
-            });
+            // Сохраняем ID старой роли для формы смены
+            $('#changeRoleForm').data('original-role-id', roleId);
             
             // Закрываем текущее модальное окно
-            $('#roleUsersDeleteModal').modal('hide');
+            bootstrap.Modal.getInstance(document.getElementById('roleUsersDeleteModal')).hide();
             
             // Открываем модальное окно смены роли
             var changeRoleModal = new bootstrap.Modal(document.getElementById('changeRoleModal'));
@@ -786,55 +853,69 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Удаление роли у всех пользователей при попытке удаления
+    // Удаление роли у всех пользователей при попытке удаления (из модального окна roleUsersDeleteModal)
     $('#removeRoleFromAllUsers').on('click', function() {
-        showConfirmModal(
-            'Подтверждение удаления',
-            'Вы действительно хотите удалить роль у всех пользователей?',
-            function() {
-                const roleId = $('#permissionRoleId').val();
-                
-                $.ajax({
-                    url: '/admin/settings/roles/remove_role_from_all_users',
-                    type: 'POST',
-                    data: { role_id: roleId },
-                    success: function(response) {
-                        if (response.success) {
-                            showToast('Роль успешно удалена у всех пользователей', 'success');
-                            $('#roleUsersDeleteModal').modal('hide');
-                            
-                            // Удаляем роль после успешного удаления у всех пользователей
-                            $.ajax({
-                                url: '/admin/settings/roles/delete_role',
-                                type: 'POST',
-                                data: { role_id: roleId },
-                                success: function(deleteResponse) {
-                                    if (deleteResponse.success) {
-                                        showToast('Роль успешно удалена', 'success');
-                                        location.reload();
-                                    } else {
-                                        showToast(deleteResponse.message || 'Произошла ошибка при удалении роли', 'error');
-                                    }
-                                },
-                                error: function(xhr, status, error) {
-                                    console.error('Ошибка при удалении роли:', error);
-                                    showToast('Произошла ошибка при удалении роли: ' + error, 'error');
+        const roleId = $('#roleUsersDeleteModal').data('role-id'); // Берем ID из data атрибута модалки
+        const roleName = $('#deleteRoleUsersName').text(); // Имя роли берем из модалки
+         if (!roleId) {
+             console.error('Role ID not found in modal data for removeRoleFromAllUsers');
+             showToast('Ошибка: ID роли не найден.', 'error');
+             return;
+         }
+
+        // Запрашиваем пароль администратора
+        showAdminPasswordModal(function(adminPassword) {
+            // Отправляем запрос на удаление роли у всех пользователей
+            $.ajax({
+                url: '/admin/settings/roles/remove_role_from_all_users',
+                type: 'POST',
+                data: { 
+                    role_id: roleId,
+                    admin_password: adminPassword // Добавляем пароль
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showToast('Роль "' + roleName + '" успешно удалена у всех пользователей', 'success');
+                        bootstrap.Modal.getInstance(document.getElementById('roleUsersDeleteModal')).hide();
+                        
+                        // Пытаемся удалить саму роль после успешного удаления у пользователей
+                        $.ajax({
+                            url: '/admin/settings/roles/delete_role', // Используем endpoint удаления роли
+                            type: 'POST',
+                            data: { 
+                                role_id: roleId,
+                                admin_password: adminPassword // Передаем тот же пароль
+                            },
+                            success: function(deleteResponse) {
+                                if (deleteResponse.success) {
+                                    showToast('Роль "' + roleName + '" окончательно удалена', 'success');
+                                    // Обновляем страницу, чтобы отразить удаление роли
+                                    location.reload(); 
+                                } else {
+                                    // Эта ошибка не должна возникать, если предыдущий шаг прошел успешно
+                                    showToast(deleteResponse.message || 'Произошла ошибка при окончательном удалении роли "' + roleName + '"', 'error');
                                 }
-                            });
-                        } else {
-                            showToast(response.message || 'Произошла ошибка', 'error');
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Ошибка при удалении роли у всех пользователей:', error);
-                        showToast('Произошла ошибка при удалении роли: ' + error, 'error');
+                            },
+                            error: function(xhrDel, statusDel, errorDel) {
+                                const errorMsgDel = xhrDel.responseJSON?.message || xhrDel.responseJSON?.error || 'Неизвестная ошибка';
+                                console.error('Ошибка при окончательном удалении роли:', errorDel);
+                                showToast('Произошла ошибка при окончательном удалении роли "' + roleName + '": ' + errorMsgDel, 'error');
+                            }
+                        });
+                    } else {
+                        showToast(response.message || 'Произошла ошибка при удалении роли у пользователей', 'error');
                     }
-                });
-            }
-        );
+                },
+                error: function(xhr, status, error) {
+                    const errorMsg = xhr.responseJSON?.message || xhr.responseJSON?.error || 'Неизвестная ошибка';
+                    console.error('Ошибка при удалении роли у всех пользователей:', error);
+                    showToast('Произошла ошибка при удалении роли "' + roleName + '" у всех пользователей: ' + errorMsg, 'error');
+                }
+            });
+        });
     });
     
-    // Удаление роли у пользователя
+    // Удаление роли у пользователя (из модального окна roleUsersModal)
     $(document).on('click', '.remove-user-role', function() {
         const userId = $(this).data('user-id');
         const roleId = $('#permissionRoleId').val();
@@ -860,7 +941,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Удаление роли у пользователя при попытке удаления роли
+    // Удаление роли у пользователя при попытке удаления роли (из модального окна roleUsersDeleteModal)
     $(document).on('click', '.remove-user-role-delete', function() {
         const userId = $(this).data('user-id');
         const roleId = $('#permissionRoleId').val();
@@ -897,8 +978,15 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Смена роли для всех пользователей
+    // Смена роли для всех пользователей (из модального окна roleUsersModal)
     $('#changeRoleForAll').on('click', function() {
+        const roleId = $('#roleUsersModal').data('role-id'); // Предполагаем, что ID роли хранится в data модального окна
+        if (!roleId) {
+            console.error('Role ID not found in roleUsersModal data');
+            showToast('Ошибка: ID роли не найден.', 'error');
+            return;
+        }
+        $('#changeRoleForm').data('original-role-id', roleId); // Сохраняем для формы смены
         var changeRoleModal = new bootstrap.Modal(document.getElementById('changeRoleModal'));
         changeRoleModal.show();
     });
@@ -906,94 +994,126 @@ document.addEventListener('DOMContentLoaded', function() {
     // Обработка формы смены роли
     $('#changeRoleForm').on('submit', function(e) {
         e.preventDefault();
-        const roleId = $('#permissionRoleId').val();
+        const originalRoleId = $(this).data('original-role-id'); // Получаем сохраненный ID старой роли
         const newRoleId = $('#newRoleSelect').val();
+        const roleName = $('#roleUsersModalLabel #roleUsersRoleName').text() || $('#deleteRoleUsersName').text() || `с ID ${originalRoleId}`; // Пытаемся получить имя роли
         
-        $.ajax({
-            url: '/admin/settings/roles/change_role_for_all_users',
-            type: 'POST',
-            data: { role_id: roleId, new_role_id: newRoleId },
-            success: function(response) {
-                if (response.success) {
-                    showToast('Роль успешно изменена для всех пользователей', 'success');
-                    $('#changeRoleModal').modal('hide');
-                    $('#roleUsersModal').modal('hide');
-                    
-                    // Удаляем роль после успешного перемещения всех пользователей
-                    $.ajax({
-                        url: '/admin/settings/roles/delete_role',
-                        type: 'POST',
-                        data: { role_id: roleId },
-                        success: function(deleteResponse) {
-                            if (deleteResponse.success) {
-                                showToast('Роль успешно удалена', 'success');
-                                location.reload();
-                            } else {
-                                showToast(deleteResponse.message || 'Произошла ошибка при удалении роли', 'error');
+        if (!originalRoleId || !newRoleId) {
+             showToast('Ошибка: Не удалось определить старую или новую роль.', 'error');
+             console.error('Missing role IDs for change role form submit');
+             return;
+        }
+
+        // Запрашиваем пароль администратора для подтверждения массовой смены и последующего удаления
+        showAdminPasswordModal(function(adminPassword) {
+            $.ajax({
+                url: '/admin/settings/roles/change_role_for_all_users',
+                type: 'POST',
+                data: { 
+                    role_id: originalRoleId, 
+                    new_role_id: newRoleId,
+                    admin_password: adminPassword // Добавляем пароль
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showToast('Роль "' + roleName + '" успешно изменена для всех пользователей', 'success');
+                        // Закрываем все связанные модальные окна
+                        bootstrap.Modal.getInstance(document.getElementById('changeRoleModal'))?.hide();
+                        bootstrap.Modal.getInstance(document.getElementById('roleUsersModal'))?.hide();
+                        bootstrap.Modal.getInstance(document.getElementById('roleUsersDeleteModal'))?.hide();
+                        
+                        // Удаляем старую роль после успешного перемещения всех пользователей
+                        $.ajax({
+                            url: '/admin/settings/roles/delete_role', // Используем endpoint удаления роли
+                            type: 'POST',
+                            data: { 
+                                role_id: originalRoleId,
+                                admin_password: adminPassword // Передаем тот же пароль
+                            },
+                            success: function(deleteResponse) {
+                                if (deleteResponse.success) {
+                                    showToast('Старая роль "' + roleName + '" успешно удалена', 'success');
+                                    location.reload(); // Перезагружаем страницу
+                                } else {
+                                    showToast(deleteResponse.message || 'Произошла ошибка при удалении старой роли "' + roleName + '"', 'error');
+                                }
+                            },
+                            error: function(xhrDel, statusDel, errorDel) {
+                                const errorMsgDel = xhrDel.responseJSON?.message || xhrDel.responseJSON?.error || 'Неизвестная ошибка';
+                                console.error('Ошибка при удалении старой роли:', errorDel);
+                                showToast('Произошла ошибка при удалении старой роли "' + roleName + '": ' + errorMsgDel, 'error');
                             }
-                        },
-                        error: function(xhr, status, error) {
-                            console.error('Ошибка при удалении роли:', error);
-                            showToast('Произошла ошибка при удалении роли: ' + error, 'error');
-                        }
-                    });
-                } else {
-                    showToast(response.message || 'Произошла ошибка', 'error');
+                        });
+                    } else {
+                        showToast(response.message || 'Произошла ошибка при смене роли', 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    const errorMsg = xhr.responseJSON?.message || xhr.responseJSON?.error || 'Неизвестная ошибка';
+                    console.error('Ошибка при смене роли:', error);
+                    showToast('Произошла ошибка при смене роли: ' + errorMsg, 'error');
                 }
-            },
-            error: function(xhr, status, error) {
-                console.error('Ошибка при смене роли:', error);
-                showToast('Произошла ошибка при смене роли: ' + error, 'error');
-            }
+            });
         });
     });
     
-    // Удаление роли у всех пользователей
+    // Удаление роли у всех пользователей (из модального окна roleUsersModal)
     $('#removeRoleFromAll').on('click', function() {
-        showConfirmModal(
-            'Подтверждение удаления',
-            'Вы действительно хотите удалить роль у всех пользователей?',
-            function() {
-                const roleId = $('#permissionRoleId').val();
-                
-                $.ajax({
-                    url: '/admin/settings/roles/remove_role_from_all_users',
-                    type: 'POST',
-                    data: { role_id: roleId },
-                    success: function(response) {
-                        if (response.success) {
-                            showToast('Роль успешно удалена у всех пользователей', 'success');
-                            $('#roleUsersModal').modal('hide');
-                            
-                            // Удаляем роль после успешного удаления у всех пользователей
-                            $.ajax({
-                                url: '/admin/settings/roles/delete_role',
-                                type: 'POST',
-                                data: { role_id: roleId },
-                                success: function(deleteResponse) {
-                                    if (deleteResponse.success) {
-                                        showToast('Роль успешно удалена', 'success');
-                                        location.reload();
-                                    } else {
-                                        showToast(deleteResponse.message || 'Произошла ошибка при удалении роли', 'error');
-                                    }
-                                },
-                                error: function(xhr, status, error) {
-                                    console.error('Ошибка при удалении роли:', error);
-                                    showToast('Произошла ошибка при удалении роли: ' + error, 'error');
+        const roleId = $('#roleUsersModal').data('role-id'); // Предполагаем, что ID роли хранится в data модального окна
+        const roleName = $('#roleUsersModalLabel #roleUsersRoleName').text(); // Получаем имя роли из заголовка
+        if (!roleId) {
+             console.error('Role ID not found in roleUsersModal data for removeRoleFromAll');
+             showToast('Ошибка: ID роли не найден.', 'error');
+             return;
+         }
+
+        // Запрашиваем пароль администратора
+        showAdminPasswordModal(function(adminPassword) {
+            $.ajax({
+                url: '/admin/settings/roles/remove_role_from_all_users',
+                type: 'POST',
+                data: { 
+                    role_id: roleId,
+                    admin_password: adminPassword // Добавляем пароль
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showToast('Роль "' + roleName + '" успешно удалена у всех пользователей', 'success');
+                         bootstrap.Modal.getInstance(document.getElementById('roleUsersModal')).hide();
+                        
+                        // Удаляем роль после успешного удаления у всех пользователей
+                         $.ajax({
+                            url: '/admin/settings/roles/delete_role', // Используем endpoint удаления роли
+                            type: 'POST',
+                            data: { 
+                                role_id: roleId,
+                                admin_password: adminPassword // Передаем тот же пароль
+                            },
+                            success: function(deleteResponse) {
+                                if (deleteResponse.success) {
+                                    showToast('Роль "' + roleName + '" успешно удалена', 'success');
+                                    location.reload(); // Перезагружаем страницу
+                                } else {
+                                    showToast(deleteResponse.message || 'Произошла ошибка при удалении роли "' + roleName + '"', 'error');
                                 }
-                            });
-                        } else {
-                            showToast(response.message || 'Произошла ошибка', 'error');
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Ошибка при удалении роли у всех пользователей:', error);
-                        showToast('Произошла ошибка при удалении роли: ' + error, 'error');
+                            },
+                            error: function(xhrDel, statusDel, errorDel) {
+                                const errorMsgDel = xhrDel.responseJSON?.message || xhrDel.responseJSON?.error || 'Неизвестная ошибка';
+                                console.error('Ошибка при удалении роли:', errorDel);
+                                showToast('Произошла ошибка при удалении роли "' + roleName + '": ' + errorMsgDel, 'error');
+                            }
+                        });
+                    } else {
+                        showToast(response.message || 'Произошла ошибка при удалении роли у пользователей', 'error');
                     }
-                });
-            }
-        );
+                },
+                error: function(xhr, status, error) {
+                    const errorMsg = xhr.responseJSON?.message || xhr.responseJSON?.error || 'Неизвестная ошибка';
+                    console.error('Ошибка при удалении роли у всех пользователей:', error);
+                    showToast('Произошла ошибка при удалении роли "' + roleName + '" у всех пользователей: ' + errorMsg, 'error');
+                }
+            });
+        });
     });
     
     // Валидация системного имени
@@ -1012,7 +1132,20 @@ document.addEventListener('DOMContentLoaded', function() {
         $('.modal-backdrop').remove();
         $('body').removeClass('modal-open').css('padding-right', '');
     });
-});
+
+    // Обработчики кнопок действий (проверка на разблокировку УДАЛЕНА)
+    document.querySelectorAll('.edit-role, .delete-role, .edit-permissions').forEach(btn => {
+        btn.addEventListener('click', function() {
+            // const btnGroup = this.closest('.btn-group');
+            // if (!btnGroup.classList.contains('unlocked')) { // <- Проверка УДАЛЕНА
+            //     currentRoleIdUnlock = btnGroup.dataset.roleId;
+            //     adminPasswordModalUnlock.show();
+            //     return; // <- УДАЛЕНО
+            // }
+            // Продолжаем выполнение действия (этот код уже есть в jQuery обработчиках выше)
+        });
+    });
+}); // Конец document.addEventListener('DOMContentLoaded', ...)
 
 // Функция для показа toast-уведомлений
 function showToast(message, type = 'success') {
@@ -1076,7 +1209,7 @@ function showToastWithAction(message, type, actionText, actionCallback) {
     }, 5000);
 }
 
-// Функция для показа модального окна с подтверждением
+// Функция для показа модального окна с подтверждением (остается для других возможных использований)
 function showConfirmModal(title, message, confirmCallback) {
     const modalHtml = `
         <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
@@ -1125,32 +1258,6 @@ function showConfirmModal(title, message, confirmCallback) {
     modal.addEventListener('hidden.bs.modal', function() {
         modal.remove();
     });
-}
-
-function deleteRole(roleId) {
-    showConfirmModal(
-        'Подтверждение удаления',
-        'Вы уверены, что хотите удалить эту роль?',
-        function() {
-            $.ajax({
-                url: '/admin/settings/roles/delete/' + roleId,
-                method: 'POST',
-                success: function(response) {
-                    if (response.success) {
-                        showToast('Роль успешно удалена', 'success');
-                        location.reload();
-                    } else if (response.error === 'role_has_users') {
-                        showToast('Невозможно удалить роль, так как она назначена пользователям', 'error');
-                    } else {
-                        showToast('Ошибка при удалении роли: ' + (response.error || 'Неизвестная ошибка'), 'error');
-                    }
-                },
-                error: function(xhr) {
-                    showToast('Ошибка при удалении роли: ' + (xhr.responseJSON?.error || 'Неизвестная ошибка'), 'error');
-                }
-            });
-        }
-    );
 }
 </script>
 {% endblock %}
