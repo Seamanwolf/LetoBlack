@@ -1103,7 +1103,7 @@ def delete_employee_api():
     # Пробуем получить ID из разных источников, так как jQuery может отправлять данные по-разному
     employee_id = request.args.get('id') or request.form.get('id')
     logger.debug(f"Запрошено удаление сотрудника с ID: {employee_id}")
-        
+    
     if not employee_id:
         logger.warning("ID сотрудника не указан в запросе")
         return jsonify({'success': False, 'message': 'ID сотрудника не указан'})
@@ -1200,19 +1200,19 @@ def personnel_dashboard():
     connection = create_db_connection()
     cursor = connection.cursor(dictionary=True)
     
-        # Получение статистики
+    # Получение статистики
     cursor.execute("SELECT COUNT(*) as total FROM User WHERE status != 'fired'")
     total_employees = cursor.fetchone()['total']
-    
+
     cursor.execute("SELECT COUNT(*) as active FROM User WHERE status = 'Онлайн'")
     active_employees = cursor.fetchone()['active']
-    
+
     cursor.execute("SELECT COUNT(*) as fired FROM User WHERE status = 'fired'")
     fired_employees = cursor.fetchone()['fired']
-    
+
     cursor.execute("SELECT COUNT(*) as departments FROM Department")
     departments_count = cursor.fetchone()['departments']
-    
+
     # Получение данных для графиков
     cursor.execute("""
         SELECT DATE(created_at) as date, COUNT(*) as count 
@@ -1222,13 +1222,13 @@ def personnel_dashboard():
         ORDER BY date
     """)
     staff_dynamics = cursor.fetchall()
-    
+
     dates = []
     staff_counts = []
     for item in staff_dynamics:
         dates.append(item['date'].strftime('%d.%m'))
         staff_counts.append(item['count'])
-    
+
     cursor.execute("""
         SELECT d.name, COUNT(u.id) as count
         FROM Department d
@@ -1236,13 +1236,13 @@ def personnel_dashboard():
         GROUP BY d.id, d.name
     """)
     department_distribution = cursor.fetchall()
-    
+
     department_names = []
     department_counts = []
     for item in department_distribution:
         department_names.append(item['name'])
         department_counts.append(item['count'])
-    
+
     cursor.execute("""
         SELECT u.full_name, d.name as department, u.position, u.created_at as hire_date
                 FROM User u
@@ -1252,7 +1252,7 @@ def personnel_dashboard():
         LIMIT 5
     """)
     recent_hires = cursor.fetchall()
-    
+
     cursor.execute("""
         SELECT u.full_name, d.name as department, u.position, u.fire_date
                     FROM User u
@@ -1262,7 +1262,7 @@ def personnel_dashboard():
         LIMIT 5
     """)
     recent_fires = cursor.fetchall()
-    
+
     cursor.close()
     connection.commit()
     connection.close()
