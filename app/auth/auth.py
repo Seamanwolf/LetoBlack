@@ -48,25 +48,80 @@ def login():
             print(f"INFO: Session UKC_KC: {session.get('ukc_kc')}")
             current_app.logger.info(f"Session data: ID={session.get('id')}, Department={session.get('department')}, Role={session.get('role')}")
     
-            # Перенаправление пользователя по роли
-            redirect_url = url_for('userlist.dashboard')  # Значение по умолчанию
+            # Определение доступных модулей для пользователя через RolePermission
+            redirect_url = None
             
-            if user.role == 'operator':
-                session['login_time'] = datetime.now()
-                update_operator_status(user.id, 'Онлайн')
-                redirect_url = url_for('callcenter.operator_dashboard')
-            elif user.role == 'admin':
-                redirect_url = url_for('admin.admin_dashboard')
-                current_app.logger.info(f"User is admin, redirecting to {redirect_url}")
-            elif user.role == 'leader':
-                redirect_url = url_for('leader.leader_dashboard')
-            elif user.role == 'backoffice' and user.department == 'Ресепшн':
-                redirect_url = url_for('reception.reception_dashboard')
-            elif user.role == 'backoffice' and user.department == 'HR':
-                redirect_url = url_for('hr.candidates_list')
+            try:
+                connection = create_db_connection()
+                if connection:
+                    with connection.cursor(dictionary=True) as cursor:
+                        # Проверяем наличие разрешений на основе роли пользователя в таблице UserRole
+                        cursor.execute("""
+                            SELECT m.name, m.url_path, rp.can_view 
+                            FROM Module m
+                            JOIN RolePermission rp ON m.id = rp.module_id
+                            JOIN UserRole ur ON rp.role_id = ur.role_id
+                            WHERE ur.user_id = %s AND rp.can_view = 1
+                            ORDER BY m.order ASC
+                        """, (user.id,))
+                        
+                        modules = cursor.fetchall()
+                        
+                        if modules:
+                            # Логируем доступные модули
+                            current_app.logger.info(f"Доступные модули для пользователя {user.id}: {[m['name'] for m in modules]}")
+                            
+                            # Используем первый доступный модуль для перенаправления
+                            for module in modules:
+                                if module['url_path']:
+                                    redirect_url = f"/{module['url_path']}"
+                                    current_app.logger.info(f"Перенаправление на модуль: {module['name']} ({redirect_url})")
+                                    break
+            except Exception as e:
+                current_app.logger.error(f"Ошибка при определении доступных модулей: {e}")
+                traceback.print_exc()
+            
+            # Если не нашли доступных модулей через RolePermission, используем стандартную логику
+            if not redirect_url:
+                current_app.logger.warning(f"Не найдены доступные модули через RolePermission, используем стандартное перенаправление")
                 
+                if user.role == 'operator':
+                    session['login_time'] = datetime.now()
+                    update_operator_status(user.id, 'Онлайн')
+                    redirect_url = url_for('callcenter.operator_dashboard')
+                elif user.role == 'admin':
+                    redirect_url = url_for('admin.admin_dashboard')
+                    current_app.logger.info(f"User is admin, redirecting to {redirect_url}")
+                elif user.role == 'leader':
+                    redirect_url = url_for('leader.leader_dashboard')
+                elif user.role == 'backoffice' and user.department == 'Ресепшн':
+                    redirect_url = url_for('reception.reception_dashboard')
+                elif user.role == 'backoffice' and user.department == 'HR':
+                    redirect_url = url_for('hr.candidates_list')
+                elif user.role == 'user':
+                    # Для тестовой роли "user" проверяем доступ к модулям ВАТС и Колл-центр
+                    ватс_url = "/vats"
+                    callcenter_url = "/callcenter"
+                    
+                    # Сначала проверяем доступ к Колл-центру
+                    if modules and any(m['name'] == 'Колл-центр' for m in modules):
+                        redirect_url = callcenter_url
+                    # Затем к ВАТС
+                    elif modules and any(m['name'] == 'ВАТС' for m in modules):
+                        redirect_url = ватс_url
+                    else:
+                        # Если доступа к нужным модулям нет, отправляем на страницу без доступа
+                        flash("У вас нет доступа к системе. Обратитесь к администратору.", "danger")
+                        return redirect(url_for('auth.login'))
+                else:
+                    redirect_url = url_for('userlist.dashboard')
+                    
             current_app.logger.info(f"Redirecting to {redirect_url}")
-            return redirect(redirect_url)
+            if redirect_url:
+                return redirect(redirect_url)
+            else:
+                flash("У вас нет доступа к системе. Обратитесь к администратору.", "danger")
+                return redirect(url_for('auth.login'))
         else:
             print("WARNING: Authentication failed.")  # Логирование неудачной аутентификации
             current_app.logger.warning("Authentication failed.")
