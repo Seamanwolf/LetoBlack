@@ -74,9 +74,9 @@ def create_app(config_class=Config):
     app.register_blueprint(itinvent_bp)
     app.register_blueprint(userlist_bp)
     app.register_blueprint(news_bp, url_prefix='/news')
-    app.register_blueprint(admin_routes_bp, url_prefix='/admin')
+    app.register_blueprint(admin_routes_bp, url_prefix='/admin', name='admin_routes_unique')
     app.register_blueprint(api_bp, url_prefix='/api')
-    app.register_blueprint(admin_bp, url_prefix='/admin_old')
+    app.register_blueprint(admin_bp, url_prefix='/admin_old', name='admin_old_unique')
     
     # Импорт и регистрация CLI команд
     from app import commands

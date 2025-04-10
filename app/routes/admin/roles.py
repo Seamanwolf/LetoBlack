@@ -260,7 +260,7 @@ def update_role():
         
         # Формируем SQL запрос в зависимости от доступных колонок и статуса роли
         if is_system:
-        # Для системных ролей можно менять только описание
+            # Для системных ролей можно менять только описание
             cursor.execute("""
             UPDATE Role SET description = %s WHERE id = %s
             """, (description, role_id))
@@ -303,8 +303,7 @@ def delete_role():
     role_id = request.form.get('role_id')
     
     if not role_id:
-        flash('ID роли обязателен', 'danger')
-        return redirect(url_for('roles.index'))
+        return jsonify({'success': False, 'message': 'ID роли обязателен'})
     
     try:
         conn = create_db_connection()
@@ -329,38 +328,33 @@ def delete_role():
             cursor.execute("SELECT is_system, display_name FROM Role WHERE id = %s", (role_id,))
             role_data = cursor.fetchone()
             if not role_data:
-                flash('Роль не найдена', 'danger')
-                return redirect(url_for('roles.index'))
+                return jsonify({'success': False, 'message': 'Роль не найдена'})
             
             is_system, display_name = bool(role_data[0]), role_data[1]
         elif has_is_system:
             cursor.execute("SELECT is_system, name FROM Role WHERE id = %s", (role_id,))
             role_data = cursor.fetchone()
             if not role_data:
-                flash('Роль не найдена', 'danger')
-                return redirect(url_for('roles.index'))
+                return jsonify({'success': False, 'message': 'Роль не найдена'})
             
             is_system, display_name = bool(role_data[0]), role_data[1]  # Используем name как display_name
         elif has_display_name:
             cursor.execute("SELECT display_name FROM Role WHERE id = %s", (role_id,))
             role_data = cursor.fetchone()
             if not role_data:
-                flash('Роль не найдена', 'danger')
-                return redirect(url_for('roles.index'))
+                return jsonify({'success': False, 'message': 'Роль не найдена'})
             
             is_system, display_name = False, role_data[0]  # Считаем все роли не системными
         else:
             cursor.execute("SELECT name FROM Role WHERE id = %s", (role_id,))
             role_data = cursor.fetchone()
             if not role_data:
-                flash('Роль не найдена', 'danger')
-                return redirect(url_for('roles.index'))
+                return jsonify({'success': False, 'message': 'Роль не найдена'})
             
             is_system, display_name = False, role_data[0]  # Считаем все роли не системными и используем name как display_name
         
         if is_system:
-            flash('Системные роли нельзя удалить', 'danger')
-            return redirect(url_for('roles.index'))
+            return jsonify({'success': False, 'message': 'Системные роли нельзя удалить'})
         
         # Проверяем, есть ли таблица UserRole
         cursor.execute("SHOW TABLES LIKE 'UserRole'")
@@ -370,8 +364,11 @@ def delete_role():
             # Проверяем, есть ли пользователи с этой ролью
             cursor.execute("SELECT COUNT(*) FROM UserRole WHERE role_id = %s", (role_id,))
             if cursor.fetchone()[0] > 0:
-                flash('Невозможно удалить роль, назначенную пользователям', 'danger')
-                return redirect(url_for('roles.index'))
+                return jsonify({
+                    'success': False, 
+                    'error': 'role_has_users',
+                    'message': 'Невозможно удалить роль, назначенную пользователям'
+                })
             
             # Проверяем, есть ли таблица RolePermission
             cursor.execute("SHOW TABLES LIKE 'RolePermission'")
@@ -385,17 +382,15 @@ def delete_role():
         cursor.execute("DELETE FROM Role WHERE id = %s", (role_id,))
         
         conn.commit()
-        flash(f'Роль "{display_name}" успешно удалена', 'success')
+        return jsonify({'success': True, 'message': f'Роль "{display_name}" успешно удалена'})
     except Exception as e:
         if 'conn' in locals():
             conn.rollback()
-        flash(f'Ошибка при удалении роли: {str(e)}', 'danger')
+        return jsonify({'success': False, 'message': f'Ошибка при удалении роли: {str(e)}'})
     finally:
         if 'conn' in locals():
             cursor.close()
             conn.close()
-    
-    return redirect(url_for('roles.index'))
 
 @roles_bp.route('/get_role_permissions/<int:role_id>', methods=['GET'])
 @login_required
@@ -475,7 +470,8 @@ def get_modules():
         # Получаем все модули
         if has_display_name:
             cursor.execute("""
-            SELECT * FROM Module ORDER BY `order`
+            SELECT id, name, name as display_name, description, url_path, icon, `order`, is_active, parent_id, created_at, updated_at
+            FROM Module ORDER BY `order`
             """)
         else:
             cursor.execute("""
@@ -503,7 +499,8 @@ def update_role_permissions():
     role_id = request.form.get('role_id')
     
     if not role_id:
-        return jsonify({'error': 'ID роли обязателен'}), 400
+        flash('ID роли обязателен', 'danger')
+        return redirect(url_for('roles.index'))
     
     try:
         conn = create_db_connection()
@@ -514,7 +511,8 @@ def update_role_permissions():
         has_role_permission_table = cursor.fetchone() is not None
         
         if not has_role_permission_table:
-            return jsonify({'error': 'Таблица RolePermission не существует. Пожалуйста, инициализируйте таблицы ролей.'}), 400
+            flash('Таблица RolePermission не существует. Пожалуйста, инициализируйте таблицы ролей.', 'danger')
+            return redirect(url_for('roles.index'))
         
         # Удаляем все текущие разрешения роли
         cursor.execute("DELETE FROM RolePermission WHERE role_id = %s", (role_id,))
@@ -551,11 +549,13 @@ def update_role_permissions():
             ))
         
         conn.commit()
-        return jsonify({'message': 'Разрешения успешно обновлены'})
+        flash('Разрешения успешно обновлены', 'success')
+        return redirect(url_for('roles.index'))
     except Exception as e:
         if 'conn' in locals():
             conn.rollback()
-        return jsonify({'error': str(e)}), 500
+        flash(f'Ошибка при обновлении разрешений: {str(e)}', 'danger')
+        return redirect(url_for('roles.index'))
     finally:
         if 'conn' in locals():
             cursor.close()
@@ -565,7 +565,7 @@ def update_role_permissions():
 @login_required
 @admin_required
 def get_role_users(role_id):
-    """Возвращает список пользователей с указанной ролью"""
+    """Получает список пользователей с указанной ролью"""
     try:
         conn = create_db_connection()
         cursor = conn.cursor(dictionary=True)
@@ -768,4 +768,4 @@ def change_role_for_all_users():
     finally:
         if 'conn' in locals():
             cursor.close()
-            conn.close() 
+            conn.close()
