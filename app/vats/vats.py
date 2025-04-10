@@ -88,6 +88,7 @@ def assign_numbers():
             """, (number_id, operator_id))
         
         connection.commit()
+        flash('Номера успешно назначены оператору', 'success')
         return jsonify({'success': True})
     except Exception as e:
         connection.rollback()

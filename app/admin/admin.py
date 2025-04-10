@@ -142,7 +142,7 @@ def upload_logo():
     if 'logo' not in request.files:
         flash('Файл не выбран', 'error')
         return redirect(url_for('admin.settings'))
-        
+
     file = request.files['logo']
     if file.filename == '':
         flash('Файл не выбран', 'error')
@@ -175,8 +175,8 @@ def upload_background():
     except Exception as e:
         flash(f'Ошибка при загрузке фонового изображения: {str(e)}', 'error')
         
-    return redirect(url_for('admin.settings'))
-
+        return redirect(url_for('admin.settings'))
+    
 @admin_bp.route('/settings')
 @login_required
 @admin_required
@@ -1197,9 +1197,9 @@ def personnel_dashboard():
         flash('У вас нет доступа к этой странице', 'danger')
         return redirect(url_for('main.index'))
     
-    connection = get_db_connection()
+    connection = create_db_connection()
     cursor = connection.cursor(dictionary=True)
-    
+        
     # Получение статистики
     cursor.execute("SELECT COUNT(*) as total FROM User WHERE status != 'fired'")
     total_employees = cursor.fetchone()['total']
@@ -1216,7 +1216,7 @@ def personnel_dashboard():
     # Получение данных для графиков
     cursor.execute("""
         SELECT DATE(created_at) as date, COUNT(*) as count 
-        FROM User
+            FROM User
         WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
         GROUP BY DATE(created_at)
         ORDER BY date
@@ -1245,7 +1245,7 @@ def personnel_dashboard():
     
     cursor.execute("""
         SELECT u.full_name, d.name as department, u.position, u.created_at as hire_date
-        FROM User u
+                FROM User u
         JOIN Department d ON u.department_id = d.id
         WHERE u.status != 'fired'
         ORDER BY u.created_at DESC
@@ -1255,10 +1255,10 @@ def personnel_dashboard():
     
     cursor.execute("""
         SELECT u.full_name, d.name as department, u.position, u.fire_date
-        FROM User u
+                    FROM User u
         JOIN Department d ON u.department_id = d.id
         WHERE u.status = 'fired' AND u.fire_date IS NOT NULL
-        ORDER BY u.fire_date DESC
+                    ORDER BY u.fire_date DESC
         LIMIT 5
     """)
     recent_fires = cursor.fetchall()
@@ -1682,6 +1682,6 @@ def initialize_roles_tables():
         conn.rollback()
         flash(f'Ошибка при инициализации таблиц ролей: {str(e)}', 'danger')
     finally:
-        conn.close()
+            conn.close()
     
     return redirect(url_for('roles.index'))

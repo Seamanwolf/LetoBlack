@@ -105,7 +105,7 @@
             </button>
             <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#bulkUploadModal">
                 <i class="fas fa-upload"></i> Массовая загрузка
-            </button>
+        </button>
         </div>
     </div>
     
@@ -149,7 +149,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Фильтры -->
     <div class="card mb-4">
         <div class="card-header">
@@ -211,14 +211,14 @@
                 <div class="ad-footer">
                     <button type="button" class="btn btn-sm btn-primary edit-ad" data-id="{{ ad_id }}">
                         <i class="fas fa-edit"></i> Редактировать
-                    </button>
+                                </button>
                     <button type="button" class="btn btn-sm btn-danger delete-ad" data-id="{{ ad_id }}">
                         <i class="fas fa-trash"></i> Удалить
-                    </button>
-                </div>
-            </div>
+                                    </button>
+                            </div>
         </div>
-        {% endfor %}
+    </div>
+    {% endfor %}
     </div>
 </div>
 
@@ -230,7 +230,7 @@
                 <h5 class="modal-title" id="addNumberModalLabel">Добавить номер</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
             </div>
-            <div class="modal-body">
+                <div class="modal-body">
                 <form id="addNumberForm">
                     <div class="mb-3">
                         <label for="phoneNumber" class="form-label">Номер телефона</label>
@@ -275,9 +275,9 @@
                         </select>
                     </div>
                 </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
                 <button type="button" class="btn btn-primary" id="bulkUploadBtn">Загрузить</button>
             </div>
         </div>
@@ -305,8 +305,8 @@
                             <option value="active">Активно</option>
                             <option value="inactive">Неактивно</option>
                         </select>
-                    </div>
-                </form>
+                </div>
+            </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>

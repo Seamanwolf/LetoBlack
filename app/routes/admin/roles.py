@@ -144,8 +144,8 @@ def add_role():
     try:
         conn = create_db_connection()
         cursor = conn.cursor()
-        
-        # Проверка существования роли с таким именем
+    
+    # Проверка существования роли с таким именем
         cursor.execute("SELECT COUNT(*) FROM Role WHERE name = %s", (name,))
         if cursor.fetchone()[0] > 0:
             flash('Роль с таким именем уже существует', 'danger')
@@ -244,18 +244,20 @@ def update_role():
         """)
         has_role_type = cursor.fetchone() is not None
         
-        # Проверяем, существует ли роль и системная ли она
-        if has_is_system:
-            cursor.execute("SELECT is_system FROM Role WHERE id = %s", (role_id,))
-            role_data = cursor.fetchone()
-            is_system = bool(role_data[0]) if role_data else False
-        else:
-            # Если колонки is_system нет, считаем все роли не системными
-            is_system = False
+        # Сначала проверим существование роли
+        cursor.execute("SELECT * FROM Role WHERE id = %s", (role_id,))
+        role_data = cursor.fetchone()
         
         if not role_data:
             flash('Роль не найдена', 'danger')
             return redirect(url_for('roles.index'))
+        
+        # Проверяем, системная ли роль
+        if has_is_system:
+            is_system = bool(role_data[5]) if len(role_data) > 5 else False
+        else:
+            # Если колонки is_system нет, считаем все роли не системными
+            is_system = False
         
         # Формируем SQL запрос в зависимости от доступных колонок и статуса роли
         if is_system:
