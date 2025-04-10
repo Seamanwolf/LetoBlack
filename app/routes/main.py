@@ -15,6 +15,17 @@ def index():
         elif current_user.role == 'user':
             # Пользователи с ролью 'user' перенаправляются на страницу ВАТС
             return redirect('/vats')
+        elif current_user.role == 'backoffice':
+            # Проверяем департамент пользователя
+            department = current_user.department if hasattr(current_user, 'department') else None
+            
+            if department == 'HR':
+                return redirect(url_for('hr.candidates_list'))
+            elif department == 'Ресепшн':
+                return redirect(url_for('reception.reception_dashboard'))
+            else:
+                # Если нет определенного департамента, по умолчанию на ВАТС
+                return redirect('/vats')
         else:
             return redirect(url_for('admin_routes.personnel'))
     

@@ -99,8 +99,8 @@ def create_test_role():
             has_permission_table = cursor.fetchone() is not None
             
             if has_module_table and has_permission_table:
-                # Получение ID базовых модулей (dashboard, news)
-                cursor.execute("SELECT id FROM Module WHERE name IN ('dashboard', 'news')")
+                # Получение ID модулей ВАТС и Колл-центр
+                cursor.execute("SELECT id FROM Module WHERE name IN ('ВАТС', 'Колл-центр')")
                 modules = cursor.fetchall()
                 
                 # Добавление разрешений на просмотр, создание и редактирование для этих модулей
@@ -119,7 +119,19 @@ def create_test_role():
                         )
                         print(f"Добавлены разрешения для модуля с ID {module_id}")
                     else:
-                        print(f"Разрешения для модуля с ID {module_id} уже существуют")
+                        # Обновляем разрешения для существующей записи
+                        cursor.execute(
+                            "UPDATE RolePermission SET can_view = 1, can_create = 1, can_edit = 1, can_delete = 0 WHERE role_id = %s AND module_id = %s",
+                            (role_id, module_id)
+                        )
+                        print(f"Обновлены разрешения для модуля с ID {module_id}")
+                        
+                # Удаляем разрешения для других модулей
+                cursor.execute(
+                    "DELETE FROM RolePermission WHERE role_id = %s AND module_id NOT IN (SELECT id FROM Module WHERE name IN ('ВАТС', 'Колл-центр'))",
+                    (role_id,)
+                )
+                print("Удалены разрешения для других модулей")
             else:
                 print("Таблицы Module или RolePermission не найдены. Пропуск добавления разрешений.")
             
@@ -156,6 +168,11 @@ def create_test_user(role_id):
             if existing_user:
                 print(f"Пользователь 'test_user' уже существует с ID: {existing_user['id']}")
                 user_id = existing_user['id']
+                
+                # Обновляем роль пользователя на admin
+                cursor.execute("UPDATE User SET role = %s WHERE id = %s", ("backoffice", user_id))
+                connection.commit()
+                print(f"Роль пользователя обновлена на 'backoffice'")
             else:
                 # Получим допустимые значения для статуса
                 cursor.execute("SHOW COLUMNS FROM User LIKE 'status'")
@@ -199,7 +216,7 @@ def create_test_user(role_id):
                 if "role" in columns:
                     fields.append("role")
                     values.append("%s")
-                    params.append("user")
+                    params.append("backoffice")
                 
                 if "department" in columns:
                     fields.append("department")

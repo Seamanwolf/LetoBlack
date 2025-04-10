@@ -94,10 +94,6 @@ def login():
                     current_app.logger.info(f"User is admin, redirecting to {redirect_url}")
                 elif user.role == 'leader':
                     redirect_url = url_for('leader.leader_dashboard')
-                elif user.role == 'backoffice' and user.department == 'Ресепшн':
-                    redirect_url = url_for('reception.reception_dashboard')
-                elif user.role == 'backoffice' and user.department == 'HR':
-                    redirect_url = url_for('hr.candidates_list')
                 elif user.role == 'user':
                     # Для тестовой роли "user" проверяем доступ к модулям ВАТС и Колл-центр
                     ватс_url = "/vats"  # согласно данным из базы для модуля ВАТС (id=11)
@@ -113,6 +109,26 @@ def login():
                         # Если доступа к нужным модулям нет, отправляем на страницу без доступа
                         flash("У вас нет доступа к системе. Обратитесь к администратору.", "danger")
                         return redirect(url_for('auth.login'))
+                elif user.role == 'backoffice':
+                    # Получаем department из данных пользователя
+                    user_department = user_data.get('department')
+                    
+                    if user_department == 'HR':
+                        redirect_url = url_for('hr.candidates_list')
+                    elif user_department == 'Ресепшн':
+                        redirect_url = url_for('reception.reception_dashboard')
+                    else:
+                        # Для бэкофиса без определенного департамента смотрим доступные модули
+                        ватс_url = "/vats"
+                        callcenter_url = "/vats"
+                        
+                        # Проверяем доступ к модулям через RolePermission
+                        if modules and any(m['name'] == 'Колл-центр' for m in modules):
+                            redirect_url = callcenter_url
+                        elif modules and any(m['name'] == 'ВАТС' for m in modules):
+                            redirect_url = ватс_url
+                        else:
+                            redirect_url = url_for('main.index')  # На главную, если нет доступа к специфическим модулям
                 else:
                     redirect_url = url_for('userlist.dashboard')
                     

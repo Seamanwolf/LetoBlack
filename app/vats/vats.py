@@ -9,9 +9,9 @@ vats_bp = Blueprint('vats', __name__)
 @vats_bp.route('/vats')
 @login_required
 def index():
-    if not current_user.is_authenticated or current_user.role != 'admin':
+    if not current_user.is_authenticated or (current_user.role != 'admin' and current_user.role != 'backoffice'):
         flash('Доступ запрещен', 'danger')
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
     return render_template('vats/index.html')
 
 @vats_bp.route('/api/get_free_numbers')
