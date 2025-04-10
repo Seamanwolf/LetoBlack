@@ -12,6 +12,9 @@ def index():
             return redirect(url_for('admin.admin_dashboard'))
         elif current_user.role == 'leader':
             return redirect(url_for('admin_routes.personnel'))
+        elif current_user.role == 'user':
+            # Пользователи с ролью 'user' перенаправляются на страницу ВАТС
+            return redirect('/vats')
         else:
             return redirect(url_for('admin_routes.personnel'))
     
