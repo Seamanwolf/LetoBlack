@@ -136,7 +136,6 @@ def add_role():
     description = request.form.get('description')
     role_type = request.form.get('role_type', 'custom')
     
-    # Валидация данных
     if not name or not display_name:
         flash('Имя роли и отображаемое имя обязательны', 'danger')
         return redirect(url_for('roles.index'))
@@ -145,7 +144,7 @@ def add_role():
         conn = create_db_connection()
         cursor = conn.cursor()
     
-    # Проверка существования роли с таким именем
+        # Проверка существования роли с таким именем
         cursor.execute("SELECT COUNT(*) FROM Role WHERE name = %s", (name,))
         if cursor.fetchone()[0] > 0:
             flash('Роль с таким именем уже существует', 'danger')
@@ -261,7 +260,7 @@ def update_role():
         
         # Формируем SQL запрос в зависимости от доступных колонок и статуса роли
         if is_system:
-            # Для системных ролей можно менять только описание
+        # Для системных ролей можно менять только описание
             cursor.execute("""
             UPDATE Role SET description = %s WHERE id = %s
             """, (description, role_id))
@@ -557,6 +556,215 @@ def update_role_permissions():
         if 'conn' in locals():
             conn.rollback()
         return jsonify({'error': str(e)}), 500
+    finally:
+        if 'conn' in locals():
+            cursor.close()
+            conn.close()
+
+@roles_bp.route('/get_role_users/<int:role_id>', methods=['GET'])
+@login_required
+@admin_required
+def get_role_users(role_id):
+    """Возвращает список пользователей с указанной ролью"""
+    try:
+        conn = create_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        # Проверяем существование таблицы UserRole
+        cursor.execute("SHOW TABLES LIKE 'UserRole'")
+        if not cursor.fetchone():
+            return jsonify({'users': []})
+        
+        # Получаем пользователей с указанной ролью
+        cursor.execute("""
+        SELECT u.id, u.full_name as name, u.login as email
+        FROM User u
+        JOIN UserRole ur ON u.id = ur.user_id
+        WHERE ur.role_id = %s
+        ORDER BY u.full_name
+        """, (role_id,))
+        
+        users = cursor.fetchall()
+        
+        return jsonify({'users': users})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if 'conn' in locals():
+            cursor.close()
+            conn.close()
+
+@roles_bp.route('/get_available_roles', methods=['GET'])
+@login_required
+@admin_required
+def get_available_roles():
+    """Возвращает список доступных ролей для выбора"""
+    try:
+        conn = create_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        # Проверяем наличие колонки display_name
+        cursor.execute("""
+        SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
+        WHERE TABLE_NAME = 'Role' AND COLUMN_NAME = 'display_name'
+        """)
+        has_display_name = cursor.fetchone() is not None
+        
+        if has_display_name:
+            cursor.execute("""
+            SELECT id, name, display_name FROM Role ORDER BY display_name
+            """)
+        else:
+            cursor.execute("""
+            SELECT id, name, name as display_name FROM Role ORDER BY name
+            """)
+        
+        roles = cursor.fetchall()
+        
+        return jsonify({'roles': roles})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if 'conn' in locals():
+            cursor.close()
+            conn.close()
+
+@roles_bp.route('/remove_role_from_user', methods=['POST'])
+@login_required
+@admin_required
+def remove_role_from_user():
+    """Удаляет роль у конкретного пользователя"""
+    user_id = request.form.get('user_id')
+    role_id = request.form.get('role_id')
+    
+    if not user_id or not role_id:
+        return jsonify({'success': False, 'message': 'Не указан ID пользователя или роли'})
+    
+    try:
+        conn = create_db_connection()
+        cursor = conn.cursor()
+        
+        # Проверяем существование таблицы UserRole
+        cursor.execute("SHOW TABLES LIKE 'UserRole'")
+        if not cursor.fetchone():
+            return jsonify({'success': False, 'message': 'Таблица ролей не найдена'})
+        
+        # Удаляем роль у пользователя
+        cursor.execute("""
+        DELETE FROM UserRole 
+        WHERE user_id = %s AND role_id = %s
+        """, (user_id, role_id))
+        
+        conn.commit()
+        
+        return jsonify({'success': True, 'message': 'Роль успешно удалена у пользователя'})
+    except Exception as e:
+        if 'conn' in locals():
+            conn.rollback()
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        if 'conn' in locals():
+            cursor.close()
+            conn.close()
+
+@roles_bp.route('/remove_role_from_all_users', methods=['POST'])
+@login_required
+@admin_required
+def remove_role_from_all_users():
+    """Удаляет роль у всех пользователей"""
+    role_id = request.form.get('role_id')
+    
+    if not role_id:
+        return jsonify({'success': False, 'message': 'Не указан ID роли'})
+    
+    try:
+        conn = create_db_connection()
+        cursor = conn.cursor()
+        
+        # Проверяем существование таблицы UserRole
+        cursor.execute("SHOW TABLES LIKE 'UserRole'")
+        if not cursor.fetchone():
+            return jsonify({'success': False, 'message': 'Таблица ролей не найдена'})
+        
+        # Удаляем роль у всех пользователей
+        cursor.execute("""
+        DELETE FROM UserRole 
+        WHERE role_id = %s
+        """, (role_id,))
+        
+        conn.commit()
+        
+        affected_rows = cursor.rowcount
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Роль успешно удалена у {affected_rows} пользователей',
+            'affected_rows': affected_rows
+        })
+    except Exception as e:
+        if 'conn' in locals():
+            conn.rollback()
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        if 'conn' in locals():
+            cursor.close()
+            conn.close()
+
+@roles_bp.route('/change_role_for_all_users', methods=['POST'])
+@login_required
+@admin_required
+def change_role_for_all_users():
+    """Меняет роль для всех пользователей с одной роли на другую"""
+    role_id = request.form.get('role_id')
+    new_role_id = request.form.get('new_role_id')
+    
+    if not role_id or not new_role_id:
+        return jsonify({'success': False, 'message': 'Не указан ID текущей или новой роли'})
+    
+    try:
+        conn = create_db_connection()
+        cursor = conn.cursor()
+        
+        # Проверяем существование таблицы UserRole
+        cursor.execute("SHOW TABLES LIKE 'UserRole'")
+        if not cursor.fetchone():
+            return jsonify({'success': False, 'message': 'Таблица ролей не найдена'})
+        
+        # Получаем пользователей с указанной ролью
+        cursor.execute("""
+        SELECT user_id FROM UserRole 
+        WHERE role_id = %s
+        """, (role_id,))
+        
+        user_ids = [row[0] for row in cursor.fetchall()]
+        
+        if not user_ids:
+            return jsonify({'success': True, 'message': 'Нет пользователей с этой ролью', 'affected_rows': 0})
+        
+        # Удаляем старую роль
+        cursor.execute("""
+        DELETE FROM UserRole 
+        WHERE role_id = %s
+        """, (role_id,))
+        
+        # Добавляем новую роль для всех пользователей
+        for user_id in user_ids:
+            cursor.execute("""
+            INSERT INTO UserRole (user_id, role_id)
+            VALUES (%s, %s)
+            """, (user_id, new_role_id))
+        
+        conn.commit()
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Роль успешно изменена для {len(user_ids)} пользователей',
+            'affected_rows': len(user_ids)
+        })
+    except Exception as e:
+        if 'conn' in locals():
+            conn.rollback()
+        return jsonify({'success': False, 'message': str(e)})
     finally:
         if 'conn' in locals():
             cursor.close()

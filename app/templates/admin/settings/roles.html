@@ -1,11 +1,86 @@
 {% extends "admin/settings/base.html" %}
 
 {% block settings_content %}
+<style>
+    .toast-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1050;
+    }
+    
+    .toast {
+        background-color: white;
+        border-left: 4px solid;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        min-width: 300px;
+        max-width: 400px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+    }
+    
+    .toast.success {
+        border-left-color: #28a745;
+    }
+    
+    .toast.error {
+        border-left-color: #dc3545;
+    }
+    
+    .btn-icon {
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        margin: 0 2px;
+    }
+    
+    .btn-icon i {
+        font-size: 14px;
+    }
+    
+    .actions-column {
+        width: 120px;
+    }
+    
+    .user-role-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+    
+    .module-description {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    
+    .form-switch {
+        padding-left: 2.5em;
+    }
+    
+    .form-switch .form-check-input {
+        width: 2em;
+        height: 1em;
+        margin-left: -2.5em;
+    }
+    
+    .modal-backdrop {
+        opacity: 0.5;
+    }
+</style>
+
+<!-- Контейнер для toast-уведомлений -->
+<div class="toast-container"></div>
+
 <!-- Управление ролями -->
 <div class="tab-pane fade show active" id="roles">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="card-title">Управление ролями пользователей</h5>
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addRoleModal">
+        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addRoleModal">
             <i class="fas fa-plus"></i> Добавить роль
         </button>
     </div>
@@ -58,7 +133,7 @@
                                     <th>Отображаемое имя</th>
                                     <th>Тип</th>
                                     <th>Описание</th>
-                                    <th width="250">Действия</th>
+                                    <th class="actions-column">Действия</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -79,26 +154,29 @@
                                     <td>{{ role.description }}</td>
                                     <td>
                                         <div class="btn-group">
-                                            <button type="button" class="btn btn-sm btn-primary edit-role" 
+                                            <button type="button" class="btn btn-sm btn-outline-primary btn-icon edit-role" 
                                                     data-role-id="{{ role.id }}"
                                                     data-role-name="{{ role.name }}"
                                                     data-role-display="{{ role.display_name }}"
                                                     data-role-type="{{ role.type }}"
                                                     data-role-desc="{{ role.description }}"
-                                                    data-role-system="{{ role.is_system }}">
-                                                <i class="fas fa-edit"></i> Редактировать
+                                                    data-role-system="{{ role.is_system }}"
+                                                    title="Редактировать роль">
+                                                <i class="fas fa-pencil-alt"></i>
                                             </button>
                                             {% if not role.is_system %}
-                                            <button type="button" class="btn btn-sm btn-danger delete-role" 
+                                            <button type="button" class="btn btn-sm btn-outline-danger btn-icon delete-role" 
                                                     data-role-id="{{ role.id }}" 
-                                                    data-role-name="{{ role.display_name }}">
-                                                <i class="fas fa-trash"></i> Удалить
+                                                    data-role-name="{{ role.display_name }}"
+                                                    title="Удалить роль">
+                                                <i class="fas fa-trash-alt"></i>
                                             </button>
                                             {% endif %}
-                                            <button type="button" class="btn btn-sm btn-info edit-permissions" 
+                                            <button type="button" class="btn btn-sm btn-outline-info btn-icon edit-permissions" 
                                                     data-role-id="{{ role.id }}"
-                                                    data-role-name="{{ role.display_name }}">
-                                                <i class="fas fa-key"></i> Разрешения
+                                                    data-role-name="{{ role.display_name }}"
+                                                    title="Управление разрешениями">
+                                                <i class="fas fa-key"></i>
                                             </button>
                                         </div>
                                     </td>
@@ -262,8 +340,136 @@
     </div>
 </div>
 
+<!-- Модальное окно для отображения пользователей роли -->
+<div class="modal fade" id="roleUsersModal" tabindex="-1" aria-labelledby="roleUsersModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="roleUsersModalLabel">Пользователи роли: <span id="roleUsersRoleName"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Имя</th>
+                                <th>Email</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="roleUsersTableBody">
+                            <!-- Здесь будет список пользователей -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="user-role-actions">
+                    <button type="button" class="btn btn-warning" id="changeRoleForAll">
+                        <i class="fas fa-exchange-alt"></i> Сменить роль для всех
+                    </button>
+                    <button type="button" class="btn btn-danger" id="removeRoleFromAll">
+                        <i class="fas fa-user-minus"></i> Удалить роль у всех
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для смены роли -->
+<div class="modal fade" id="changeRoleModal" tabindex="-1" aria-labelledby="changeRoleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="changeRoleModalLabel">Смена роли</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="changeRoleForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="newRoleSelect" class="form-label">Выберите новую роль</label>
+                        <select class="form-select" id="newRoleSelect" name="new_role_id" required>
+                            <!-- Здесь будут доступные роли -->
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сменить роль</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для отображения пользователей с ролью при попытке удаления -->
+<div class="modal fade" id="roleUsersDeleteModal" tabindex="-1" aria-labelledby="roleUsersDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="roleUsersDeleteModalLabel">Невозможно удалить роль</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i> Роль "<span id="deleteRoleUsersName"></span>" назначена пользователям и не может быть удалена.
+                </div>
+                
+                <p>Выберите действие:</p>
+                
+                <div class="d-flex gap-2 mb-3">
+                    <button type="button" class="btn btn-info" id="viewRoleUsers">
+                        <i class="fas fa-users"></i> Посмотреть список пользователей
+                    </button>
+                    <button type="button" class="btn btn-warning" id="changeRoleForAllUsers">
+                        <i class="fas fa-exchange-alt"></i> Сменить роль для всех
+                    </button>
+                    <button type="button" class="btn btn-danger" id="removeRoleFromAllUsers">
+                        <i class="fas fa-user-minus"></i> Удалить роль у всех
+                    </button>
+                </div>
+                
+                <div id="roleUsersList" class="d-none">
+                    <h6 class="mt-4">Пользователи с этой ролью:</h6>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Имя</th>
+                                    <th>Email</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody id="roleUsersDeleteTableBody">
+                                <!-- Здесь будет список пользователей -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Проверка, что jQuery и Bootstrap загружены
+    if (typeof jQuery === 'undefined') {
+        console.error('jQuery не загружен!');
+        return;
+    }
+    
+    if (typeof bootstrap === 'undefined') {
+        console.error('Bootstrap не загружен!');
+        return;
+    }
+    
+    console.log('Инициализация обработчиков событий для страницы ролей');
+    
     // Автоматическое создание системного имени из отображаемого имени
     $('#roleDisplayName').on('input', function() {
         var displayName = $(this).val().toLowerCase();
@@ -274,7 +480,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Обработчик для редактирования роли
-    $('.edit-role').click(function() {
+    $('.edit-role').on('click', function() {
+        console.log('Клик по кнопке редактирования роли');
         var roleId = $(this).data('role-id');
         var roleName = $(this).data('role-name');
         var roleDisplay = $(this).data('role-display');
@@ -299,132 +506,397 @@ document.addEventListener('DOMContentLoaded', function() {
             $('#systemRoleWarning').addClass('d-none');
         }
         
-        $('#editRoleModal').modal('show');
+        var editModal = new bootstrap.Modal(document.getElementById('editRoleModal'));
+        editModal.show();
     });
     
     // Обработчик для удаления роли
-    $('.delete-role').click(function() {
+    $('.delete-role').on('click', function() {
+        console.log('Клик по кнопке удаления роли');
         var roleId = $(this).data('role-id');
         var roleName = $(this).data('role-name');
         
-        $('#deleteRoleId').val(roleId);
-        $('#deleteRoleName').text(roleName);
-        
-        $('#deleteRoleModal').modal('show');
+        // Пытаемся удалить роль
+        $.ajax({
+            url: '{{ url_for("roles.delete_role") }}',
+            type: 'POST',
+            data: { role_id: roleId },
+            success: function(response) {
+                if (response.success) {
+                    showToast('Роль успешно удалена', 'success');
+                    // Удаляем строку из таблицы
+                    $(`button[data-role-id="${roleId}"]`).closest('tr').fadeOut(300, function() {
+                        $(this).remove();
+                    });
+                } else {
+                    if (response.error === 'role_has_users') {
+                        // Показываем модальное окно с пользователями
+                        $('#deleteRoleUsersName').text(roleName);
+                        $('#permissionRoleId').val(roleId);
+                        loadRoleUsersForDelete(roleId);
+                        
+                        var roleUsersDeleteModal = new bootstrap.Modal(document.getElementById('roleUsersDeleteModal'));
+                        roleUsersDeleteModal.show();
+                    } else {
+                        showToast(response.message || 'Произошла ошибка при удалении роли', 'error');
+                    }
+                }
+            },
+            error: function() {
+                showToast('Произошла ошибка при удалении роли', 'error');
+            }
+        });
     });
     
-    // Обработчик для редактирования разрешений
-    $('.edit-permissions').click(function() {
+    // Обработчик для редактирования разрешений роли
+    $('.edit-permissions').on('click', function() {
+        console.log('Клик по кнопке редактирования разрешений');
         var roleId = $(this).data('role-id');
         var roleName = $(this).data('role-name');
         
         $('#permissionRoleId').val(roleId);
         $('#permissionRoleName').text(roleName);
         
-        // Загружаем разрешения для роли через AJAX
-        $.getJSON('{{ url_for("roles.get_role_permissions", role_id=0) }}'.replace('0', roleId), function(data) {
-            // Очищаем таблицу
-            $('#permissionsTableBody').empty();
-            
-            // Загружаем список модулей
-            $.getJSON('{{ url_for("roles.get_modules") }}', function(moduleData) {
-                const permissions = data.permissions;
-                const modules = moduleData.modules;
+        // Загружаем данные разрешений для роли
+        $.getJSON('{{ url_for("roles.get_role_permissions", role_id=0) }}'.replace('0', roleId), function(roleData) {
+            // Загружаем список всех модулей
+            $.getJSON('{{ url_for("roles.get_modules") }}', function(modulesData) {
+                const tbody = $('#permissionsTableBody');
+                tbody.empty();
                 
-                // Создаем строки таблицы для каждого модуля
-                modules.forEach(function(module) {
-                    // Ищем разрешения для текущего модуля
-                    const modulePermission = permissions.find(p => p.module_name === module.name) || {
+                // Создаем карту разрешений для быстрого доступа
+                const permissionsMap = {};
+                roleData.permissions.forEach(function(permission) {
+                    permissionsMap[permission.module_id] = permission;
+                });
+                
+                // Добавляем строки для каждого модуля
+                modulesData.modules.forEach(function(module) {
+                    const permission = permissionsMap[module.id] || {
                         can_view: false,
                         can_create: false,
                         can_edit: false,
                         can_delete: false
                     };
                     
-                    // Формируем строку таблицы
-                    var row = `
-                    <tr>
-                        <td>
-                            <strong>${module.display_name}</strong>
-                            <div class="text-muted small">${module.description || ''}</div>
-                            <input type="hidden" name="module_ids[]" value="${module.id}">
-                        </td>
-                        <td class="text-center">
-                            <div class="form-check form-switch d-flex justify-content-center">
-                                <input class="form-check-input permission-checkbox" type="checkbox" 
-                                       name="permissions[${module.id}][view]" value="1"
-                                       id="view_${module.id}" ${modulePermission.can_view ? 'checked' : ''}>
-                            </div>
-                        </td>
-                        <td class="text-center">
-                            <div class="form-check form-switch d-flex justify-content-center">
-                                <input class="form-check-input permission-checkbox" type="checkbox" 
-                                       name="permissions[${module.id}][create]" value="1"
-                                       id="create_${module.id}" ${modulePermission.can_create ? 'checked' : ''}>
-                            </div>
-                        </td>
-                        <td class="text-center">
-                            <div class="form-check form-switch d-flex justify-content-center">
-                                <input class="form-check-input permission-checkbox" type="checkbox" 
-                                       name="permissions[${module.id}][edit]" value="1"
-                                       id="edit_${module.id}" ${modulePermission.can_edit ? 'checked' : ''}>
-                            </div>
-                        </td>
-                        <td class="text-center">
-                            <div class="form-check form-switch d-flex justify-content-center">
-                                <input class="form-check-input permission-checkbox" type="checkbox" 
-                                       name="permissions[${module.id}][delete]" value="1"
-                                       id="delete_${module.id}" ${modulePermission.can_delete ? 'checked' : ''}>
-                            </div>
-                        </td>
-                    </tr>
+                    const row = `
+                        <tr>
+                            <td>
+                                ${module.display_name || module.name}
+                                <div class="module-description">${module.description || 'Нет описания'}</div>
+                            </td>
+                            <td class="text-center">
+                                <div class="form-check form-switch justify-content-center">
+                                    <input class="form-check-input" type="checkbox" name="permissions[${module.id}][view]" 
+                                           id="perm_${module.id}_view" ${permission.can_view ? 'checked' : ''}>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <div class="form-check form-switch justify-content-center">
+                                    <input class="form-check-input" type="checkbox" name="permissions[${module.id}][create]" 
+                                           id="perm_${module.id}_create" ${permission.can_create ? 'checked' : ''}>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <div class="form-check form-switch justify-content-center">
+                                    <input class="form-check-input" type="checkbox" name="permissions[${module.id}][edit]" 
+                                           id="perm_${module.id}_edit" ${permission.can_edit ? 'checked' : ''}>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <div class="form-check form-switch justify-content-center">
+                                    <input class="form-check-input" type="checkbox" name="permissions[${module.id}][delete]" 
+                                           id="perm_${module.id}_delete" ${permission.can_delete ? 'checked' : ''}>
+                                </div>
+                            </td>
+                        </tr>
                     `;
                     
-                    // Добавляем строку в таблицу
-                    $('#permissionsTableBody').append(row);
+                    tbody.append(row);
                 });
+                
+                // Отображаем модальное окно
+                var permissionsModal = new bootstrap.Modal(document.getElementById('editPermissionsModal'));
+                permissionsModal.show();
             });
         });
-        
-        $('#editPermissionsModal').modal('show');
     });
     
-    // Отправка формы разрешений через AJAX
-    $('#editPermissionsForm').on('submit', function(e) {
-        e.preventDefault();
-        var formData = $(this).serialize();
+    // Загрузка пользователей роли для удаления
+    function loadRoleUsersForDelete(roleId) {
+        $.getJSON('{{ url_for("roles.get_role_users", role_id=0) }}'.replace('0', roleId), function(data) {
+            const tbody = $('#roleUsersDeleteTableBody');
+            tbody.empty();
+            
+            data.users.forEach(function(user) {
+                tbody.append(`
+                    <tr>
+                        <td>${user.id}</td>
+                        <td>${user.name}</td>
+                        <td>${user.email}</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-danger btn-icon remove-user-role-delete" 
+                                    data-user-id="${user.id}" title="Удалить роль">
+                                <i class="fas fa-user-minus"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `);
+            });
+        });
+    }
+    
+    // Загрузка пользователей роли
+    function loadRoleUsers(roleId) {
+        $.getJSON('{{ url_for("roles.get_role_users", role_id=0) }}'.replace('0', roleId), function(data) {
+            const tbody = $('#roleUsersTableBody');
+            tbody.empty();
+            
+            data.users.forEach(function(user) {
+                tbody.append(`
+                    <tr>
+                        <td>${user.id}</td>
+                        <td>${user.name}</td>
+                        <td>${user.email}</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-danger btn-icon remove-user-role" 
+                                    data-user-id="${user.id}" title="Удалить роль">
+                                <i class="fas fa-user-minus"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `);
+            });
+            
+            // Загружаем список доступных ролей для смены
+            loadAvailableRoles(roleId);
+        });
+    }
+    
+    // Загрузка доступных ролей
+    function loadAvailableRoles(currentRoleId) {
+        $.getJSON('{{ url_for("roles.get_available_roles") }}', function(data) {
+            const select = $('#newRoleSelect');
+            select.empty();
+            
+            data.roles.forEach(function(role) {
+                if (role.id != currentRoleId) {
+                    select.append(`<option value="${role.id}">${role.display_name}</option>`);
+                }
+            });
+        });
+    }
+    
+    // Показать список пользователей при попытке удаления роли
+    $('#viewRoleUsers').on('click', function() {
+        $('#roleUsersList').removeClass('d-none');
+        loadRoleUsersForDelete($('#permissionRoleId').val());
+    });
+    
+    // Смена роли для всех пользователей при попытке удаления
+    $('#changeRoleForAllUsers').on('click', function() {
+        const roleId = $('#permissionRoleId').val();
+        
+        // Загружаем список доступных ролей
+        $.getJSON('{{ url_for("roles.get_available_roles") }}', function(data) {
+            const select = $('#newRoleSelect');
+            select.empty();
+            
+            data.roles.forEach(function(role) {
+                if (role.id != roleId) {
+                    select.append(`<option value="${role.id}">${role.display_name}</option>`);
+                }
+            });
+            
+            // Закрываем текущее модальное окно
+            $('#roleUsersDeleteModal').modal('hide');
+            
+            // Открываем модальное окно смены роли
+            var changeRoleModal = new bootstrap.Modal(document.getElementById('changeRoleModal'));
+            changeRoleModal.show();
+        });
+    });
+    
+    // Удаление роли у всех пользователей при попытке удаления
+    $('#removeRoleFromAllUsers').on('click', function() {
+        if (confirm('Вы действительно хотите удалить роль у всех пользователей?')) {
+            const roleId = $('#permissionRoleId').val();
+            
+            $.ajax({
+                url: '{{ url_for("roles.remove_role_from_all_users") }}',
+                type: 'POST',
+                data: { role_id: roleId },
+                success: function(response) {
+                    if (response.success) {
+                        showToast('Роль успешно удалена у всех пользователей', 'success');
+                        $('#roleUsersDeleteModal').modal('hide');
+                        
+                        // Удаляем строку из таблицы
+                        $(`button[data-role-id="${roleId}"]`).closest('tr').fadeOut(300, function() {
+                            $(this).remove();
+                        });
+                    } else {
+                        showToast(response.message || 'Произошла ошибка', 'error');
+                    }
+                },
+                error: function() {
+                    showToast('Произошла ошибка при удалении роли', 'error');
+                }
+            });
+        }
+    });
+    
+    // Удаление роли у пользователя
+    $(document).on('click', '.remove-user-role', function() {
+        const userId = $(this).data('user-id');
+        const roleId = $('#permissionRoleId').val();
         
         $.ajax({
-            url: $(this).attr('action'),
+            url: '{{ url_for("roles.remove_role_from_user") }}',
             type: 'POST',
-            data: formData,
+            data: { user_id: userId, role_id: roleId },
             success: function(response) {
-                $('#editPermissionsModal').modal('hide');
-                
-                // Показываем уведомление об успехе
-                var alert = `
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    Разрешения успешно обновлены
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>`;
-                $('#roles').prepend(alert);
-            },
-            error: function(xhr) {
-                var errorMsg = 'Произошла ошибка при обновлении разрешений';
-                if (xhr.responseJSON && xhr.responseJSON.error) {
-                    errorMsg = xhr.responseJSON.error;
+                if (response.success) {
+                    showToast('Роль успешно удалена у пользователя', 'success');
+                    $(`button[data-user-id="${userId}"]`).closest('tr').fadeOut(300, function() {
+                        $(this).remove();
+                    });
+                } else {
+                    showToast(response.message || 'Произошла ошибка', 'error');
                 }
-                
-                // Показываем уведомление об ошибке
-                var alert = `
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    ${errorMsg}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>`;
-                $('#editPermissionsModal .modal-body').prepend(alert);
+            },
+            error: function() {
+                showToast('Произошла ошибка при удалении роли', 'error');
             }
         });
     });
+    
+    // Удаление роли у пользователя при попытке удаления роли
+    $(document).on('click', '.remove-user-role-delete', function() {
+        const userId = $(this).data('user-id');
+        const roleId = $('#permissionRoleId').val();
+        
+        $.ajax({
+            url: '{{ url_for("roles.remove_role_from_user") }}',
+            type: 'POST',
+            data: { user_id: userId, role_id: roleId },
+            success: function(response) {
+                if (response.success) {
+                    showToast('Роль успешно удалена у пользователя', 'success');
+                    $(`button[data-user-id="${userId}"]`).closest('tr').fadeOut(300, function() {
+                        $(this).remove();
+                    });
+                    
+                    // Проверяем, остались ли пользователи с этой ролью
+                    if ($('#roleUsersDeleteTableBody tr:visible').length === 0) {
+                        showToast('Роль успешно удалена у всех пользователей', 'success');
+                        $('#roleUsersDeleteModal').modal('hide');
+                        
+                        // Удаляем строку из таблицы
+                        $(`button[data-role-id="${roleId}"]`).closest('tr').fadeOut(300, function() {
+                            $(this).remove();
+                        });
+                    }
+                } else {
+                    showToast(response.message || 'Произошла ошибка', 'error');
+                }
+            },
+            error: function() {
+                showToast('Произошла ошибка при удалении роли', 'error');
+            }
+        });
+    });
+    
+    // Смена роли для всех пользователей
+    $('#changeRoleForAll').on('click', function() {
+        var changeRoleModal = new bootstrap.Modal(document.getElementById('changeRoleModal'));
+        changeRoleModal.show();
+    });
+    
+    // Обработка формы смены роли
+    $('#changeRoleForm').on('submit', function(e) {
+        e.preventDefault();
+        const roleId = $('#permissionRoleId').val();
+        const newRoleId = $('#newRoleSelect').val();
+        
+        $.ajax({
+            url: '{{ url_for("roles.change_role_for_all_users") }}',
+            type: 'POST',
+            data: { role_id: roleId, new_role_id: newRoleId },
+            success: function(response) {
+                if (response.success) {
+                    showToast('Роль успешно изменена для всех пользователей', 'success');
+                    $('#changeRoleModal').modal('hide');
+                    $('#roleUsersModal').modal('hide');
+                } else {
+                    showToast(response.message || 'Произошла ошибка', 'error');
+                }
+            },
+            error: function() {
+                showToast('Произошла ошибка при смене роли', 'error');
+            }
+        });
+    });
+    
+    // Удаление роли у всех пользователей
+    $('#removeRoleFromAll').on('click', function() {
+        if (confirm('Вы действительно хотите удалить роль у всех пользователей?')) {
+            const roleId = $('#permissionRoleId').val();
+            
+            $.ajax({
+                url: '{{ url_for("roles.remove_role_from_all_users") }}',
+                type: 'POST',
+                data: { role_id: roleId },
+                success: function(response) {
+                    if (response.success) {
+                        showToast('Роль успешно удалена у всех пользователей', 'success');
+                        $('#roleUsersModal').modal('hide');
+                    } else {
+                        showToast(response.message || 'Произошла ошибка', 'error');
+                    }
+                },
+                error: function() {
+                    showToast('Произошла ошибка при удалении роли', 'error');
+                }
+            });
+        }
+    });
+    
+    // Валидация системного имени
+    $('#roleName').on('input', function() {
+        this.value = this.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+    });
+    
+    // Инициализация тултипов
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Исправление проблемы с серым экраном при закрытии модальных окон
+    $('.modal').on('hidden.bs.modal', function() {
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open').css('padding-right', '');
+    });
 });
+
+// Функция для показа toast-уведомлений
+function showToast(message, type = 'success') {
+    const toastContainer = document.querySelector('.toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type} show`;
+    toast.innerHTML = `
+        <div class="toast-body">
+            ${message}
+        </div>
+    `;
+    toastContainer.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
 </script>
+{% endblock %}
+
 {% endblock %} 

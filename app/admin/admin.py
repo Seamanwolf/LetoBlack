@@ -1103,7 +1103,7 @@ def delete_employee_api():
     # Пробуем получить ID из разных источников, так как jQuery может отправлять данные по-разному
     employee_id = request.args.get('id') or request.form.get('id')
     logger.debug(f"Запрошено удаление сотрудника с ID: {employee_id}")
-    
+        
     if not employee_id:
         logger.warning("ID сотрудника не указан в запросе")
         return jsonify({'success': False, 'message': 'ID сотрудника не указан'})
@@ -1199,8 +1199,8 @@ def personnel_dashboard():
     
     connection = create_db_connection()
     cursor = connection.cursor(dictionary=True)
-        
-    # Получение статистики
+    
+        # Получение статистики
     cursor.execute("SELECT COUNT(*) as total FROM User WHERE status != 'fired'")
     total_employees = cursor.fetchone()['total']
     
