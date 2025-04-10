@@ -576,3 +576,104 @@ def save_background(file):
     images_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'images')
     return save_uploaded_file(file, images_dir, 'real_estate_bg.jpg')
 
+def check_module_access(user_id, module_name):
+    """
+    Проверяет, имеет ли пользователь доступ к указанному модулю
+    
+    Args:
+        user_id: ID пользователя
+        module_name: Название модуля ('Дашборд', 'ВАТС', 'Колл-центр', etc.)
+        
+    Returns:
+        bool: True если пользователь имеет доступ, False в противном случае
+    """
+    if not user_id:
+        return False
+        
+    try:
+        connection = create_db_connection()
+        if not connection:
+            return False
+            
+        with connection.cursor(dictionary=True) as cursor:
+            # Проверяем доступ через таблицу RolePermission
+            cursor.execute("""
+                SELECT COUNT(*) as has_access 
+                FROM Module m
+                JOIN RolePermission rp ON m.id = rp.module_id
+                JOIN UserRole ur ON rp.role_id = ur.role_id
+                WHERE ur.user_id = %s 
+                AND m.name = %s 
+                AND rp.can_view = 1
+            """, (user_id, module_name))
+            
+            result = cursor.fetchone()
+            
+            # Если пользователь администратор, у него есть доступ ко всем модулям
+            cursor.execute("SELECT role FROM User WHERE id = %s", (user_id,))
+            user = cursor.fetchone()
+            
+            if user and user['role'] == 'admin':
+                return True
+                
+            return result and result['has_access'] > 0
+    except Exception as e:
+        print(f"Ошибка при проверке доступа к модулю: {e}")
+        return False
+    finally:
+        if connection:
+            connection.close()
+            
+def get_user_accessible_modules(user_id):
+    """
+    Получает список модулей, к которым у пользователя есть доступ
+    
+    Args:
+        user_id: ID пользователя
+        
+    Returns:
+        list: Список названий модулей, к которым есть доступ
+    """
+    if not user_id:
+        return []
+        
+    try:
+        connection = create_db_connection()
+        if not connection:
+            print(f"Не удалось установить соединение с БД для пользователя {user_id}")
+            return []
+            
+        with connection.cursor(dictionary=True) as cursor:
+            # Проверяем, является ли пользователь администратором
+            cursor.execute("SELECT role FROM User WHERE id = %s", (user_id,))
+            user = cursor.fetchone()
+            
+            if user and user['role'] == 'admin':
+                # Администратору доступны все модули
+                cursor.execute("SELECT name FROM Module")
+                modules = cursor.fetchall()
+                module_names = [m['name'] for m in modules]
+                print(f"Пользователь {user_id} является администратором. Доступные модули: {module_names}")
+                return module_names
+            
+            # Для других ролей - только модули с разрешением can_view
+            cursor.execute("""
+                SELECT DISTINCT m.name 
+                FROM Module m
+                JOIN RolePermission rp ON m.id = rp.module_id
+                JOIN UserRole ur ON rp.role_id = ur.role_id
+                WHERE ur.user_id = %s 
+                AND rp.can_view = 1
+            """, (user_id,))
+            
+            modules = cursor.fetchall()
+            module_names = [m['name'] for m in modules]
+            print(f"Пользователь {user_id} с ролью {user.get('role')}. Доступные модули: {module_names}")
+            return module_names
+    except Exception as e:
+        print(f"Ошибка при получении доступных модулей для пользователя {user_id}: {e}")
+        return []
+    finally:
+        if connection:
+            connection.close()
+

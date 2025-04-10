@@ -112,4 +112,20 @@ def create_app(config_class=Config):
     # Завершаем планировщик при завершении приложения
     atexit.register(lambda: scheduler.shutdown())
     
+    # Настройка логгера на уровне приложения
+    app.logger = logging.getLogger(__name__)
+    
+    # Добавляем контекстный процессор для доступа к модулям
+    @app.context_processor
+    def inject_accessible_modules():
+        def get_accessible_modules():
+            from app.utils import get_user_accessible_modules
+            from flask_login import current_user
+            
+            if current_user.is_authenticated:
+                return get_user_accessible_modules(current_user.id)
+            return []
+            
+        return {'get_accessible_modules': get_accessible_modules}
+    
     return app
