@@ -13,7 +13,16 @@ def admin_required(f):
             return redirect(url_for('auth.login', next=request.url))
             
         # Проверяем наличие роли admin у пользователя
-        admin_role = any(role.name == 'admin' for role in current_user.roles)
+        admin_role = False
+        
+        # Поддержка старого способа (через прямой атрибут role)
+        if hasattr(current_user, 'role') and current_user.role == 'admin':
+            admin_role = True
+        
+        # Поддержка нового способа (через свойство roles)
+        elif hasattr(current_user, 'roles') and current_user.roles:
+            admin_role = any(role.name == 'admin' for role in current_user.roles)
+            
         if not admin_role:
             flash('У вас недостаточно прав для доступа к этой странице', 'danger')
             return redirect(url_for('main.index'))
@@ -37,7 +46,16 @@ def role_required(role_name):
                 return redirect(url_for('auth.login', next=request.url))
                 
             # Проверяем наличие указанной роли у пользователя
-            has_role = any(role.name == role_name for role in current_user.roles)
+            has_role = False
+            
+            # Поддержка старого способа (через прямой атрибут role)
+            if hasattr(current_user, 'role') and current_user.role == role_name:
+                has_role = True
+            
+            # Поддержка нового способа (через свойство roles)
+            elif hasattr(current_user, 'roles') and current_user.roles:
+                has_role = any(role.name == role_name for role in current_user.roles)
+                
             if not has_role:
                 flash('У вас недостаточно прав для доступа к этой странице', 'danger')
                 return redirect(url_for('main.index'))
@@ -64,16 +82,28 @@ def permission_required(module_name, action):
                 return redirect(url_for('auth.login', next=request.url))
             
             # Проверяем наличие роли admin у пользователя (у админа есть все права)
-            admin_role = any(role.name == 'admin' for role in current_user.roles)
+            admin_role = False
+            
+            # Поддержка старого способа (через прямой атрибут role)
+            if hasattr(current_user, 'role') and current_user.role == 'admin':
+                admin_role = True
+            
+            # Поддержка нового способа (через свойство roles)
+            elif hasattr(current_user, 'roles') and current_user.roles:
+                admin_role = any(role.name == 'admin' for role in current_user.roles)
+                
             if admin_role:
                 return f(*args, **kwargs)
                 
             # Проверяем наличие разрешения у пользователя через его роли
             has_permission = False
-            for role in current_user.roles:
-                if role.has_permission(module_name, action):
-                    has_permission = True
-                    break
+            
+            # Для новой системы ролей
+            if hasattr(current_user, 'roles') and current_user.roles:
+                for role in current_user.roles:
+                    if hasattr(role, 'has_permission') and role.has_permission(module_name, action):
+                        has_permission = True
+                        break
             
             if not has_permission:
                 flash(f'У вас недостаточно прав для {action} в модуле {module_name}', 'danger')
@@ -101,13 +131,23 @@ def has_permission(module_name, action):
         return False
     
     # У администратора есть все права
-    admin_role = any(role.name == 'admin' for role in current_user.roles)
+    admin_role = False
+            
+    # Поддержка старого способа (через прямой атрибут role)
+    if hasattr(current_user, 'role') and current_user.role == 'admin':
+        admin_role = True
+    
+    # Поддержка нового способа (через свойство roles)
+    elif hasattr(current_user, 'roles') and current_user.roles:
+        admin_role = any(role.name == 'admin' for role in current_user.roles)
+        
     if admin_role:
         return True
         
-    # Проверяем наличие разрешения у пользователя через его роли
-    for role in current_user.roles:
-        if role.has_permission(module_name, action):
-            return True
+    # Проверяем наличие разрешения у пользователя через его роли (для новой системы)
+    if hasattr(current_user, 'roles') and current_user.roles:
+        for role in current_user.roles:
+            if hasattr(role, 'has_permission') and role.has_permission(module_name, action):
+                return True
     
     return False 

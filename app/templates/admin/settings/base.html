@@ -2,57 +2,159 @@
 
 {% block title %}Настройки системы{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
+<style>
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    .btn-xs {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.7rem;
+    }
+    .btn i {
+        font-size: 0.8rem;
+        margin-right: 3px;
+    }
+    
+    /* Стили для input[type="file"] */
+    .custom-file-input {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+    }
+    
+    .custom-file-input input[type="file"] {
+        position: absolute;
+        left: 0;
+        top: 0;
+        opacity: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+    }
+    
+    .custom-file-label {
+        display: block;
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 400;
+        line-height: 1.5;
+        color: #495057;
+        background-color: #fff;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        text-align: center;
+        cursor: pointer;
+    }
+    
+    .custom-file-label:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .custom-file-label i {
+        margin-right: 5px;
+    }
+
+    /* Стили для меню */
+    .settings-menu {
+        background-color: #f8f9fa;
+        border-radius: 0.25rem;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .settings-menu ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+    }
+    
+    .settings-menu li {
+        margin-right: 15px;
+        margin-bottom: 10px;
+    }
+    
+    .settings-menu a {
+        display: inline-block;
+        padding: 8px 15px;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        color: #333;
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+    }
+    
+    .settings-menu a:hover {
+        background-color: #e9ecef;
+        border-color: #ced4da;
+    }
+    
+    .settings-menu a.active {
+        background-color: #007bff;
+        border-color: #007bff;
+        color: white;
+    }
+    
+    .settings-menu i {
+        margin-right: 5px;
+    }
+    
+    /* Стили для табов настроек */
+    .settings-content {
+        background-color: #fff;
+        border-radius: 0.25rem;
+        padding: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .card {
+        border: 1px solid rgba(0,0,0,.125);
+        border-radius: 0.25rem;
+        margin-bottom: 1rem;
+    }
+    
+    .card-header {
+        background-color: rgba(0,0,0,.03);
+        border-bottom: 1px solid rgba(0,0,0,.125);
+        padding: 0.75rem 1.25rem;
+    }
+    
+    .card-body {
+        padding: 1.25rem;
+    }
+    
+    .card-title {
+        margin-bottom: 0.75rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container-fluid mt-4">
-    <div class="row">
-        <div class="col-md-12">
-            <h2 class="mb-4">Настройки системы</h2>
-            
-            <div class="card shadow">
-                <div class="card-header">
-                    <ul class="nav nav-tabs card-header-tabs" id="settingsTabs" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link{% if active_tab == 'general' %} active{% endif %}" 
-                               id="general-tab" href="{{ url_for('admin.settings') }}" role="tab">
-                                <i class="fas fa-cog"></i> Общие
-                            </a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link{% if active_tab == 'roles' %} active{% endif %}" 
-                               id="roles-tab" href="{{ url_for('admin.settings_roles') }}" role="tab">
-                                <i class="fas fa-user-tag"></i> Роли пользователей
-                            </a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link{% if active_tab == 'departments' %} active{% endif %}" 
-                               id="departments-tab" href="#" role="tab">
-                                <i class="fas fa-sitemap"></i> Отделы
-                            </a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link{% if active_tab == 'email' %} active{% endif %}" 
-                               id="email-tab" href="#" role="tab">
-                                <i class="fas fa-envelope"></i> Настройки почты
-                            </a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link{% if active_tab == 'backup' %} active{% endif %}" 
-                               id="backup-tab" href="#" role="tab">
-                                <i class="fas fa-database"></i> Резервное копирование
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-                
-                <div class="card-body">
-                    <div class="tab-content" id="settingsContent">
-                        {% block settings_content %}
-                        <!-- Контент для каждой вкладки будет определен в дочерних шаблонах -->
-                        {% endblock %}
-                    </div>
-                </div>
-            </div>
-        </div>
+<div class="container mt-4">
+    <h2>Настройки системы</h2>
+    
+    <!-- Меню настроек -->
+    <div class="settings-menu">
+        <ul>
+            <li><a href="{{ url_for('admin.settings') }}" {% if active_tab == 'general' %}class="active"{% endif %}><i class="fas fa-cog"></i> Общие настройки</a></li>
+            <li><a href="#" {% if active_tab == 'users' %}class="active"{% endif %}><i class="fas fa-users"></i> Пользователи</a></li>
+            <li><a href="#" {% if active_tab == 'database' %}class="active"{% endif %}><i class="fas fa-database"></i> База данных</a></li>
+            <li><a href="#" {% if active_tab == 'security' %}class="active"{% endif %}><i class="fas fa-shield-alt"></i> Безопасность</a></li>
+            <li><a href="{{ url_for('roles.index') }}" {% if active_tab == 'roles' %}class="active"{% endif %}><i class="fas fa-user-tag"></i> Роли пользователей</a></li>
+            <li><a href="#" {% if active_tab == 'notifications' %}class="active"{% endif %}><i class="fas fa-bell"></i> Уведомления</a></li>
+            <li><a href="#" {% if active_tab == 'logs' %}class="active"{% endif %}><i class="fas fa-file-alt"></i> Логи системы</a></li>
+        </ul>
+    </div>
+    
+    <!-- Содержимое выбранного таба -->
+    <div class="settings-content">
+        {% block settings_content %}{% endblock %}
     </div>
 </div>
 {% endblock %} 

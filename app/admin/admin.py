@@ -1519,3 +1519,169 @@ def update_department_order():
             cursor.close()
         if 'conn' in locals():
             conn.close()
+
+@admin_bp.route('/initialize_roles_tables', methods=['GET'])
+@login_required
+@admin_required
+def initialize_roles_tables():
+    """Инициализирует таблицы ролей, модулей и разрешений"""
+    conn = create_db_connection()
+    
+    try:
+        # Создаем таблицу Role
+        cursor = conn.cursor()
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS `Role` (
+          `id` INT AUTO_INCREMENT PRIMARY KEY,
+          `name` VARCHAR(50) NOT NULL UNIQUE COMMENT 'Название роли',
+          `display_name` VARCHAR(100) NOT NULL COMMENT 'Отображаемое имя роли',
+          `description` TEXT COMMENT 'Описание роли',
+          `role_type` ENUM('system', 'backoffice', 'custom') DEFAULT 'custom',
+          `is_system` TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Системная роль (нельзя удалить)',
+          `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          `updated_at` DATETIME NULL ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+        """)
+        
+        # Создаем таблицу Module
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS `Module` (
+          `id` INT AUTO_INCREMENT PRIMARY KEY,
+          `name` VARCHAR(50) NOT NULL UNIQUE COMMENT 'Системное имя модуля',
+          `display_name` VARCHAR(100) NOT NULL COMMENT 'Отображаемое имя модуля',
+          `description` TEXT COMMENT 'Описание модуля',
+          `url_path` VARCHAR(100) COMMENT 'URL-путь модуля',
+          `icon` VARCHAR(50) COMMENT 'Иконка для меню',
+          `order` INT DEFAULT 0 COMMENT 'Порядок отображения',
+          `is_active` TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'Активен ли модуль',
+          `parent_id` INT NULL COMMENT 'ID родительского модуля для подразделов',
+          `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          `updated_at` DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+          FOREIGN KEY (`parent_id`) REFERENCES `Module`(`id`) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+        """)
+        
+        # Создаем таблицу RolePermission
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS `RolePermission` (
+          `id` INT AUTO_INCREMENT PRIMARY KEY,
+          `role_id` INT NOT NULL,
+          `module_id` INT NOT NULL,
+          `can_view` TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'Право на просмотр',
+          `can_edit` TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Право на редактирование',
+          `can_create` TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Право на создание',
+          `can_delete` TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Право на удаление',
+          `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          `updated_at` DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+          FOREIGN KEY (`role_id`) REFERENCES `Role`(`id`) ON DELETE CASCADE,
+          FOREIGN KEY (`module_id`) REFERENCES `Module`(`id`) ON DELETE CASCADE,
+          UNIQUE KEY `unique_role_module` (`role_id`, `module_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+        """)
+        
+        # Создаем таблицу UserRole
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS `UserRole` (
+          `id` INT AUTO_INCREMENT PRIMARY KEY,
+          `user_id` INT NOT NULL,
+          `role_id` INT NOT NULL,
+          `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          `updated_at` DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+          FOREIGN KEY (`user_id`) REFERENCES `User`(`id`) ON DELETE CASCADE,
+          FOREIGN KEY (`role_id`) REFERENCES `Role`(`id`) ON DELETE CASCADE,
+          UNIQUE KEY `unique_user_role` (`user_id`, `role_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+        """)
+        
+        # Проверяем, есть ли уже роли в таблице Role
+        cursor.execute("SELECT COUNT(*) FROM `Role`")
+        role_count = cursor.fetchone()[0]
+        
+        if role_count == 0:
+            # Заполняем таблицу базовыми ролями
+            cursor.execute("""
+            INSERT INTO `Role` (`name`, `display_name`, `description`, `role_type`, `is_system`) VALUES
+            ('admin', 'Администратор', 'Полный доступ ко всем разделам системы', 'system', 1),
+            ('leader', 'Руководитель', 'Доступ к управлению и отчетам', 'system', 1),
+            ('operator', 'Оператор', 'Базовый доступ к системе', 'system', 1),
+            ('user', 'Пользователь', 'Минимальные права доступа', 'system', 1),
+            ('backoffice', 'Бэк-офис', 'Работа с документами', 'backoffice', 0);
+            """)
+        
+        # Проверяем, есть ли уже модули в таблице Module
+        cursor.execute("SELECT COUNT(*) FROM `Module`")
+        module_count = cursor.fetchone()[0]
+        
+        if module_count == 0:
+            # Заполняем таблицу базовыми модулями
+            cursor.execute("""
+            INSERT INTO `Module` (`name`, `display_name`, `description`, `url_path`, `icon`, `order`, `is_active`) VALUES
+            ('dashboard', 'Дашборд', 'Главная страница системы', '/dashboard', 'fas fa-home', 1, 1),
+            ('news', 'Новости', 'Управление новостями', '/news', 'fas fa-newspaper', 2, 1),
+            ('rating', 'Рейтинг', 'Рейтинг брокеров', '/rating', 'fas fa-chart-line', 3, 1),
+            ('personnel', 'Персонал', 'Управление сотрудниками', '/personnel', 'fas fa-users', 4, 1),
+            ('settings', 'Настройки', 'Настройки системы', '/admin/settings', 'fas fa-cog', 5, 1),
+            ('callcenter', 'Колл-центр', 'Управление колл-центром', '/callcenter', 'fas fa-phone', 6, 1),
+            ('helpdesk', 'Хелпдеск', 'Система поддержки', '/helpdesk', 'fas fa-headset', 7, 1);
+            """)
+            
+            # Получаем ID администратора
+            cursor.execute("SELECT id FROM `Role` WHERE name = 'admin'")
+            admin_role_id = cursor.fetchone()[0]
+            
+            # Добавляем все права администратору на все модули
+            cursor.execute("""
+            INSERT INTO `RolePermission` (`role_id`, `module_id`, `can_view`, `can_edit`, `can_create`, `can_delete`)
+            SELECT %s, id, 1, 1, 1, 1 FROM `Module`
+            """, (admin_role_id,))
+            
+            # Получаем ID руководителя
+            cursor.execute("SELECT id FROM `Role` WHERE name = 'leader'")
+            leader_role_id = cursor.fetchone()[0]
+            
+            # Добавляем права руководителю на просмотр и редактирование некоторых модулей
+            cursor.execute("""
+            INSERT INTO `RolePermission` (`role_id`, `module_id`, `can_view`, `can_edit`, `can_create`, `can_delete`)
+            SELECT %s, id, 1, 1, 1, 0 FROM `Module` WHERE `name` IN ('dashboard', 'personnel', 'rating')
+            """, (leader_role_id,))
+            
+            # Права только на просмотр для руководителя
+            cursor.execute("""
+            INSERT INTO `RolePermission` (`role_id`, `module_id`, `can_view`, `can_edit`, `can_create`, `can_delete`)
+            SELECT %s, id, 1, 0, 0, 0 FROM `Module` WHERE `name` IN ('news', 'settings')
+            """, (leader_role_id,))
+            
+            # Получаем ID оператора
+            cursor.execute("SELECT id FROM `Role` WHERE name = 'operator'")
+            operator_role_id = cursor.fetchone()[0]
+            
+            # Добавляем права оператору
+            cursor.execute("""
+            INSERT INTO `RolePermission` (`role_id`, `module_id`, `can_view`, `can_edit`, `can_create`, `can_delete`)
+            SELECT %s, id, 1, 1, 1, 0 FROM `Module` WHERE `name` IN ('callcenter')
+            """, (operator_role_id,))
+            
+            cursor.execute("""
+            INSERT INTO `RolePermission` (`role_id`, `module_id`, `can_view`, `can_edit`, `can_create`, `can_delete`)
+            SELECT %s, id, 1, 0, 0, 0 FROM `Module` WHERE `name` IN ('dashboard', 'news')
+            """, (operator_role_id,))
+            
+            # Получаем ID пользователя
+            cursor.execute("SELECT id FROM `Role` WHERE name = 'user'")
+            user_role_id = cursor.fetchone()[0]
+            
+            # Добавляем базовые права пользователю
+            cursor.execute("""
+            INSERT INTO `RolePermission` (`role_id`, `module_id`, `can_view`, `can_edit`, `can_create`, `can_delete`)
+            SELECT %s, id, 1, 0, 0, 0 FROM `Module` WHERE `name` IN ('dashboard', 'news')
+            """, (user_role_id,))
+            
+        conn.commit()
+        flash('Таблицы ролей успешно инициализированы', 'success')
+    except Exception as e:
+        conn.rollback()
+        flash(f'Ошибка при инициализации таблиц ролей: {str(e)}', 'danger')
+    finally:
+        conn.close()
+    
+    return redirect(url_for('roles.index'))
