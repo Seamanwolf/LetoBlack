@@ -1,0 +1,40 @@
+<!-- Модальное окно добавления/редактирования отдела -->
+<div class="modal fade" id="addDepartmentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="departmentModalTitle">Добавить отдел</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="departmentForm">
+                    <input type="hidden" id="departmentId" name="id">
+                    <div class="mb-3">
+                        <label for="departmentName" class="form-label">Название отдела</label>
+                        <input type="text" class="form-control" id="departmentName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="departmentLocation" class="form-label">Локация</label>
+                        <select class="form-select" id="departmentLocation" name="location_id" required>
+                            <option value="">Выберите локацию</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="departmentLeader" class="form-label">Руководитель</label>
+                        <select class="form-select" id="departmentLeader" name="leader_id">
+                            <option value="">Выберите руководителя</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="departmentDescription" class="form-label">Описание</label>
+                        <textarea class="form-control" id="departmentDescription" name="description" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="saveDepartment">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div> 

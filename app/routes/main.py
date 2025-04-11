@@ -9,7 +9,7 @@ def index():
     # Если пользователь авторизован, перенаправляем на соответствующую панель
     if current_user.is_authenticated:
         if current_user.role == 'admin':
-            return redirect(url_for('admin.admin_dashboard'))
+            return redirect(url_for('admin_routes_unique.admin_dashboard'))
         elif current_user.role == 'leader':
             return redirect(url_for('admin_routes.personnel'))
         elif current_user.role == 'user':
@@ -29,5 +29,5 @@ def index():
         else:
             return redirect(url_for('admin_routes.personnel'))
     
-    # Для неавторизованных пользователей показываем главную страницу
-    return redirect(url_for('auth.login')) 
+    # Для неавторизованных пользователей показываем страницу входа
+    return render_template('auth/login.html') 

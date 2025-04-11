@@ -1,0 +1,28 @@
+<!-- Модальное окно добавления/редактирования локации -->
+<div class="modal fade" id="addLocationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="locationModalTitle">Добавить локацию</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="locationForm">
+                    <input type="hidden" id="locationId" name="id">
+                    <div class="mb-3">
+                        <label for="locationName" class="form-label">Название локации</label>
+                        <input type="text" class="form-control" id="locationName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="locationAddress" class="form-label">Адрес</label>
+                        <input type="text" class="form-control" id="locationAddress" name="address" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="saveLocation">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div> 

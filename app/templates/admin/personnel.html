@@ -637,52 +637,180 @@
 
 {% block extra_js %}
 <script>
-// Загрузка данных сотрудника при открытии модального окна редактирования
-document.querySelectorAll('.edit-icon').forEach(icon => {
-    icon.addEventListener('click', function() {
-        const employeeId = this.getAttribute('data-id');
-        fetch(`/admin/get_employee/${employeeId}`)
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('editEmployeeId').value = data.id;
-                document.getElementById('editFullName').value = data.full_name;
-                document.getElementById('editPosition').value = data.position;
-                document.getElementById('editDepartment').value = data.department_id;
-                document.getElementById('editRole').value = data.role;
-                document.getElementById('editCorporateNumber').value = data.corporate_number;
-                document.getElementById('editCorporateEmail').value = data.corporate_email;
-                document.getElementById('editPersonalPhone').value = data.phone;
-                document.getElementById('editPersonalEmail').value = data.personal_email;
-                document.getElementById('editLoginPC').value = data.pc_login;
-                document.getElementById('editPasswordPC').value = data.pc_password;
-                document.getElementById('editHireDate').value = data.hire_date ? new Date(data.hire_date).toISOString().split('T')[0] : '';
-                document.getElementById('editBirthDate').value = data.birth_date ? new Date(data.birth_date).toISOString().split('T')[0] : '';
-                document.getElementById('editCRMId').value = data.crm_id || '';
-                document.getElementById('editPreviousNumber').value = data.previous_number || '';
-                document.getElementById('editNotes').value = data.notes || '';
-                
-                // Проверяем чекбоксы
-                document.getElementById('editDocuments').checked = data.documents === 1;
-                document.getElementById('editRR').checked = data.rr === 1;
-                document.getElementById('editSite').checked = data.site === 1;
-                
-                // Отображение фото если есть
-                if (data.photo_url) {
-                    document.getElementById('employeePhotoPreview').src = data.photo_url;
-                    document.getElementById('employeePhotoPreview').style.display = 'block';
-                    document.getElementById('photoPlaceholder').style.display = 'none';
-                } else {
-                    document.getElementById('employeePhotoPreview').style.display = 'none';
-                    document.getElementById('photoPlaceholder').style.display = 'block';
-                }
-                
-                // Загрузка истории изменений
-                loadEmployeeHistory(employeeId);
-                // Загрузка истории номеров
-                loadNumberHistory(employeeId);
-            });
-            });
+// Функция для загрузки списка должностей
+async function loadPositions() {
+    try {
+        const response = await fetch('/admin/settings/positions');
+        const positions = await response.json();
+        const positionSelect = document.getElementById('position');
+        positionSelect.innerHTML = '<option value="">Выберите должность</option>';
+        positions.forEach(position => {
+            positionSelect.innerHTML += `<option value="${position.id}">${position.name}</option>`;
         });
+    } catch (error) {
+        console.error('Ошибка при загрузке должностей:', error);
+        showNotification('Ошибка при загрузке списка должностей', 'error');
+    }
+}
+
+// Функция для загрузки данных сотрудника
+async function loadEmployeeData(employeeId) {
+    try {
+        const response = await fetch(`/admin/get_employee/${employeeId}`);
+        const employee = await response.json();
+        
+        // Заполняем поля формы
+        document.getElementById('editEmployeeId').value = employee.id;
+        document.getElementById('editFullName').value = employee.full_name;
+        document.getElementById('editPosition').value = employee.position;
+        document.getElementById('editDepartment').value = employee.department_id;
+        document.getElementById('editRole').value = employee.role;
+        document.getElementById('editCorporateNumber').value = employee.corporate_number;
+        document.getElementById('editCorporateEmail').value = employee.corporate_email;
+        document.getElementById('editPersonalPhone').value = employee.phone;
+        document.getElementById('editPersonalEmail').value = employee.personal_email;
+        document.getElementById('editLoginPC').value = employee.pc_login;
+        document.getElementById('editPasswordPC').value = employee.pc_password;
+        document.getElementById('editHireDate').value = employee.hire_date ? new Date(employee.hire_date).toISOString().split('T')[0] : '';
+        document.getElementById('editBirthDate').value = employee.birth_date ? new Date(employee.birth_date).toISOString().split('T')[0] : '';
+        document.getElementById('editCRMId').value = employee.crm_id || '';
+        document.getElementById('editPreviousNumber').value = employee.previous_number || '';
+        document.getElementById('editNotes').value = employee.notes || '';
+        
+        // Проверяем чекбоксы
+        document.getElementById('editDocuments').checked = employee.documents === 1;
+        document.getElementById('editRR').checked = employee.rr === 1;
+        document.getElementById('editSite').checked = employee.site === 1;
+        
+        // Отображение фото если есть
+        if (employee.photo_url) {
+            document.getElementById('employeePhotoPreview').src = employee.photo_url;
+            document.getElementById('employeePhotoPreview').style.display = 'block';
+            document.getElementById('photoPlaceholder').style.display = 'none';
+        } else {
+            document.getElementById('employeePhotoPreview').style.display = 'none';
+            document.getElementById('photoPlaceholder').style.display = 'block';
+        }
+        
+        // Загрузка истории изменений
+        loadEmployeeHistory(employee.id);
+        // Загрузка истории номеров
+        loadNumberHistory(employee.id);
+    } catch (error) {
+        console.error('Ошибка при загрузке данных сотрудника:', error);
+        showNotification('Ошибка при загрузке данных сотрудника', 'error');
+    }
+}
+
+// Функция для сохранения изменений
+async function saveEmployeeChanges() {
+    const employeeId = document.getElementById('editEmployeeId').value;
+    const formData = {
+        id: employeeId,
+        full_name: document.getElementById('editFullName').value,
+        position: document.getElementById('editPosition').value,
+        department_id: document.getElementById('editDepartment').value,
+        role: document.getElementById('editRole').value,
+        corporate_number: document.getElementById('editCorporateNumber').value,
+        corporate_email: document.getElementById('editCorporateEmail').value,
+        phone: document.getElementById('editPersonalPhone').value,
+        personal_email: document.getElementById('editPersonalEmail').value,
+        pc_login: document.getElementById('editLoginPC').value,
+        pc_password: document.getElementById('editPasswordPC').value,
+        hire_date: document.getElementById('editHireDate').value,
+        birth_date: document.getElementById('editBirthDate').value,
+        crm_id: document.getElementById('editCRMId').value,
+        previous_number: document.getElementById('editPreviousNumber').value,
+        notes: document.getElementById('editNotes').value,
+        documents: document.getElementById('editDocuments').checked ? 1 : 0,
+        rr: document.getElementById('editRR').checked ? 1 : 0,
+        site: document.getElementById('editSite').checked ? 1 : 0
+    };
+
+    try {
+        const response = await fetch(`/admin/update_employee/${employeeId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+
+        if (response.ok) {
+            showNotification('Данные сотрудника успешно обновлены', 'success');
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editEmployeeModal'));
+            modal.hide();
+            location.reload(); // Перезагружаем страницу для обновления данных
+        } else {
+            throw new Error('Ошибка при обновлении данных');
+        }
+    } catch (error) {
+        console.error('Ошибка при сохранении изменений:', error);
+        showNotification('Ошибка при сохранении изменений', 'error');
+    }
+}
+
+// Функция для увольнения сотрудника
+async function fireEmployee(employeeId) {
+    if (!confirm('Вы уверены, что хотите уволить этого сотрудника?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/admin/fire_employee/${employeeId}`, {
+            method: 'POST'
+        });
+
+        if (response.ok) {
+            showNotification('Сотрудник успешно уволен', 'success');
+            location.reload(); // Перезагружаем страницу для обновления данных
+        } else {
+            throw new Error('Ошибка при увольнении сотрудника');
+        }
+    } catch (error) {
+        console.error('Ошибка при увольнении сотрудника:', error);
+        showNotification('Ошибка при увольнении сотрудника', 'error');
+    }
+}
+
+// Функция для отображения уведомлений
+function showNotification(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${type} border-0`;
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+    
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    `;
+    
+    const container = document.getElementById('toast-container') || document.body;
+    container.appendChild(toast);
+    
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    
+    toast.addEventListener('hidden.bs.toast', () => {
+        toast.remove();
+    });
+}
+
+// Инициализация при загрузке страницы
+document.addEventListener('DOMContentLoaded', () => {
+    loadPositions();
+    
+    // Инициализация всех тултипов
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
 
 // Загрузка истории изменений
 function loadEmployeeHistory(employeeId) {
@@ -705,7 +833,7 @@ function loadEmployeeHistory(employeeId) {
                     `;
                     historyContainer.appendChild(historyItem);
                 });
-                    } else {
+            } else {
                 historyContainer.innerHTML = '<div class="p-2">История изменений отсутствует</div>';
             }
         });
@@ -730,8 +858,8 @@ function loadNumberHistory(employeeId) {
                         </div>
                     `;
                     numberContainer.appendChild(numberItem);
-        });
-    } else {
+                });
+            } else {
                 numberContainer.innerHTML = '<div class="p-2">История номеров отсутствует</div>';
             }
         });
@@ -761,56 +889,6 @@ function formatDateForInput(dateString) {
     return new Date(dateString).toISOString().split('T')[0];
 }
 
-// Сохранение изменений сотрудника
-document.getElementById('saveEmployeeChanges').addEventListener('click', function() {
-    const form = document.getElementById('editEmployeeForm');
-    const formData = new FormData(form);
-    const employeeId = formData.get('id');
-    
-    fetch(`/admin/update_employee/${employeeId}`, {
-                method: 'POST',
-        body: formData
-            })
-    .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-            location.reload();
-                } else {
-            alert('Ошибка при сохранении изменений');
-                }
-            });
-        });
-
-// Открытие модального окна увольнения
-document.querySelectorAll('.fire-icon').forEach(icon => {
-    icon.addEventListener('click', function() {
-        const employeeId = this.getAttribute('data-id');
-        document.getElementById('fireEmployeeId').value = employeeId;
-        document.getElementById('fireDate').valueAsDate = new Date();
-        new bootstrap.Modal(document.getElementById('fireEmployeeModal')).show();
-    });
-});
-
-// Подтверждение увольнения
-document.getElementById('confirmFireEmployee').addEventListener('click', function() {
-    const form = document.getElementById('fireEmployeeForm');
-    const formData = new FormData(form);
-    const employeeId = formData.get('id');
-    
-    fetch(`/admin/fire_employee/${employeeId}`, {
-                method: 'POST',
-        body: formData
-            })
-    .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-            location.reload();
-                } else {
-            alert('Ошибка при увольнении сотрудника');
-                }
-            });
-        });
-
 // Поиск сотрудников
 document.getElementById('searchInput').addEventListener('input', function() {
     const searchText = this.value.toLowerCase();
@@ -827,7 +905,7 @@ document.getElementById('searchInput').addEventListener('input', function() {
             if (employeeName.includes(searchText) || employeePosition.includes(searchText)) {
                 row.style.display = '';
                 hasVisibleEmployees = true;
-                } else {
+            } else {
                 row.style.display = 'none';
             }
         });
@@ -852,7 +930,7 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
                 row.style.display = '';
             } else if (filter === 'Сотрудники' && !row.classList.contains('manager-row') && !row.classList.contains('deputy-row')) {
                 row.style.display = '';
-                } else {
+            } else {
                 row.style.display = 'none';
             }
         });

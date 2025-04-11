@@ -322,4 +322,17 @@ class Role:
         ) for role_data in roles_data]
     
     def __repr__(self):
-        return f'<Role {self.name}>' 
+        return f'<Role {self.name}>'
+
+    @staticmethod
+    def count():
+        """Возвращает общее количество ролей"""
+        conn = create_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute("SELECT COUNT(*) as count FROM Role")
+            result = cursor.fetchone()
+            return result['count']
+        finally:
+            cursor.close()
+            conn.close() 

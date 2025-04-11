@@ -5,6 +5,11 @@ from app.models.role import Role
 from app.models.permission import Permission
 from app.models.system_module import SystemModule
 from app.models.user import User
+import os
+from app.utils import execute_sql_file
+import logging
+
+logger = logging.getLogger(__name__)
 
 @click.command('init-roles')
 @with_appcontext
@@ -219,6 +224,43 @@ def init_roles_command():
             
     click.echo('Инициализация ролей и модулей завершена успешно!')
 
+@click.command('create-org-tables')
+@with_appcontext
+def create_org_tables_command():
+    """Создает таблицы организационной структуры."""
+    base_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'app', 'sql')
+    
+    # Список SQL-файлов в порядке выполнения
+    sql_files = [
+        'create_position_table.sql',
+        'create_location_table.sql',
+        'create_department_table.sql',
+        'create_employee_table.sql',
+        'add_department_leader_fk.sql'
+    ]
+    
+    success = True
+    for sql_file in sql_files:
+        file_path = os.path.join(base_dir, sql_file)
+        logger.info(f"Выполнение SQL-файла: {file_path}")
+        logger.info(f"Файл существует: {os.path.exists(file_path)}")
+        
+        if os.path.exists(file_path):
+            result = execute_sql_file(file_path)
+            logger.info(f"Результат выполнения SQL-файла {sql_file}: {result}")
+            if not result:
+                success = False
+                click.echo(f"Ошибка при выполнении SQL-файла {sql_file}")
+        else:
+            success = False
+            click.echo(f"SQL-файл не найден: {file_path}")
+    
+    if success:
+        click.echo('Таблицы организационной структуры успешно созданы.')
+    else:
+        click.echo('Произошла ошибка при создании таблиц организационной структуры.')
+
 def init_app(app):
     """Регистрирует CLI команды."""
-    app.cli.add_command(init_roles_command) 
+    app.cli.add_command(init_roles_command)
+    app.cli.add_command(create_org_tables_command) 

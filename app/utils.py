@@ -1,5 +1,5 @@
 import mysql.connector
-from flask import current_app, session, flash, redirect, url_for, request, jsonify, Blueprint
+from flask import current_app, session, flash, redirect, url_for, request, jsonify, Blueprint, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from flask_login import login_required as flask_login_required, current_user
@@ -16,6 +16,7 @@ import pymysql
 from pymysql.cursors import Cursor
 from werkzeug.utils import secure_filename
 from PIL import Image
+from mysql.connector import connect, Error
 
 utils_bp = Blueprint('utils', __name__)
 
@@ -127,25 +128,16 @@ def get_user_department():
     return session.get('department')
 
 def create_db_connection():
-    """
-    Создает соединение с базой данных.
-    Нужно всегда закрывать соединение после использования!
-    """
     try:
-        # Если используется пул соединений
-        if 'pool' in globals():
-            try:
-                return pool.get_connection()
-            except Exception as e:
-                logger.error(f"Ошибка при получении соединения из пула: {e}")
-                # Пробуем создать новое соединение, если пул не работает
-                
-        # Если пула нет или он не работает
-        config = get_db_config()
-        connection = mysql.connector.connect(**config)
+        connection = connect(
+            host='192.168.2.225',
+            user='root',
+            password='Podego53055',
+            database='Brokers'
+        )
         return connection
-    except Exception as e:
-        logger.error(f"Ошибка при создании соединения с БД: {e}")
+    except Error as e:
+        print(f"Error connecting to MySQL Database: {e}")
         return None
 
 # Переопределяем метод cursor для автоматического оборачивания в DictCursorWrapper
@@ -396,7 +388,13 @@ def close_all_connections():
     try:
         # Закрытие всех соединений на стороне сервера
         config = get_db_config()
-        conn = mysql.connector.connect(**config)
+        conn = connect(
+            host=config['host'],
+            user=config['user'],
+            password=config['password'],
+            database=config['database'],
+            port=config['port']
+        )
         cursor = conn.cursor()
         
         # Сначала получаем список всех соединений для нашего пользователя
@@ -675,5 +673,35 @@ def get_user_accessible_modules(user_id):
         return []
     finally:
         if connection:
+            connection.close()
+
+def execute_sql_file(filename):
+    connection = create_db_connection()
+    if connection is None:
+        return False
+    
+    try:
+        cursor = connection.cursor()
+        
+        # Читаем SQL-файл
+        with open(filename, 'r') as file:
+            sql_commands = file.read()
+        
+        # Разделяем команды по точке с запятой
+        commands = sql_commands.split(';')
+        
+        # Выполняем каждую команду
+        for command in commands:
+            if command.strip():
+                cursor.execute(command)
+        
+        connection.commit()
+        return True
+    except Error as e:
+        print(f"Error executing SQL file: {e}")
+        return False
+    finally:
+        if connection.is_connected():
+            cursor.close()
             connection.close()
 

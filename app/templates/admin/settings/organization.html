@@ -1,0 +1,699 @@
+{% extends "admin/settings/base.html" %}
+
+{% block title %}Настройки организации{% endblock %}
+{% block page_title %}Настройки организации{% endblock %}
+
+{% block extra_css %}
+<style>
+    .settings-container {
+        display: flex;
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .settings-sidebar {
+        width: 250px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        padding: 1.5rem;
+    }
+
+    .settings-sidebar .nav-link {
+        color: #6c757d;
+        padding: 0.75rem 1rem;
+        border-radius: 5px;
+        transition: all 0.2s;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+    }
+
+    .settings-sidebar .nav-link:hover {
+        background: #f8f9fa;
+        color: #3498db;
+    }
+
+    .settings-sidebar .nav-link.active {
+        background: #e3f2fd;
+        color: #3498db;
+        font-weight: 500;
+    }
+
+    .settings-sidebar .nav-link i {
+        margin-right: 0.75rem;
+        width: 20px;
+        text-align: center;
+    }
+
+    .settings-content {
+        flex: 1;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        padding: 2rem;
+    }
+    
+    .table th {
+        font-weight: 600;
+        color: #6c757d;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    
+    .btn-outline-primary, .btn-outline-danger {
+        border-width: 1px;
+    }
+    
+    .btn-outline-primary:hover, .btn-outline-danger:hover {
+        color: white;
+    }
+    
+    .action-buttons i {
+        cursor: pointer;
+        margin-right: 1rem;
+        transition: color 0.2s;
+    }
+    
+    .action-buttons i:hover {
+        color: #3498db;
+    }
+    
+    .action-buttons i.delete:hover {
+        color: #e74c3c;
+    }
+</style>
+{% endblock %}
+
+{% block settings_content %}
+<div class="settings-container">
+    <!-- Боковое меню -->
+    <div class="settings-sidebar">
+        <div class="nav flex-column" role="tablist">
+            <a class="nav-link active" id="positions-tab" data-bs-toggle="tab" data-bs-target="#positions" type="button" role="tab">
+                <i class="fas fa-briefcase"></i>Должности
+            </a>
+            <a class="nav-link" id="locations-tab" data-bs-toggle="tab" data-bs-target="#locations" type="button" role="tab">
+                <i class="fas fa-map-marker-alt"></i>Локации
+            </a>
+            <a class="nav-link" id="departments-tab" data-bs-toggle="tab" data-bs-target="#departments" type="button" role="tab">
+                <i class="fas fa-building"></i>Отделы
+            </a>
+        </div>
+    </div>
+
+    <!-- Содержимое вкладок -->
+    <div class="settings-content">
+        <div class="tab-content">
+            <!-- Вкладка должностей -->
+            <div class="tab-pane fade show active" id="positions" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="mb-0">Список должностей</h5>
+                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#positionModal">
+                        <i class="fas fa-plus me-2"></i>Добавить должность
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Название</th>
+                                <th>Описание</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="positionsTableBody">
+                            {% for position in positions %}
+                            <tr>
+                                <td>{{ position.id }}</td>
+                                <td>{{ position.name }}</td>
+                                <td>{{ position.description }}</td>
+                                <td class="action-buttons">
+                                    <button class="btn btn-sm btn-outline-primary" title="Редактировать" data-id="{{ position.id }}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" title="Удалить" data-id="{{ position.id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Вкладка локаций -->
+            <div class="tab-pane fade" id="locations" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="mb-0">Список локаций</h5>
+                    <button class="btn btn-sm btn-primary" id="addLocationBtn">
+                        <i class="fas fa-plus me-2"></i>Добавить локацию
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Название</th>
+                                <th>Адрес</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="locationsTableBody">
+                            {% for location in locations %}
+                            <tr>
+                                <td>{{ location.id }}</td>
+                                <td>{{ location.name }}</td>
+                                <td>{{ location.address }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary edit-location" data-id="{{ location.id }}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger delete-location" data-id="{{ location.id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Вкладка отделов -->
+            <div class="tab-pane fade" id="departments" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="mb-0">Список отделов</h5>
+                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#departmentModal">
+                        <i class="fas fa-plus me-2"></i>Добавить отдел
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Название</th>
+                                <th>Локация</th>
+                                <th>Руководитель</th>
+                                <th>Кол-во сотрудников</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for department in departments %}
+                            <tr>
+                                <td>{{ department.id }}</td>
+                                <td>{{ department.name }}</td>
+                                <td>{{ department.location.name if department.location else '' }}</td>
+                                <td>{{ department.leader.full_name if department.leader else '' }}</td>
+                                <td>{{ department.employee_count }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary edit-department" data-id="{{ department.id }}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger delete-department" data-id="{{ department.id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно добавления/редактирования должности -->
+<div class="modal fade" id="positionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="positionModalTitle">Добавить должность</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="positionForm">
+                    <input type="hidden" id="positionId" name="id">
+                    <div class="mb-3">
+                        <label for="positionName" class="form-label">Название должности</label>
+                        <input type="text" class="form-control" id="positionName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="positionDescription" class="form-label">Описание</label>
+                        <textarea class="form-control" id="positionDescription" name="description" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-sm btn-primary" id="savePosition">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для добавления/редактирования локации -->
+<div class="modal fade" id="locationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="locationModalTitle">Добавить локацию</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="locationForm">
+                    <input type="hidden" id="locationId">
+                    <div class="mb-3">
+                        <label for="locationName" class="form-label">Название локации</label>
+                        <input type="text" class="form-control" id="locationName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="locationAddress" class="form-label">Адрес</label>
+                        <input type="text" class="form-control" id="locationAddress" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-sm btn-primary" id="saveLocationBtn">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно добавления/редактирования отдела -->
+<div class="modal fade" id="departmentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="departmentModalTitle">Добавить отдел</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="departmentForm">
+                    <input type="hidden" id="departmentId" name="id">
+                    <div class="mb-3">
+                        <label for="departmentName" class="form-label">Название отдела</label>
+                        <input type="text" class="form-control" id="departmentName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="departmentLocation" class="form-label">Локация</label>
+                        <select class="form-select" id="departmentLocation" name="location_id" required>
+                            {% for location in locations %}
+                            <option value="{{ location.id }}">{{ location.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="departmentLeader" class="form-label">Руководитель</label>
+                        <div class="position-relative">
+                            <input type="text" class="form-control" id="leaderSearch" placeholder="Начните вводить ФИО...">
+                            <input type="hidden" id="departmentLeader" name="leader_id" value="">
+                            <div id="leaderSearchResults" class="position-absolute w-100 bg-white border rounded-bottom shadow-sm" style="display: none; max-height: 200px; overflow-y: auto; z-index: 1000;"></div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-sm btn-primary" id="saveDepartment">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно подтверждения удаления отдела -->
+<div class="modal fade" id="deleteDepartmentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Подтверждение удаления</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить этот отдел?</p>
+                <p class="text-danger">Это действие нельзя отменить.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-sm btn-danger" id="confirmDeleteDepartment">Удалить</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Автодополнение для поиска руководителя
+    const leaderSearch = document.getElementById('leaderSearch');
+    const departmentLeader = document.getElementById('departmentLeader');
+    const leaderSearchResults = document.getElementById('leaderSearchResults');
+    let employees = [];
+    
+    // Загружаем список сотрудников
+    fetch('/admin/settings/employees')
+        .then(response => response.json())
+        .then(data => {
+            employees = data;
+        });
+    
+    if (leaderSearch && departmentLeader && leaderSearchResults) {
+        leaderSearch.addEventListener('input', function() {
+            const searchText = this.value.toLowerCase();
+            
+            if (searchText.length < 3) {
+                leaderSearchResults.style.display = 'none';
+                return;
+            }
+            
+            const filteredEmployees = employees.filter(employee => 
+                employee.full_name.toLowerCase().includes(searchText)
+            );
+            
+            if (filteredEmployees.length > 0) {
+                leaderSearchResults.innerHTML = '';
+                
+                filteredEmployees.forEach(employee => {
+                    const div = document.createElement('div');
+                    div.className = 'p-2 border-bottom cursor-pointer';
+                    div.textContent = employee.full_name;
+                    div.dataset.id = employee.id;
+                    
+                    div.addEventListener('click', function() {
+                        leaderSearch.value = employee.full_name;
+                        departmentLeader.value = employee.id;
+                        leaderSearchResults.style.display = 'none';
+                    });
+                    
+                    leaderSearchResults.appendChild(div);
+                });
+                
+                leaderSearchResults.style.display = 'block';
+            } else {
+                leaderSearchResults.style.display = 'none';
+            }
+        });
+        
+        // Закрываем результаты поиска при клике вне элемента
+        document.addEventListener('click', function(e) {
+            if (!leaderSearch.contains(e.target) && !leaderSearchResults.contains(e.target)) {
+                leaderSearchResults.style.display = 'none';
+            }
+        });
+    }
+    
+    // Обработчики для должностей
+    const positionModal = new bootstrap.Modal(document.getElementById('positionModal'));
+    
+    // Открытие модального окна добавления должности
+    document.querySelector('[data-bs-target="#positionModal"]').addEventListener('click', function() {
+        document.getElementById('positionModalTitle').textContent = 'Добавить должность';
+        document.getElementById('positionForm').reset();
+        document.getElementById('positionId').value = '';
+        positionModal.show();
+    });
+    
+    // Открытие модального окна редактирования должности
+    document.querySelectorAll('#positionsTableBody .btn-outline-primary').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const positionId = this.dataset.id;
+            fetch(`/admin/settings/positions/${positionId}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('positionModalTitle').textContent = 'Редактировать должность';
+                    document.getElementById('positionId').value = data.id;
+                    document.getElementById('positionName').value = data.name;
+                    document.getElementById('positionDescription').value = data.description;
+                    positionModal.show();
+                });
+        });
+    });
+    
+    // Удаление должности
+    document.querySelectorAll('#positionsTableBody .btn-outline-danger').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (confirm('Вы уверены, что хотите удалить эту должность?')) {
+                const positionId = this.dataset.id;
+                fetch(`/admin/settings/positions/${positionId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Ошибка при удалении должности');
+                    }
+                });
+            }
+        });
+    });
+    
+    // Сохранение должности
+    document.getElementById('savePosition').addEventListener('click', function() {
+        const form = document.getElementById('positionForm');
+        const formData = new FormData(form);
+        const positionId = formData.get('id');
+        
+        fetch(`/admin/settings/positions${positionId ? `/${positionId}` : ''}`, {
+            method: positionId ? 'PUT' : 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Ошибка при сохранении должности');
+            }
+        });
+    });
+    
+    // Обработчики для локаций
+    const locationModal = new bootstrap.Modal(document.getElementById('locationModal'));
+    
+    // Открытие модального окна добавления локации
+    document.getElementById('addLocationBtn').addEventListener('click', function() {
+        document.getElementById('locationModalTitle').textContent = 'Добавить локацию';
+        document.getElementById('locationForm').reset();
+        document.getElementById('locationId').value = '';
+        locationModal.show();
+    });
+    
+    // Обработчик кнопки редактирования локации
+    document.querySelectorAll('.edit-location').forEach(button => {
+        button.addEventListener('click', async () => {
+            const id = button.dataset.id;
+            try {
+                const response = await fetch(`/admin/settings/locations/${id}`);
+                const location = await response.json();
+                
+                document.getElementById('locationId').value = location.id;
+                document.getElementById('locationName').value = location.name;
+                document.getElementById('locationAddress').value = location.address;
+                
+                document.getElementById('locationModalTitle').textContent = 'Редактировать локацию';
+                locationModal.show();
+            } catch (error) {
+                console.error('Ошибка при загрузке данных локации:', error);
+                alert('Ошибка при загрузке данных локации');
+            }
+        });
+    });
+    
+    // Обработчик кнопки сохранения локации
+    document.getElementById('saveLocationBtn').addEventListener('click', async () => {
+        const id = document.getElementById('locationId').value;
+        const name = document.getElementById('locationName').value;
+        const address = document.getElementById('locationAddress').value;
+        
+        if (!name || !address) {
+            alert('Пожалуйста, заполните все обязательные поля');
+            return;
+        }
+        
+        const data = {
+            name: name,
+            address: address
+        };
+        
+        try {
+            const response = await fetch(`/admin/settings/locations${id ? `/${id}` : ''}`, {
+                method: id ? 'PUT' : 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+            
+            if (response.ok) {
+                location.reload();
+            } else {
+                const error = await response.json();
+                alert(error.message || 'Ошибка при сохранении локации');
+            }
+        } catch (error) {
+            console.error('Ошибка при сохранении локации:', error);
+            alert('Ошибка при сохранении локации');
+        }
+    });
+    
+    function deleteLocation(id) {
+        if (confirm('Вы уверены, что хотите удалить эту локацию?')) {
+            fetch(`/admin/settings/locations/${id}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    loadLocations();
+                } else {
+                    showNotification(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Произошла ошибка при удалении локации', 'error');
+            });
+        }
+    }
+    
+    function loadLocations() {
+        fetch('/admin/settings/locations')
+            .then(response => response.json())
+            .then(data => {
+                const tbody = document.getElementById('locationsTableBody');
+                tbody.innerHTML = '';
+                data.forEach(location => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${location.id}</td>
+                        <td>${location.name}</td>
+                        <td>${location.address}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary edit-location" data-id="${location.id}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger delete-location" data-id="${location.id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Ошибка при загрузке списка локаций', 'error');
+            });
+    }
+    
+    // Аналогичные обработчики для отделов
+    const departmentModal = new bootstrap.Modal(document.getElementById('departmentModal'));
+    const deleteDepartmentModal = new bootstrap.Modal(document.getElementById('deleteDepartmentModal'));
+    let departmentToDelete = null;
+    
+    document.querySelector('[data-bs-target="#departmentModal"]').addEventListener('click', function() {
+        document.getElementById('departmentModalTitle').textContent = 'Добавить отдел';
+        document.getElementById('departmentForm').reset();
+        document.getElementById('departmentId').value = '';
+        departmentModal.show();
+    });
+    
+    document.querySelectorAll('.edit-department').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const departmentId = this.dataset.id;
+            fetch(`/admin/settings/departments/${departmentId}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('departmentModalTitle').textContent = 'Редактировать отдел';
+                    document.getElementById('departmentId').value = data.id;
+                    document.getElementById('departmentName').value = data.name;
+                    document.getElementById('departmentLocation').value = data.location_id;
+                    
+                    // Устанавливаем значение руководителя
+                    if (data.leader_id) {
+                        document.getElementById('departmentLeader').value = data.leader_id;
+                        // Находим имя руководителя
+                        const leader = employees.find(emp => emp.id === data.leader_id);
+                        if (leader) {
+                            document.getElementById('leaderSearch').value = leader.full_name;
+                        }
+                    } else {
+                        document.getElementById('departmentLeader').value = '';
+                        document.getElementById('leaderSearch').value = '';
+                    }
+                    
+                    departmentModal.show();
+                });
+        });
+    });
+    
+    document.getElementById('saveDepartment').addEventListener('click', function() {
+        const form = document.getElementById('departmentForm');
+        const formData = new FormData(form);
+        const departmentId = formData.get('id');
+        
+        // Создаем объект с данными
+        const data = {
+            name: formData.get('name'),
+            location_id: formData.get('location_id'),
+            leader_id: formData.get('leader_id') || null
+        };
+        
+        fetch(`/admin/settings/departments${departmentId ? `/${departmentId}` : ''}`, {
+            method: departmentId ? 'PUT' : 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Ошибка при сохранении отдела');
+            }
+        });
+    });
+    
+    document.querySelectorAll('.delete-department').forEach(btn => {
+        btn.addEventListener('click', function() {
+            departmentToDelete = this.dataset.id;
+            deleteDepartmentModal.show();
+        });
+    });
+    
+    document.getElementById('confirmDeleteDepartment').addEventListener('click', function() {
+        if (departmentToDelete) {
+            fetch(`/admin/settings/departments/${departmentToDelete}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Ошибка при удалении отдела');
+                }
+            });
+        }
+        deleteDepartmentModal.hide();
+    });
+});
+</script>
+{% endblock %} 

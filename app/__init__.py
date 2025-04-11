@@ -7,6 +7,11 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import atexit
 import os
 from flask import render_template
+from app.utils import execute_sql_file
+
+# Настройка логирования
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Инициализация LoginManager
 login_manager = LoginManager()
@@ -38,10 +43,25 @@ def create_app(config_class=Config):
     from app.models.role import Role
     from app.models.permission import Permission
     from app.models.system_module import SystemModule
+    from app.models.department import Department
+    from app.models.position import Position
+    from app.models.location import Location
+    from app.models.employee import Employee
     
     @login_manager.user_loader
     def load_user(user_id):
         return User.get_by_id(int(user_id))
+    
+    # Создание таблиц организационной структуры
+    sql_file = os.path.join(os.path.dirname(__file__), 'sql', 'create_organization_tables.sql')
+    logger.info(f"Путь к SQL-файлу: {sql_file}")
+    logger.info(f"Файл существует: {os.path.exists(sql_file)}")
+    
+    if os.path.exists(sql_file):
+        result = execute_sql_file(sql_file)
+        logger.info(f"Результат выполнения SQL-файла: {result}")
+    else:
+        logger.error(f"SQL-файл не найден: {sql_file}")
     
     # Импорт и регистрация маршрутов
     from app.routes.main import main_bp
@@ -49,6 +69,7 @@ def create_app(config_class=Config):
     from app.admin import admin_bp
     from app.routes.admin import admin_routes_bp
     from app.routes.admin.roles import roles_bp
+    from app.routes.admin.organization import bp as admin_organization_bp
     from app.callcenter.callcenter import callcenter_bp
     from app.vats.vats import vats_bp
     from app.avito.avito import avito_bp
@@ -62,9 +83,8 @@ def create_app(config_class=Config):
     
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
-    app.register_blueprint(admin_bp)
-    app.register_blueprint(admin_routes_bp)
     app.register_blueprint(roles_bp)
+    app.register_blueprint(admin_organization_bp, url_prefix='/admin')
     app.register_blueprint(callcenter_bp)
     app.register_blueprint(vats_bp)
     app.register_blueprint(avito_bp)
@@ -90,9 +110,6 @@ def create_app(config_class=Config):
     @app.errorhandler(500)
     def internal_server_error(e):
         return render_template('errors/500.html'), 500
-    
-    # Настройка логирования
-    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
     
     # Планировщик задач
     scheduler = BackgroundScheduler()

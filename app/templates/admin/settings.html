@@ -132,7 +132,7 @@
                     <h5 class="card-title mb-0">Загрузка логотипа</h5>
                 </div>
                 <div class="card-body">
-                    <form action="{{ url_for('admin_routes.upload_logo') }}" method="post" enctype="multipart/form-data" class="mb-3">
+                    <form action="{{ url_for('admin_old_unique.upload_logo') }}" method="post" enctype="multipart/form-data" class="mb-3">
                         <div class="mb-3">
                             <label class="form-label">Выберите файл логотипа</label>
                             <div class="custom-file-input">
@@ -156,7 +156,7 @@
                             {% endif %}
                         </div>
                         {% if logo_url %}
-                        <form action="{{ url_for('admin_routes.delete_logo') }}" method="post" class="d-inline mt-4">
+                        <form action="{{ url_for('admin_old_unique.delete_logo') }}" method="post" class="d-inline mt-4">
                             <button type="submit" class="btn btn-danger btn-xs"><i class="fas fa-trash"></i> Удалить</button>
                         </form>
                         {% endif %}
@@ -172,7 +172,7 @@
                     <h5 class="card-title mb-0">Загрузка фонового изображения</h5>
                 </div>
                 <div class="card-body">
-                    <form action="{{ url_for('admin_routes.upload_background') }}" method="post" enctype="multipart/form-data" class="mb-3">
+                    <form action="{{ url_for('admin_old_unique.upload_background') }}" method="post" enctype="multipart/form-data" class="mb-3">
                         <div class="mb-3">
                             <label class="form-label">Выберите фоновое изображение</label>
                             <div class="custom-file-input">
@@ -196,7 +196,7 @@
                             {% endif %}
                         </div>
                         {% if background_url %}
-                        <form action="{{ url_for('admin_routes.delete_background') }}" method="post" class="d-inline mt-4">
+                        <form action="{{ url_for('admin_old_unique.delete_background') }}" method="post" class="d-inline mt-4">
                             <button type="submit" class="btn btn-danger btn-xs"><i class="fas fa-trash"></i> Удалить</button>
                         </form>
                         {% endif %}

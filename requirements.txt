@@ -11,3 +11,4 @@ oauth2client
 pandas
 python-dateutil
 pytz
+pymysql

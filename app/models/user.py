@@ -391,4 +391,17 @@ class User(UserMixin):
             cursor.close()
             connection.close()
 
+    @staticmethod
+    def count():
+        """Возвращает общее количество пользователей"""
+        conn = create_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute("SELECT COUNT(*) as count FROM User")
+            result = cursor.fetchone()
+            return result['count']
+        finally:
+            cursor.close()
+            conn.close()
+
     # ... existing code ...

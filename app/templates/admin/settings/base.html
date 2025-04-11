@@ -147,6 +147,7 @@
             <li><a href="#" {% if active_tab == 'database' %}class="active"{% endif %}><i class="fas fa-database"></i> База данных</a></li>
             <li><a href="#" {% if active_tab == 'security' %}class="active"{% endif %}><i class="fas fa-shield-alt"></i> Безопасность</a></li>
             <li><a href="{{ url_for('roles.index') }}" {% if active_tab == 'roles' %}class="active"{% endif %}><i class="fas fa-user-tag"></i> Роли пользователей</a></li>
+            <li><a href="{{ url_for('admin_organization.index') }}" {% if active_tab == 'organization' %}class="active"{% endif %}><i class="fas fa-building"></i> Организация</a></li>
             <li><a href="#" {% if active_tab == 'notifications' %}class="active"{% endif %}><i class="fas fa-bell"></i> Уведомления</a></li>
             <li><a href="#" {% if active_tab == 'logs' %}class="active"{% endif %}><i class="fas fa-file-alt"></i> Логи системы</a></li>
         </ul>

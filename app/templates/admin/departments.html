@@ -167,7 +167,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('updateDepartment').addEventListener('click', function() {
         const id = document.getElementById('editDepartmentId').value;
         const name = document.getElementById('editDepartmentName').value;
-        const floorId = document.getElementById('editDepartmentFloor').value;
+        const leaderId = document.getElementById('editDepartmentLeader').value;
         
         fetch(`/admin/departments/edit/${id}`, {
             method: 'POST',
@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             body: JSON.stringify({
                 name: name,
-                floor_id: floorId
+                leader_id: leaderId
             })
         })
         .then(response => response.json())

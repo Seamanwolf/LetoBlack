@@ -3,10 +3,9 @@ from flask_login import current_user
 from app.utils import create_db_connection, login_required
 import logging
 from datetime import datetime
+from app.routes.admin import admin_routes_bp
 
 logger = logging.getLogger(__name__)
-
-from app.routes.admin import admin_routes_bp
 
 @admin_routes_bp.route('/personnel')
 @login_required

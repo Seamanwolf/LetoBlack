@@ -1,0 +1,4 @@
+-- Добавление колонок created_at и updated_at в таблицу Location
+ALTER TABLE Location
+ADD COLUMN created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ADD COLUMN updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP; 

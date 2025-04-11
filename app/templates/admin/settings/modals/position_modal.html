@@ -1,0 +1,28 @@
+<!-- Модальное окно добавления/редактирования должности -->
+<div class="modal fade" id="addPositionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="positionModalTitle">Добавить должность</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="positionForm">
+                    <input type="hidden" id="positionId" name="id">
+                    <div class="mb-3">
+                        <label for="positionName" class="form-label">Название должности</label>
+                        <input type="text" class="form-control" id="positionName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="positionDescription" class="form-label">Описание</label>
+                        <textarea class="form-control" id="positionDescription" name="description" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="savePosition">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div> 

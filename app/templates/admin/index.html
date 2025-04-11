@@ -1,0 +1,148 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Админ-панель{% endblock %}
+
+{% block page_title %}Панель управления{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-users fa-2x text-primary"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="card-title mb-0">Пользователи</h6>
+                            <h2 class="mt-2 mb-0">{{ user_count|default(0) }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{{ url_for('admin.settings.users') }}" class="btn btn-sm btn-outline-primary">Управление</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-user-shield fa-2x text-success"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="card-title mb-0">Роли</h6>
+                            <h2 class="mt-2 mb-0">{{ role_count|default(0) }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{{ url_for('admin.settings.roles') }}" class="btn btn-sm btn-outline-success">Управление</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-sitemap fa-2x text-info"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="card-title mb-0">Отделы</h6>
+                            <h2 class="mt-2 mb-0">{{ department_count|default(0) }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{{ url_for('admin.settings.organization') }}" class="btn btn-sm btn-outline-info">Управление</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-map-marker-alt fa-2x text-warning"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="card-title mb-0">Локации</h6>
+                            <h2 class="mt-2 mb-0">{{ location_count|default(0) }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{{ url_for('admin.settings.organization') }}" class="btn btn-sm btn-outline-warning">Управление</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Последние действия</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% if recent_actions %}
+                            {% for action in recent_actions %}
+                                <div class="list-group-item px-0">
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0">
+                                            <i class="fas fa-circle text-{{ action.type }} fa-xs"></i>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <p class="mb-0">{{ action.description }}</p>
+                                            <small class="text-muted">{{ action.timestamp }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted mb-0">Нет недавних действий</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Системная информация</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tbody>
+                            <tr>
+                                <th scope="row">Версия системы</th>
+                                <td>{{ system_version|default('1.0.0') }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Последнее обновление</th>
+                                <td>{{ last_update|default('Неизвестно') }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Статус базы данных</th>
+                                <td><span class="badge bg-success">Работает</span></td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Статус сервера</th>
+                                <td><span class="badge bg-success">Работает</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
