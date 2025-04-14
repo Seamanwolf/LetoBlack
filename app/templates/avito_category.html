@@ -9,7 +9,7 @@
             <img src="{{ url_for('static', filename='logo.bmp') }}" alt="Logo" class="logo">
         </div>
         <nav class="sidebar-nav">
-            <a href="{{ url_for('admin.personnel') }}" class="nav-item">
+            <a href="{{ url_for('admin_routes_unique.personnel') }}" class="nav-item">
                 <i class="fas fa-users"></i>
                 <span>Персонал</span>
             </a>
@@ -45,7 +45,7 @@
                 <i class="fas fa-store"></i>
                 <span>Авито Про</span>
             </a>
-            <a href="{{ url_for('admin.settings') }}" class="nav-item">
+            <a href="{{ url_for('admin_old_unique.settings') }}" class="nav-item">
                 <i class="fas fa-cog"></i>
                 <span>Настройки</span>
             </a>

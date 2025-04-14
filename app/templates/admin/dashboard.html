@@ -7,12 +7,32 @@
     <h1 class="mb-4">Панель администратора</h1>
     
     <div class="row">
+        <!-- Статистика -->
+        <div class="col-md-3">
+            <div class="card text-white bg-primary mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Всего пользователей</h5>
+                    <h2 class="card-text">{{ users_count }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Онлайн</h5>
+                    <h2 class="card-text">{{ online_users }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
         <div class="col-md-4 mb-4">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Управление пользователями</h5>
                     <p class="card-text">Добавление, редактирование и удаление пользователей системы.</p>
-                    <a href="{{ url_for('admin.user_list') }}" class="btn btn-primary">Перейти</a>
+                    <a href="{{ url_for('admin_routes.user_list') }}" class="btn btn-primary">Перейти</a>
                 </div>
             </div>
         </div>
@@ -32,7 +52,7 @@
                 <div class="card-body">
                     <h5 class="card-title">Настройки системы</h5>
                     <p class="card-text">Общие настройки и конфигурация системы.</p>
-                    <a href="{{ url_for('admin.settings') }}" class="btn btn-primary">Перейти</a>
+                    <a href="{{ url_for('admin_routes.settings') }}" class="btn btn-primary">Перейти</a>
                 </div>
             </div>
         </div>
@@ -65,6 +85,38 @@
                     <h5 class="card-title">Резервное копирование</h5>
                     <p class="card-text">Управление резервными копиями данных системы.</p>
                     <a href="{{ url_for('admin.backup') }}" class="btn btn-primary">Перейти</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Последние действия пользователей</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Пользователь</th>
+                                    <th>Действие</th>
+                                    <th>Дата и время</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for action in recent_actions %}
+                                <tr>
+                                    <td>{{ action.full_name }}</td>
+                                    <td>{{ action.action_type }}</td>
+                                    <td>{{ action.created_at }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>

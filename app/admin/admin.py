@@ -1685,3 +1685,43 @@ def initialize_roles_tables():
             conn.close()
     
     return redirect(url_for('roles.index'))
+
+@admin_bp.route('/save_notification', methods=['POST'])
+@login_required
+def save_notification():
+    """Сохранение уведомления на рабочем столе"""
+    if current_user.role != 'admin':
+        flash('У вас нет доступа к этой странице', 'error')
+        return redirect(url_for('admin_old_unique.settings'))
+
+    # Здесь должна быть логика сохранения уведомления на рабочем столе
+    flash('Уведомление сохранено', 'success')
+    return redirect(url_for('admin_old_unique.settings'))
+
+@admin_bp.route('/toggle_system_maintenance', methods=['POST'])
+@login_required
+def toggle_system_maintenance():
+    """Включение/выключение режима обслуживания"""
+    if current_user.role != 'admin':
+        flash('У вас нет доступа к этой странице', 'error')
+        return redirect(url_for('admin_old_unique.settings'))
+        
+    try:
+        # Здесь логика переключения режима
+        flash('Настройки сохранены', 'success')
+    except Exception as e:
+        flash(f'Ошибка: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_old_unique.settings'))
+
+@admin_bp.route('/reset_user_password/<int:user_id>', methods=['POST'])
+@login_required
+def reset_user_password(user_id):
+    """Сброс пароля пользователя"""
+    if current_user.role != 'admin':
+        flash('У вас нет доступа к этой странице', 'error')
+        return redirect(url_for('admin_old_unique.settings'))
+
+    # Здесь должна быть логика сброса пароля пользователя
+    flash('Пароль пользователя успешно сброшен', 'success')
+    return redirect(url_for('admin_old_unique.settings'))

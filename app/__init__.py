@@ -70,6 +70,7 @@ def create_app(config_class=Config):
     from app.routes.admin import admin_routes_bp
     from app.routes.admin.roles import roles_bp
     from app.routes.admin.organization import bp as admin_organization_bp
+    from app.routes.admin.dashboard import admin_dashboard_bp
     from app.callcenter.callcenter import callcenter_bp
     from app.vats.vats import vats_bp
     from app.avito.avito import avito_bp
@@ -85,6 +86,7 @@ def create_app(config_class=Config):
     app.register_blueprint(auth_bp)
     app.register_blueprint(roles_bp)
     app.register_blueprint(admin_organization_bp, url_prefix='/admin')
+    app.register_blueprint(admin_dashboard_bp)
     app.register_blueprint(callcenter_bp)
     app.register_blueprint(vats_bp)
     app.register_blueprint(avito_bp)

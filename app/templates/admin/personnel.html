@@ -299,15 +299,15 @@
 <!-- Боковая панель -->
 <div class="sidebar">
     <div class="nav flex-column">
-        <a href="{{ url_for('admin.personnel') }}" class="nav-link active">
+        <a href="{{ url_for('admin_routes_unique.personnel') }}" class="nav-link active">
             <i class="fas fa-users"></i>
             Сотрудники
         </a>
-        <a href="{{ url_for('admin.show_fired_employees') }}" class="nav-link">
+        <a href="{{ url_for('admin_routes_unique.fired_employees') }}" class="nav-link">
             <i class="fas fa-user-times"></i>
             Уволенные
         </a>
-        <a href="{{ url_for('admin.personnel_dashboard') }}" class="nav-link">
+        <a href="{{ url_for('admin_routes_unique.personnel_dashboard') }}" class="nav-link">
             <i class="fas fa-chart-line"></i>
             Дашборд
         </a>
@@ -318,15 +318,15 @@
 <div class="main-content">
     <!-- Навигационное меню -->
     <div class="nav-menu">
-        <a href="{{ url_for('admin.personnel') }}" class="active">
+        <a href="{{ url_for('admin_routes_unique.personnel') }}" class="active">
             <i class="fas fa-users"></i>
             Активные
         </a>
-        <a href="{{ url_for('admin.show_fired_employees') }}">
+        <a href="{{ url_for('admin_routes_unique.fired_employees') }}">
             <i class="fas fa-user-times"></i>
             Уволенные
         </a>
-        <a href="{{ url_for('admin.personnel_dashboard') }}">
+        <a href="{{ url_for('admin_routes_unique.personnel_dashboard') }}">
             <i class="fas fa-chart-line"></i>
             Дашборд
         </a>

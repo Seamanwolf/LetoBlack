@@ -95,19 +95,19 @@
             <div class="sidebar-sticky">
                 <ul class="nav flex-column">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin.personnel') }}">
+                        <a class="nav-link" href="{{ url_for('admin_routes_unique.personnel') }}">
                             <i class="fas fa-users"></i>
                             Сотрудники
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('admin.personnel_dashboard') }}">
+                        <a class="nav-link" href="{{ url_for('admin_routes_unique.personnel_dashboard') }}">
                             <i class="fas fa-chart-line"></i>
                             Дашборд
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="{{ url_for('admin.show_fired_employees') }}">
+                        <a class="nav-link active" href="{{ url_for('admin_routes_unique.fired_employees') }}">
                             <i class="fas fa-user-times"></i>
                             Уволенные
                         </a>

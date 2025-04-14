@@ -14,7 +14,7 @@ def personnel():
     if current_user.role != 'admin' and current_user.role != 'leader':
         logger.warning(f"Отказано в доступе пользователю {current_user.login} с ролью {current_user.role}")
         flash('У вас нет доступа к этой странице', 'error')
-        return redirect(url_for('admin_routes.admin_dashboard'))
+        return redirect(url_for('admin_dashboard.admin_dashboard'))
     
     try:
         conn = create_db_connection()
@@ -105,7 +105,7 @@ def personnel():
     except Exception as e:
         logger.error(f"Ошибка при загрузке страницы персонала: {str(e)}")
         flash('Произошла ошибка при загрузке данных', 'error')
-        return redirect(url_for('admin_routes.admin_dashboard'))
+        return redirect(url_for('admin_dashboard.admin_dashboard'))
     finally:
         if 'conn' in locals():
             conn.close()
@@ -371,7 +371,7 @@ def fired_employees():
     except Exception as e:
         logger.error(f"Ошибка при загрузке страницы уволенных сотрудников: {e}")
         flash(f'Ошибка при получении данных: {str(e)}', 'danger')
-        return redirect(url_for('admin_routes.admin_dashboard'))
+        return redirect(url_for('admin_dashboard.admin_dashboard'))
     
     finally:
         cursor.close()

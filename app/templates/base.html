@@ -318,14 +318,14 @@
         {% set accessible_modules = get_accessible_modules() %}
         
         {% if 'Дашборд' in accessible_modules or current_user.role == 'admin' %}
-        <a href="{{ url_for('admin.admin_dashboard') }}" {% if request.endpoint == 'admin.admin_dashboard' %}class="active"{% endif %}>
+        <a href="{{ url_for('admin_dashboard.admin_dashboard') }}" {% if request.endpoint == 'admin_dashboard.admin_dashboard' %}class="active"{% endif %}>
             <i class="fas fa-home"></i>
             <span>Дашборд</span>
         </a>
         {% endif %}
         
         {% if 'Персонал' in accessible_modules or current_user.role == 'admin' %}
-        <a href="{{ url_for('admin.personnel') }}" {% if request.endpoint == 'admin.personnel' %}class="active"{% endif %}>
+        <a href="{{ url_for('admin_routes_unique.personnel') }}" {% if request.endpoint == 'admin_routes_unique.personnel' %}class="active"{% endif %}>
             <i class="fas fa-users"></i>
             <span>Персонал</span>
         </a>
@@ -381,7 +381,7 @@
         {% endif %}
         
         {% if current_user.role == 'admin' %}
-        <a href="{{ url_for('admin.settings') }}" {% if request.endpoint == 'admin.settings' %}class="active"{% endif %}>
+        <a href="{{ url_for('admin_old_unique.settings') }}" {% if request.endpoint == 'admin_old_unique.settings' %}class="active"{% endif %}>
             <i class="fas fa-cog"></i>
             <span>Настройки</span>
         </a>
@@ -400,8 +400,8 @@
                     <p>{{ current_user.full_name or 'Администратор' }}</p>
                 </div>
                 <a href="#"><i class="fas fa-user"></i> Мой профиль</a>
-                <a href="{{ url_for('admin.settings') }}"><i class="fas fa-cogs"></i> Настройки</a>
-                <a href="{{ url_for('userlist.logout') }}"><i class="fas fa-sign-out-alt"></i> Выход</a>
+                <a href="{{ url_for('admin_old_unique.settings') }}"><i class="fas fa-cogs"></i> Настройки</a>
+                <a href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> Выход</a>
             </div>
         </div>
     </div>
