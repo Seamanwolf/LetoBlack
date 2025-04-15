@@ -318,10 +318,10 @@
         </div>
     </div>
     <div class="col-md-6 text-end">
-        <button class="btn btn-outline-danger btn-sm me-2" type="button" data-bs-toggle="collapse" data-bs-target="#filtersCollapse" aria-expanded="false" aria-controls="filtersCollapse">
-            <i class="fas fa-filter"></i> Фильтры
-        </button>
         <div class="btn-group btn-group-sm">
+            <button class="btn btn-outline-danger" type="button" data-bs-toggle="collapse" data-bs-target="#filtersCollapse" aria-expanded="false" aria-controls="filtersCollapse">
+                <i class="fas fa-filter"></i> Фильтры
+            </button>
             <button class="btn btn-outline-primary" id="sortByDismissalDate">
                 <i class="fas fa-sort"></i> По дате увольнения
             </button>
@@ -917,11 +917,11 @@ document.addEventListener('DOMContentLoaded', function() {
         otherBtn.setAttribute('data-sort', '');
         otherBtn.querySelector('i.fas').className = 'fas fa-sort';
         
-        // Сортируем все отделы
+        // Получаем все строки с сотрудниками из всех отделов
         const departments = Array.from(document.querySelectorAll('.department-section'));
         const container = document.getElementById('departments-container');
         
-        // Получаем все строки с сотрудниками из всех отделов
+        // Собираем всех сотрудников из всех отделов
         let allEmployees = [];
         departments.forEach(dept => {
             const rows = Array.from(dept.querySelectorAll('.employee-row'));
@@ -948,84 +948,91 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // Группируем отсортированных сотрудников по отделам
-        const groupedEmployees = {};
-        allEmployees.forEach(emp => {
-            if (!groupedEmployees[emp.deptId]) {
-                groupedEmployees[emp.deptId] = {
-                    name: emp.deptName,
-                    id: emp.deptId,
-                    employees: []
-                };
-            }
-            groupedEmployees[emp.deptId].employees.push(emp.row);
-        });
-        
-        // Очищаем и перестраиваем контейнер
+        // Очищаем контейнер
         container.innerHTML = '';
         
-        Object.values(groupedEmployees).forEach(dept => {
-            const deptSection = document.createElement('div');
-            deptSection.className = 'department-section';
-            deptSection.setAttribute('data-department-id', dept.id);
-            deptSection.setAttribute('data-department-name', dept.name);
+        // Создаем единую секцию для всех сотрудников
+        const sectionContainer = document.createElement('div');
+        sectionContainer.className = 'department-section';
+        sectionContainer.setAttribute('data-department-id', 'all');
+        sectionContainer.setAttribute('data-department-name', 'Все сотрудники');
+        
+        // Создаем заголовок
+        const header = document.createElement('div');
+        header.className = 'department-header';
+        header.innerHTML = `
+            <span>Список всех сотрудников (сортировка по дате увольнения)</span>
+            <div class="badge">${allEmployees.length}</div>
+        `;
+        
+        // Создаем содержимое
+        const content = document.createElement('div');
+        content.className = 'department-content';
+        
+        // Создаем таблицу
+        const tableResponsive = document.createElement('div');
+        tableResponsive.className = 'table-responsive';
+        
+        const table = document.createElement('table');
+        table.className = 'table table-hover';
+        
+        // Создаем заголовок таблицы
+        const thead = document.createElement('thead');
+        thead.innerHTML = `
+            <tr>
+                <th>ФИО</th>
+                <th>Должность</th>
+                <th>Отдел</th>
+                <th>Личный номер</th>
+                <th>Корп. почта</th>
+                <th>Дата увольнения</th>
+                <th>Отработано дней</th>
+                <th>Действия</th>
+            </tr>
+        `;
+        
+        // Создаем тело таблицы
+        const tbody = document.createElement('tbody');
+        
+        // Добавляем строки с сотрудниками
+        allEmployees.forEach(emp => {
+            const row = emp.row;
             
-            // Создаем заголовок отдела
-            const header = document.createElement('div');
-            header.className = 'department-header';
-            header.innerHTML = `
-                <span>${dept.name}</span>
-                <div class="department-controls">
-                    <div class="badge">${dept.employees.length}</div>
-                    <i class="fas fa-arrow-up move-up" title="Переместить вверх" data-id="${dept.id}"></i>
-                    <i class="fas fa-arrow-down move-down" title="Переместить вниз" data-id="${dept.id}"></i>
-                </div>
-            `;
+            // Добавляем ячейку с отделом после должности
+            const positionCell = row.querySelector('td:nth-child(2)');
+            const deptCell = document.createElement('td');
+            deptCell.textContent = emp.deptName;
+            positionCell.insertAdjacentElement('afterend', deptCell);
             
-            // Создаем содержимое отдела
-            const content = document.createElement('div');
-            content.className = 'department-content';
-            
-            // Создаем таблицу
-            const tableResponsive = document.createElement('div');
-            tableResponsive.className = 'table-responsive';
-            
-            const table = document.createElement('table');
-            table.className = 'table table-hover';
-            
-            // Создаем заголовок таблицы
-            const thead = document.createElement('thead');
-            thead.innerHTML = `
-                <tr>
-                    <th>ФИО</th>
-                    <th>Должность</th>
-                    <th>Личный номер</th>
-                    <th>Корп. почта</th>
-                    <th>Дата увольнения</th>
-                    <th>Отработано дней</th>
-                    <th>Действия</th>
-                </tr>
-            `;
-            
-            // Создаем тело таблицы
-            const tbody = document.createElement('tbody');
-            dept.employees.forEach(row => {
-                tbody.appendChild(row);
-            });
-            
-            // Собираем таблицу
-            table.appendChild(thead);
-            table.appendChild(tbody);
-            tableResponsive.appendChild(table);
-            content.appendChild(tableResponsive);
-            
-            // Собираем секцию отдела
-            deptSection.appendChild(header);
-            deptSection.appendChild(content);
-            
-            // Добавляем в контейнер
-            container.appendChild(deptSection);
+            tbody.appendChild(row);
         });
+        
+        // Собираем таблицу
+        table.appendChild(thead);
+        table.appendChild(tbody);
+        tableResponsive.appendChild(table);
+        content.appendChild(tableResponsive);
+        
+        // Собираем секцию
+        sectionContainer.appendChild(header);
+        sectionContainer.appendChild(content);
+        
+        // Добавляем в контейнер
+        container.appendChild(sectionContainer);
+        
+        // Добавляем кнопку возврата к исходному виду
+        const resetButtonContainer = document.createElement('div');
+        resetButtonContainer.className = 'text-center mt-3 mb-4';
+        
+        const resetButton = document.createElement('button');
+        resetButton.className = 'btn btn-outline-secondary';
+        resetButton.innerHTML = '<i class="fas fa-undo"></i> Вернуться к отображению по отделам';
+        resetButton.addEventListener('click', function() {
+            window.location.reload();
+        });
+        
+        resetButtonContainer.appendChild(resetButton);
+        container.appendChild(resetButtonContainer);
         
         // Повторно привязываем обработчики событий
         reattachEventHandlers();
@@ -1033,6 +1040,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Сохраняем сортировку в localStorage
         localStorage.setItem('firedEmployeesSortType', 'dismissalDate');
         localStorage.setItem('firedEmployeesSortDirection', direction);
+        localStorage.setItem('firedEmployeesSortView', 'list');
     });
 
     // Глобальная сортировка по отработанным дням
@@ -1049,11 +1057,11 @@ document.addEventListener('DOMContentLoaded', function() {
         otherBtn.setAttribute('data-sort', '');
         otherBtn.querySelector('i.fas').className = 'fas fa-sort';
         
-        // Сортируем все отделы
+        // Получаем все строки с сотрудниками из всех отделов
         const departments = Array.from(document.querySelectorAll('.department-section'));
         const container = document.getElementById('departments-container');
         
-        // Получаем все строки с сотрудниками из всех отделов
+        // Собираем всех сотрудников из всех отделов
         let allEmployees = [];
         departments.forEach(dept => {
             const rows = Array.from(dept.querySelectorAll('.employee-row'));
@@ -1076,84 +1084,91 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // Группируем отсортированных сотрудников по отделам
-        const groupedEmployees = {};
-        allEmployees.forEach(emp => {
-            if (!groupedEmployees[emp.deptId]) {
-                groupedEmployees[emp.deptId] = {
-                    name: emp.deptName,
-                    id: emp.deptId,
-                    employees: []
-                };
-            }
-            groupedEmployees[emp.deptId].employees.push(emp.row);
-        });
-        
-        // Очищаем и перестраиваем контейнер
+        // Очищаем контейнер
         container.innerHTML = '';
         
-        Object.values(groupedEmployees).forEach(dept => {
-            const deptSection = document.createElement('div');
-            deptSection.className = 'department-section';
-            deptSection.setAttribute('data-department-id', dept.id);
-            deptSection.setAttribute('data-department-name', dept.name);
+        // Создаем единую секцию для всех сотрудников
+        const sectionContainer = document.createElement('div');
+        sectionContainer.className = 'department-section';
+        sectionContainer.setAttribute('data-department-id', 'all');
+        sectionContainer.setAttribute('data-department-name', 'Все сотрудники');
+        
+        // Создаем заголовок
+        const header = document.createElement('div');
+        header.className = 'department-header';
+        header.innerHTML = `
+            <span>Список всех сотрудников (сортировка по стажу)</span>
+            <div class="badge">${allEmployees.length}</div>
+        `;
+        
+        // Создаем содержимое
+        const content = document.createElement('div');
+        content.className = 'department-content';
+        
+        // Создаем таблицу
+        const tableResponsive = document.createElement('div');
+        tableResponsive.className = 'table-responsive';
+        
+        const table = document.createElement('table');
+        table.className = 'table table-hover';
+        
+        // Создаем заголовок таблицы
+        const thead = document.createElement('thead');
+        thead.innerHTML = `
+            <tr>
+                <th>ФИО</th>
+                <th>Должность</th>
+                <th>Отдел</th>
+                <th>Личный номер</th>
+                <th>Корп. почта</th>
+                <th>Дата увольнения</th>
+                <th>Отработано дней</th>
+                <th>Действия</th>
+            </tr>
+        `;
+        
+        // Создаем тело таблицы
+        const tbody = document.createElement('tbody');
+        
+        // Добавляем строки с сотрудниками
+        allEmployees.forEach(emp => {
+            const row = emp.row;
             
-            // Создаем заголовок отдела
-            const header = document.createElement('div');
-            header.className = 'department-header';
-            header.innerHTML = `
-                <span>${dept.name}</span>
-                <div class="department-controls">
-                    <div class="badge">${dept.employees.length}</div>
-                    <i class="fas fa-arrow-up move-up" title="Переместить вверх" data-id="${dept.id}"></i>
-                    <i class="fas fa-arrow-down move-down" title="Переместить вниз" data-id="${dept.id}"></i>
-                </div>
-            `;
+            // Добавляем ячейку с отделом после должности
+            const positionCell = row.querySelector('td:nth-child(2)');
+            const deptCell = document.createElement('td');
+            deptCell.textContent = emp.deptName;
+            positionCell.insertAdjacentElement('afterend', deptCell);
             
-            // Создаем содержимое отдела
-            const content = document.createElement('div');
-            content.className = 'department-content';
-            
-            // Создаем таблицу
-            const tableResponsive = document.createElement('div');
-            tableResponsive.className = 'table-responsive';
-            
-            const table = document.createElement('table');
-            table.className = 'table table-hover';
-            
-            // Создаем заголовок таблицы
-            const thead = document.createElement('thead');
-            thead.innerHTML = `
-                <tr>
-                    <th>ФИО</th>
-                    <th>Должность</th>
-                    <th>Личный номер</th>
-                    <th>Корп. почта</th>
-                    <th>Дата увольнения</th>
-                    <th>Отработано дней</th>
-                    <th>Действия</th>
-                </tr>
-            `;
-            
-            // Создаем тело таблицы
-            const tbody = document.createElement('tbody');
-            dept.employees.forEach(row => {
-                tbody.appendChild(row);
-            });
-            
-            // Собираем таблицу
-            table.appendChild(thead);
-            table.appendChild(tbody);
-            tableResponsive.appendChild(table);
-            content.appendChild(tableResponsive);
-            
-            // Собираем секцию отдела
-            deptSection.appendChild(header);
-            deptSection.appendChild(content);
-            
-            // Добавляем в контейнер
-            container.appendChild(deptSection);
+            tbody.appendChild(row);
         });
+        
+        // Собираем таблицу
+        table.appendChild(thead);
+        table.appendChild(tbody);
+        tableResponsive.appendChild(table);
+        content.appendChild(tableResponsive);
+        
+        // Собираем секцию
+        sectionContainer.appendChild(header);
+        sectionContainer.appendChild(content);
+        
+        // Добавляем в контейнер
+        container.appendChild(sectionContainer);
+        
+        // Добавляем кнопку возврата к исходному виду
+        const resetButtonContainer = document.createElement('div');
+        resetButtonContainer.className = 'text-center mt-3 mb-4';
+        
+        const resetButton = document.createElement('button');
+        resetButton.className = 'btn btn-outline-secondary';
+        resetButton.innerHTML = '<i class="fas fa-undo"></i> Вернуться к отображению по отделам';
+        resetButton.addEventListener('click', function() {
+            window.location.reload();
+        });
+        
+        resetButtonContainer.appendChild(resetButton);
+        container.appendChild(resetButtonContainer);
         
         // Повторно привязываем обработчики событий
         reattachEventHandlers();
@@ -1161,17 +1176,18 @@ document.addEventListener('DOMContentLoaded', function() {
         // Сохраняем сортировку в localStorage
         localStorage.setItem('firedEmployeesSortType', 'daysWorked');
         localStorage.setItem('firedEmployeesSortDirection', direction);
+        localStorage.setItem('firedEmployeesSortView', 'list');
     });
 
-    // Управление порядком отделов
+    // Инициализация порядка отделов
     function initDepartmentOrder() {
         // Получаем сохраненный порядок из localStorage
-        const savedOrder = localStorage.getItem('departmentOrder');
+        const savedOrder = localStorage.getItem('firedDepartmentOrder');
         if (savedOrder) {
             try {
                 const orderArray = JSON.parse(savedOrder);
                 const container = document.getElementById('departments-container');
-                const departments = Array.from(document.querySelectorAll('.department-section'));
+                const departments = Array.from(container.querySelectorAll('.department-section'));
                 
                 // Сортируем отделы согласно сохраненному порядку
                 departments.sort((a, b) => {
@@ -1221,11 +1237,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Сохранение порядка отделов
+    // Сохранение порядка отделов в localStorage
     function saveDepartmentOrder() {
         const departments = Array.from(document.querySelectorAll('.department-section'));
         const orderArray = departments.map(dept => dept.getAttribute('data-department-id'));
-        localStorage.setItem('departmentOrder', JSON.stringify(orderArray));
+        localStorage.setItem('firedDepartmentOrder', JSON.stringify(orderArray));
     }
 
     // Вспомогательная функция для форматирования даты для сравнения
@@ -1319,8 +1335,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function initSavedSortingState() {
         const sortType = localStorage.getItem('firedEmployeesSortType');
         const sortDirection = localStorage.getItem('firedEmployeesSortDirection');
+        const sortView = localStorage.getItem('firedEmployeesSortView');
         
-        if (sortType && sortDirection) {
+        if (sortType && sortDirection && sortView === 'list') {
             if (sortType === 'dismissalDate') {
                 document.getElementById('sortByDismissalDate').setAttribute('data-sort', sortDirection);
                 document.getElementById('sortByDismissalDate').click();
