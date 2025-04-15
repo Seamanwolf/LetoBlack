@@ -95,7 +95,7 @@
     }
     
     .department-header {
-        background-color: #f8f9fa;
+        background-color: #f0f0f0;
         padding: 15px 20px;
         border-bottom: 1px solid #e9ecef;
         display: flex;
@@ -111,6 +111,21 @@
         padding: 5px 10px;
         border-radius: 50px;
         font-size: 0.8rem;
+    }
+    
+    .department-header .department-controls {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .department-header .department-controls i {
+        cursor: pointer;
+        color: #6c757d;
+        transition: color 0.3s;
+    }
+    
+    .department-header .department-controls i:hover {
+        color: #e74c3c;
     }
     
     /* Стили для таблицы с фиксированными ширинами столбцов */
@@ -145,11 +160,6 @@
     
     .table th:nth-child(7), .table td:nth-child(7) {
         width: 15%;
-    }
-    
-    /* Стили для заголовка отдела */
-    .department-header {
-        background-color: #f0f0f0;
     }
     
     /* Стили для модальных окон */
@@ -307,10 +317,18 @@
             <input type="text" class="form-control" id="searchInput" placeholder="Поиск уволенных сотрудников...">
         </div>
     </div>
-    <div class="col-md-6">
-        <button class="btn btn-outline-danger btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filtersCollapse" aria-expanded="false" aria-controls="filtersCollapse">
+    <div class="col-md-6 text-end">
+        <button class="btn btn-outline-danger btn-sm me-2" type="button" data-bs-toggle="collapse" data-bs-target="#filtersCollapse" aria-expanded="false" aria-controls="filtersCollapse">
             <i class="fas fa-filter"></i> Фильтры
         </button>
+        <div class="btn-group btn-group-sm">
+            <button class="btn btn-outline-primary" id="sortByDismissalDate">
+                <i class="fas fa-sort"></i> По дате увольнения
+            </button>
+            <button class="btn btn-outline-primary" id="sortByDaysWorked">
+                <i class="fas fa-sort"></i> По стажу
+            </button>
+        </div>
     </div>
 </div>
 
@@ -365,7 +383,11 @@
     <div class="department-section" data-department-name="{{ department_name }}" data-department-id="{{ department_id }}">
         <div class="department-header">
             <span>{{ department_name }}</span>
-            <div class="badge">{{ department_employees|length }}</div>
+            <div class="department-controls">
+                <div class="badge">{{ department_employees|length }}</div>
+                <i class="fas fa-arrow-up move-up" title="Переместить вверх" data-id="{{ department_id }}"></i>
+                <i class="fas fa-arrow-down move-down" title="Переместить вниз" data-id="{{ department_id }}"></i>
+            </div>
         </div>
         <div class="department-content">
             <div class="table-responsive">
@@ -589,8 +611,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('viewCorporateNumber').textContent = employee.Phone || 'Н/Д';
                 document.getElementById('viewPersonalPhone').textContent = employee.personal_phone || 'Н/Д';
                 document.getElementById('viewCorporateEmail').textContent = employee.corporate_email || 'Н/Д';
-                document.getElementById('viewHireDate').textContent = formatDate(employee.hire_date) || 'Н/Д';
-                document.getElementById('viewFireDate').textContent = formatDate(employee.fire_date) || 'Н/Д';
+                document.getElementById('viewHireDate').textContent = formatDateForDisplay(employee.hire_date) || 'Н/Д';
+                document.getElementById('viewFireDate').textContent = formatDateForDisplay(employee.fire_date) || 'Н/Д';
                 document.getElementById('viewExperience').textContent = employee.experience || 'Н/Д';
                 document.getElementById('viewNotes').textContent = employee.notes || 'Нет примечаний';
                 
@@ -612,11 +634,29 @@ document.addEventListener('DOMContentLoaded', function() {
         return roles[role] || role;
     }
     
-    // Функция для форматирования даты
-    function formatDate(dateStr) {
+    // Функция для форматирования даты для отображения
+    function formatDateForDisplay(dateStr) {
         if (!dateStr) return '';
+        
+        // Пробуем разные форматы дат
         const date = new Date(dateStr);
-        return date.toLocaleDateString('ru-RU');
+        if (!isNaN(date.getTime())) {
+            return date.toLocaleDateString('ru-RU');
+        }
+        
+        // Для формата YYYY-MM-DD
+        const isoMatch = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (isoMatch) {
+            return `${isoMatch[3]}.${isoMatch[2]}.${isoMatch[1]}`;
+        }
+        
+        // Для формата DD.MM.YYYY
+        const ruMatch = dateStr.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+        if (ruMatch) {
+            return dateStr; // Уже в нужном формате
+        }
+        
+        return dateStr; // Возвращаем как есть, если не удалось распознать
     }
     
     // Обработчик восстановления сотрудника
@@ -757,10 +797,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Проверка по датам
             let matchesDates = true;
-            if (dateFrom && formatDate(fireDate) < dateFrom) {
+            if (dateFrom && formatDateForCompare(fireDate) < dateFrom) {
                 matchesDates = false;
             }
-            if (dateTo && formatDate(fireDate) > dateTo) {
+            if (dateTo && formatDateForCompare(fireDate) > dateTo) {
                 matchesDates = false;
             }
             
@@ -774,13 +814,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Обновляем видимость отделов
         updateDepartmentVisibility();
-    }
-    
-    // Вспомогательная функция для форматирования даты
-    function formatDate(dateStr) {
-        if (!dateStr) return '';
-        const parts = dateStr.split('.');
-        return `${parts[2]}-${parts[1]}-${parts[0]}`;
     }
     
     // Обновление видимости отделов в зависимости от видимых сотрудников
@@ -869,6 +902,438 @@ document.addEventListener('DOMContentLoaded', function() {
             tbody.appendChild(row);
         });
     }
+
+    // Глобальная сортировка по дате увольнения
+    document.getElementById('sortByDismissalDate').addEventListener('click', function() {
+        const direction = this.getAttribute('data-sort') === 'asc' ? 'desc' : 'asc';
+        this.setAttribute('data-sort', direction);
+        
+        // Обновляем иконку
+        const icon = this.querySelector('i.fas');
+        icon.className = `fas fa-sort-${direction === 'asc' ? 'up' : 'down'}`;
+        
+        // Сбрасываем другую кнопку сортировки
+        const otherBtn = document.getElementById('sortByDaysWorked');
+        otherBtn.setAttribute('data-sort', '');
+        otherBtn.querySelector('i.fas').className = 'fas fa-sort';
+        
+        // Сортируем все отделы
+        const departments = Array.from(document.querySelectorAll('.department-section'));
+        const container = document.getElementById('departments-container');
+        
+        // Получаем все строки с сотрудниками из всех отделов
+        let allEmployees = [];
+        departments.forEach(dept => {
+            const rows = Array.from(dept.querySelectorAll('.employee-row'));
+            allEmployees = [...allEmployees, ...rows.map(row => {
+                return {
+                    row: row.cloneNode(true),
+                    fireDate: row.getAttribute('data-fire-date'),
+                    deptId: dept.getAttribute('data-department-id'),
+                    deptName: dept.getAttribute('data-department-name')
+                };
+            })];
+        });
+        
+        // Сортируем сотрудников
+        allEmployees.sort((a, b) => {
+            // Преобразуем даты для сравнения
+            let dateA = a.fireDate ? formatDateForCompare(a.fireDate) : '';
+            let dateB = b.fireDate ? formatDateForCompare(b.fireDate) : '';
+            
+            if (direction === 'asc') {
+                return dateA > dateB ? 1 : -1;
+            } else {
+                return dateA < dateB ? 1 : -1;
+            }
+        });
+        
+        // Группируем отсортированных сотрудников по отделам
+        const groupedEmployees = {};
+        allEmployees.forEach(emp => {
+            if (!groupedEmployees[emp.deptId]) {
+                groupedEmployees[emp.deptId] = {
+                    name: emp.deptName,
+                    id: emp.deptId,
+                    employees: []
+                };
+            }
+            groupedEmployees[emp.deptId].employees.push(emp.row);
+        });
+        
+        // Очищаем и перестраиваем контейнер
+        container.innerHTML = '';
+        
+        Object.values(groupedEmployees).forEach(dept => {
+            const deptSection = document.createElement('div');
+            deptSection.className = 'department-section';
+            deptSection.setAttribute('data-department-id', dept.id);
+            deptSection.setAttribute('data-department-name', dept.name);
+            
+            // Создаем заголовок отдела
+            const header = document.createElement('div');
+            header.className = 'department-header';
+            header.innerHTML = `
+                <span>${dept.name}</span>
+                <div class="department-controls">
+                    <div class="badge">${dept.employees.length}</div>
+                    <i class="fas fa-arrow-up move-up" title="Переместить вверх" data-id="${dept.id}"></i>
+                    <i class="fas fa-arrow-down move-down" title="Переместить вниз" data-id="${dept.id}"></i>
+                </div>
+            `;
+            
+            // Создаем содержимое отдела
+            const content = document.createElement('div');
+            content.className = 'department-content';
+            
+            // Создаем таблицу
+            const tableResponsive = document.createElement('div');
+            tableResponsive.className = 'table-responsive';
+            
+            const table = document.createElement('table');
+            table.className = 'table table-hover';
+            
+            // Создаем заголовок таблицы
+            const thead = document.createElement('thead');
+            thead.innerHTML = `
+                <tr>
+                    <th>ФИО</th>
+                    <th>Должность</th>
+                    <th>Личный номер</th>
+                    <th>Корп. почта</th>
+                    <th>Дата увольнения</th>
+                    <th>Отработано дней</th>
+                    <th>Действия</th>
+                </tr>
+            `;
+            
+            // Создаем тело таблицы
+            const tbody = document.createElement('tbody');
+            dept.employees.forEach(row => {
+                tbody.appendChild(row);
+            });
+            
+            // Собираем таблицу
+            table.appendChild(thead);
+            table.appendChild(tbody);
+            tableResponsive.appendChild(table);
+            content.appendChild(tableResponsive);
+            
+            // Собираем секцию отдела
+            deptSection.appendChild(header);
+            deptSection.appendChild(content);
+            
+            // Добавляем в контейнер
+            container.appendChild(deptSection);
+        });
+        
+        // Повторно привязываем обработчики событий
+        reattachEventHandlers();
+        
+        // Сохраняем сортировку в localStorage
+        localStorage.setItem('firedEmployeesSortType', 'dismissalDate');
+        localStorage.setItem('firedEmployeesSortDirection', direction);
+    });
+
+    // Глобальная сортировка по отработанным дням
+    document.getElementById('sortByDaysWorked').addEventListener('click', function() {
+        const direction = this.getAttribute('data-sort') === 'asc' ? 'desc' : 'asc';
+        this.setAttribute('data-sort', direction);
+        
+        // Обновляем иконку
+        const icon = this.querySelector('i.fas');
+        icon.className = `fas fa-sort-${direction === 'asc' ? 'up' : 'down'}`;
+        
+        // Сбрасываем другую кнопку сортировки
+        const otherBtn = document.getElementById('sortByDismissalDate');
+        otherBtn.setAttribute('data-sort', '');
+        otherBtn.querySelector('i.fas').className = 'fas fa-sort';
+        
+        // Сортируем все отделы
+        const departments = Array.from(document.querySelectorAll('.department-section'));
+        const container = document.getElementById('departments-container');
+        
+        // Получаем все строки с сотрудниками из всех отделов
+        let allEmployees = [];
+        departments.forEach(dept => {
+            const rows = Array.from(dept.querySelectorAll('.employee-row'));
+            allEmployees = [...allEmployees, ...rows.map(row => {
+                return {
+                    row: row.cloneNode(true),
+                    daysWorked: parseInt(row.getAttribute('data-days-worked')) || 0,
+                    deptId: dept.getAttribute('data-department-id'),
+                    deptName: dept.getAttribute('data-department-name')
+                };
+            })];
+        });
+        
+        // Сортируем сотрудников
+        allEmployees.sort((a, b) => {
+            if (direction === 'asc') {
+                return a.daysWorked - b.daysWorked;
+            } else {
+                return b.daysWorked - a.daysWorked;
+            }
+        });
+        
+        // Группируем отсортированных сотрудников по отделам
+        const groupedEmployees = {};
+        allEmployees.forEach(emp => {
+            if (!groupedEmployees[emp.deptId]) {
+                groupedEmployees[emp.deptId] = {
+                    name: emp.deptName,
+                    id: emp.deptId,
+                    employees: []
+                };
+            }
+            groupedEmployees[emp.deptId].employees.push(emp.row);
+        });
+        
+        // Очищаем и перестраиваем контейнер
+        container.innerHTML = '';
+        
+        Object.values(groupedEmployees).forEach(dept => {
+            const deptSection = document.createElement('div');
+            deptSection.className = 'department-section';
+            deptSection.setAttribute('data-department-id', dept.id);
+            deptSection.setAttribute('data-department-name', dept.name);
+            
+            // Создаем заголовок отдела
+            const header = document.createElement('div');
+            header.className = 'department-header';
+            header.innerHTML = `
+                <span>${dept.name}</span>
+                <div class="department-controls">
+                    <div class="badge">${dept.employees.length}</div>
+                    <i class="fas fa-arrow-up move-up" title="Переместить вверх" data-id="${dept.id}"></i>
+                    <i class="fas fa-arrow-down move-down" title="Переместить вниз" data-id="${dept.id}"></i>
+                </div>
+            `;
+            
+            // Создаем содержимое отдела
+            const content = document.createElement('div');
+            content.className = 'department-content';
+            
+            // Создаем таблицу
+            const tableResponsive = document.createElement('div');
+            tableResponsive.className = 'table-responsive';
+            
+            const table = document.createElement('table');
+            table.className = 'table table-hover';
+            
+            // Создаем заголовок таблицы
+            const thead = document.createElement('thead');
+            thead.innerHTML = `
+                <tr>
+                    <th>ФИО</th>
+                    <th>Должность</th>
+                    <th>Личный номер</th>
+                    <th>Корп. почта</th>
+                    <th>Дата увольнения</th>
+                    <th>Отработано дней</th>
+                    <th>Действия</th>
+                </tr>
+            `;
+            
+            // Создаем тело таблицы
+            const tbody = document.createElement('tbody');
+            dept.employees.forEach(row => {
+                tbody.appendChild(row);
+            });
+            
+            // Собираем таблицу
+            table.appendChild(thead);
+            table.appendChild(tbody);
+            tableResponsive.appendChild(table);
+            content.appendChild(tableResponsive);
+            
+            // Собираем секцию отдела
+            deptSection.appendChild(header);
+            deptSection.appendChild(content);
+            
+            // Добавляем в контейнер
+            container.appendChild(deptSection);
+        });
+        
+        // Повторно привязываем обработчики событий
+        reattachEventHandlers();
+        
+        // Сохраняем сортировку в localStorage
+        localStorage.setItem('firedEmployeesSortType', 'daysWorked');
+        localStorage.setItem('firedEmployeesSortDirection', direction);
+    });
+
+    // Управление порядком отделов
+    function initDepartmentOrder() {
+        // Получаем сохраненный порядок из localStorage
+        const savedOrder = localStorage.getItem('departmentOrder');
+        if (savedOrder) {
+            try {
+                const orderArray = JSON.parse(savedOrder);
+                const container = document.getElementById('departments-container');
+                const departments = Array.from(document.querySelectorAll('.department-section'));
+                
+                // Сортируем отделы согласно сохраненному порядку
+                departments.sort((a, b) => {
+                    const idA = a.getAttribute('data-department-id');
+                    const idB = b.getAttribute('data-department-id');
+                    const indexA = orderArray.indexOf(idA);
+                    const indexB = orderArray.indexOf(idB);
+                    
+                    // Если отдел не в сохраненном порядке, помещаем его в конец
+                    if (indexA === -1) return 1;
+                    if (indexB === -1) return -1;
+                    
+                    return indexA - indexB;
+                });
+                
+                // Перестраиваем DOM
+                departments.forEach(dept => {
+                    container.appendChild(dept);
+                });
+            } catch (e) {
+                console.error('Ошибка при восстановлении порядка отделов:', e);
+            }
+        }
+        
+        // Обработчики для кнопок перемещения отделов
+        document.querySelectorAll('.move-up, .move-down').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation();
+                
+                const departmentId = this.getAttribute('data-id');
+                const department = document.querySelector(`.department-section[data-department-id="${departmentId}"]`);
+                const container = document.getElementById('departments-container');
+                const departments = Array.from(container.querySelectorAll('.department-section'));
+                const currentIndex = departments.indexOf(department);
+                
+                if (this.classList.contains('move-up') && currentIndex > 0) {
+                    // Перемещаем вверх
+                    container.insertBefore(department, departments[currentIndex - 1]);
+                } else if (this.classList.contains('move-down') && currentIndex < departments.length - 1) {
+                    // Перемещаем вниз
+                    container.insertBefore(departments[currentIndex + 1], department);
+                }
+                
+                // Сохраняем новый порядок
+                saveDepartmentOrder();
+            });
+        });
+    }
+
+    // Сохранение порядка отделов
+    function saveDepartmentOrder() {
+        const departments = Array.from(document.querySelectorAll('.department-section'));
+        const orderArray = departments.map(dept => dept.getAttribute('data-department-id'));
+        localStorage.setItem('departmentOrder', JSON.stringify(orderArray));
+    }
+
+    // Вспомогательная функция для форматирования даты для сравнения
+    function formatDateForCompare(dateStr) {
+        if (!dateStr) return '';
+        
+        // Для формата ДД.ММ.ГГГГ -> ГГГГ-ММ-ДД
+        const ruMatch = dateStr.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+        if (ruMatch) {
+            return `${ruMatch[3]}-${ruMatch[2]}-${ruMatch[1]}`;
+        }
+        
+        return dateStr;
+    }
+
+    // Повторное прикрепление обработчиков событий после перестроения DOM
+    function reattachEventHandlers() {
+        // Обработчики для просмотра сотрудника
+        document.querySelectorAll('.view-employee').forEach(icon => {
+            icon.addEventListener('click', async function(e) {
+                e.stopPropagation();
+                const employeeId = this.getAttribute('data-id');
+                const employee = await loadEmployeeData(employeeId);
+                
+                if (employee) {
+                    document.getElementById('viewFullName').textContent = employee.full_name || 'Н/Д';
+                    document.getElementById('viewDepartment').textContent = employee.department || 'Н/Д';
+                    document.getElementById('viewPosition').textContent = employee.position || 'Н/Д';
+                    document.getElementById('viewRole').textContent = translateRole(employee.role) || 'Н/Д';
+                    document.getElementById('viewCorporateNumber').textContent = employee.Phone || 'Н/Д';
+                    document.getElementById('viewPersonalPhone').textContent = employee.personal_phone || 'Н/Д';
+                    document.getElementById('viewCorporateEmail').textContent = employee.corporate_email || 'Н/Д';
+                    document.getElementById('viewHireDate').textContent = formatDateForDisplay(employee.hire_date) || 'Н/Д';
+                    document.getElementById('viewFireDate').textContent = formatDateForDisplay(employee.fire_date) || 'Н/Д';
+                    document.getElementById('viewExperience').textContent = employee.experience || 'Н/Д';
+                    document.getElementById('viewNotes').textContent = employee.notes || 'Нет примечаний';
+                    
+                    const viewModal = new bootstrap.Modal(document.getElementById('viewEmployeeModal'));
+                    viewModal.show();
+                }
+            });
+        });
+        
+        // Обработчики для восстановления сотрудника
+        document.querySelectorAll('.rehire-employee').forEach(icon => {
+            icon.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const employeeId = this.getAttribute('data-id');
+                document.getElementById('rehireEmployeeId').value = employeeId;
+                
+                const rehireModal = new bootstrap.Modal(document.getElementById('rehireEmployeeModal'));
+                rehireModal.show();
+            });
+        });
+        
+        // Обработчики для удаления сотрудника
+        document.querySelectorAll('.delete-employee').forEach(icon => {
+            icon.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const employeeId = this.getAttribute('data-id');
+                document.getElementById('deleteEmployeeId').value = employeeId;
+                
+                const deleteModal = new bootstrap.Modal(document.getElementById('deleteEmployeeModal'));
+                deleteModal.show();
+            });
+        });
+        
+        // Обработчики для перемещения отделов
+        document.querySelectorAll('.move-up, .move-down').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation();
+                
+                const departmentId = this.getAttribute('data-id');
+                const department = document.querySelector(`.department-section[data-department-id="${departmentId}"]`);
+                const container = document.getElementById('departments-container');
+                const departments = Array.from(container.querySelectorAll('.department-section'));
+                const currentIndex = departments.indexOf(department);
+                
+                if (this.classList.contains('move-up') && currentIndex > 0) {
+                    container.insertBefore(department, departments[currentIndex - 1]);
+                } else if (this.classList.contains('move-down') && currentIndex < departments.length - 1) {
+                    container.insertBefore(departments[currentIndex + 1], department);
+                }
+                
+                saveDepartmentOrder();
+            });
+        });
+    }
+
+    // Инициализация и восстановление сохраненной сортировки
+    function initSavedSortingState() {
+        const sortType = localStorage.getItem('firedEmployeesSortType');
+        const sortDirection = localStorage.getItem('firedEmployeesSortDirection');
+        
+        if (sortType && sortDirection) {
+            if (sortType === 'dismissalDate') {
+                document.getElementById('sortByDismissalDate').setAttribute('data-sort', sortDirection);
+                document.getElementById('sortByDismissalDate').click();
+            } else if (sortType === 'daysWorked') {
+                document.getElementById('sortByDaysWorked').setAttribute('data-sort', sortDirection);
+                document.getElementById('sortByDaysWorked').click();
+            }
+        }
+    }
+
+    // Инициализация после загрузки страницы
+    initDepartmentOrder();
+    initSavedSortingState();
 });
 </script>
 {% endblock %} 
