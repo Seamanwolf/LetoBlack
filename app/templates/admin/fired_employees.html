@@ -238,6 +238,7 @@
         border-radius: 8px;
         border: 1px solid #ced4da;
         font-size: 0.85rem;
+        height: calc(1.5em + 0.5rem + 2px) !important;
     }
     .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice {
         background-color: #e74c3c;
@@ -246,6 +247,7 @@
         font-size: 0.85rem;
         padding: 0.2rem 0.4rem;
         margin: 3px;
+        height: calc(1.5em + 0.15rem) !important;
     }
     .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove {
         padding: 0 3px;
@@ -254,6 +256,17 @@
         border-radius: 8px;
         box-shadow: 0 3px 10px rgba(0,0,0,0.1);
         font-size: 0.85rem;
+    }
+
+    /* Активное состояние кнопок сортировки */
+    .btn-sort-active {
+        background-color: #e74c3c !important;
+        color: white !important;
+    }
+
+    /* Унификация высоты кнопок и элементов формы */
+    .form-control-sm, .btn-sm, .select2-container--bootstrap-5 .select2-selection {
+        height: calc(1.5em + 0.5rem + 2px) !important;
     }
 </style>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -905,6 +918,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Глобальная сортировка по дате увольнения
     document.getElementById('sortByDismissalDate').addEventListener('click', function() {
+        const isActive = this.classList.contains('btn-sort-active');
+        
+        // Если кнопка уже активна, отменяем сортировку и возвращаемся к обычному виду
+        if (isActive) {
+            window.location.reload();
+            return;
+        }
+        
+        // Удаляем активное состояние у всех кнопок сортировки
+        document.querySelectorAll('#sortByDismissalDate, #sortByDaysWorked').forEach(btn => {
+            btn.classList.remove('btn-sort-active');
+        });
+        
+        // Добавляем активное состояние текущей кнопке
+        this.classList.add('btn-sort-active');
+        
         const direction = this.getAttribute('data-sort') === 'asc' ? 'desc' : 'asc';
         this.setAttribute('data-sort', direction);
         
@@ -1045,6 +1074,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Глобальная сортировка по отработанным дням
     document.getElementById('sortByDaysWorked').addEventListener('click', function() {
+        const isActive = this.classList.contains('btn-sort-active');
+        
+        // Если кнопка уже активна, отменяем сортировку и возвращаемся к обычному виду
+        if (isActive) {
+            window.location.reload();
+            return;
+        }
+        
+        // Удаляем активное состояние у всех кнопок сортировки
+        document.querySelectorAll('#sortByDismissalDate, #sortByDaysWorked').forEach(btn => {
+            btn.classList.remove('btn-sort-active');
+        });
+        
+        // Добавляем активное состояние текущей кнопке
+        this.classList.add('btn-sort-active');
+        
         const direction = this.getAttribute('data-sort') === 'asc' ? 'desc' : 'asc';
         this.setAttribute('data-sort', direction);
         
@@ -1339,11 +1384,15 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (sortType && sortDirection && sortView === 'list') {
             if (sortType === 'dismissalDate') {
-                document.getElementById('sortByDismissalDate').setAttribute('data-sort', sortDirection);
-                document.getElementById('sortByDismissalDate').click();
+                const btn = document.getElementById('sortByDismissalDate');
+                btn.setAttribute('data-sort', sortDirection);
+                btn.classList.add('btn-sort-active');
+                btn.click();
             } else if (sortType === 'daysWorked') {
-                document.getElementById('sortByDaysWorked').setAttribute('data-sort', sortDirection);
-                document.getElementById('sortByDaysWorked').click();
+                const btn = document.getElementById('sortByDaysWorked');
+                btn.setAttribute('data-sort', sortDirection);
+                btn.classList.add('btn-sort-active');
+                btn.click();
             }
         }
     }
