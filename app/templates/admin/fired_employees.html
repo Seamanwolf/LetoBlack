@@ -1382,19 +1382,169 @@ document.addEventListener('DOMContentLoaded', function() {
         const sortDirection = localStorage.getItem('firedEmployeesSortDirection');
         const sortView = localStorage.getItem('firedEmployeesSortView');
         
+        // Очищаем localStorage, чтобы предотвратить автоматическую активацию при каждой загрузке
+        localStorage.removeItem('firedEmployeesSortType');
+        localStorage.removeItem('firedEmployeesSortDirection');
+        localStorage.removeItem('firedEmployeesSortView');
+        
+        // Восстанавливаем только если явно указан режим списка
         if (sortType && sortDirection && sortView === 'list') {
             if (sortType === 'dismissalDate') {
                 const btn = document.getElementById('sortByDismissalDate');
                 btn.setAttribute('data-sort', sortDirection);
+                
+                // Создаем и отображаем единый список без вызова click()
+                createSortedList('dismissalDate', sortDirection);
+                
+                // Обновляем визуальное состояние кнопки
                 btn.classList.add('btn-sort-active');
-                btn.click();
+                btn.querySelector('i.fas').className = `fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'}`;
             } else if (sortType === 'daysWorked') {
                 const btn = document.getElementById('sortByDaysWorked');
                 btn.setAttribute('data-sort', sortDirection);
+                
+                // Создаем и отображаем единый список без вызова click()
+                createSortedList('daysWorked', sortDirection);
+                
+                // Обновляем визуальное состояние кнопки
                 btn.classList.add('btn-sort-active');
-                btn.click();
+                btn.querySelector('i.fas').className = `fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'}`;
             }
         }
+    }
+    
+    // Функция для создания отсортированного списка без повторного использования обработчиков событий
+    function createSortedList(sortType, direction) {
+        // Получаем все строки с сотрудниками из всех отделов
+        const departments = Array.from(document.querySelectorAll('.department-section'));
+        const container = document.getElementById('departments-container');
+        
+        // Собираем всех сотрудников из всех отделов
+        let allEmployees = [];
+        departments.forEach(dept => {
+            const rows = Array.from(dept.querySelectorAll('.employee-row'));
+            allEmployees = [...allEmployees, ...rows.map(row => {
+                return {
+                    row: row.cloneNode(true),
+                    fireDate: row.getAttribute('data-fire-date'),
+                    daysWorked: parseInt(row.getAttribute('data-days-worked')) || 0,
+                    deptId: dept.getAttribute('data-department-id'),
+                    deptName: dept.getAttribute('data-department-name')
+                };
+            })];
+        });
+        
+        // Сортируем сотрудников
+        if (sortType === 'dismissalDate') {
+            allEmployees.sort((a, b) => {
+                // Преобразуем даты для сравнения
+                let dateA = a.fireDate ? formatDateForCompare(a.fireDate) : '';
+                let dateB = b.fireDate ? formatDateForCompare(b.fireDate) : '';
+                
+                if (direction === 'asc') {
+                    return dateA > dateB ? 1 : -1;
+                } else {
+                    return dateA < dateB ? 1 : -1;
+                }
+            });
+        } else if (sortType === 'daysWorked') {
+            allEmployees.sort((a, b) => {
+                if (direction === 'asc') {
+                    return a.daysWorked - b.daysWorked;
+                } else {
+                    return b.daysWorked - a.daysWorked;
+                }
+            });
+        }
+        
+        // Очищаем контейнер
+        container.innerHTML = '';
+        
+        // Создаем единую секцию для всех сотрудников
+        const sectionContainer = document.createElement('div');
+        sectionContainer.className = 'department-section';
+        sectionContainer.setAttribute('data-department-id', 'all');
+        sectionContainer.setAttribute('data-department-name', 'Все сотрудники');
+        
+        // Создаем заголовок
+        const header = document.createElement('div');
+        header.className = 'department-header';
+        header.innerHTML = `
+            <span>Список всех сотрудников (сортировка по ${sortType === 'dismissalDate' ? 'дате увольнения' : 'стажу'})</span>
+            <div class="badge">${allEmployees.length}</div>
+        `;
+        
+        // Создаем содержимое
+        const content = document.createElement('div');
+        content.className = 'department-content';
+        
+        // Создаем таблицу
+        const tableResponsive = document.createElement('div');
+        tableResponsive.className = 'table-responsive';
+        
+        const table = document.createElement('table');
+        table.className = 'table table-hover';
+        
+        // Создаем заголовок таблицы
+        const thead = document.createElement('thead');
+        thead.innerHTML = `
+            <tr>
+                <th>ФИО</th>
+                <th>Должность</th>
+                <th>Отдел</th>
+                <th>Личный номер</th>
+                <th>Корп. почта</th>
+                <th>Дата увольнения</th>
+                <th>Отработано дней</th>
+                <th>Действия</th>
+            </tr>
+        `;
+        
+        // Создаем тело таблицы
+        const tbody = document.createElement('tbody');
+        
+        // Добавляем строки с сотрудниками
+        allEmployees.forEach(emp => {
+            const row = emp.row;
+            
+            // Добавляем ячейку с отделом после должности
+            const positionCell = row.querySelector('td:nth-child(2)');
+            const deptCell = document.createElement('td');
+            deptCell.textContent = emp.deptName;
+            positionCell.insertAdjacentElement('afterend', deptCell);
+            
+            tbody.appendChild(row);
+        });
+        
+        // Собираем таблицу
+        table.appendChild(thead);
+        table.appendChild(tbody);
+        tableResponsive.appendChild(table);
+        content.appendChild(tableResponsive);
+        
+        // Собираем секцию
+        sectionContainer.appendChild(header);
+        sectionContainer.appendChild(content);
+        
+        // Добавляем в контейнер
+        container.appendChild(sectionContainer);
+        
+        // Добавляем кнопку возврата к исходному виду
+        const resetButtonContainer = document.createElement('div');
+        resetButtonContainer.className = 'text-center mt-3 mb-4';
+        
+        const resetButton = document.createElement('button');
+        resetButton.className = 'btn btn-outline-secondary';
+        resetButton.innerHTML = '<i class="fas fa-undo"></i> Вернуться к отображению по отделам';
+        resetButton.addEventListener('click', function() {
+            window.location.reload();
+        });
+        
+        resetButtonContainer.appendChild(resetButton);
+        container.appendChild(resetButtonContainer);
+        
+        // Повторно привязываем обработчики событий
+        reattachEventHandlers();
     }
 
     // Инициализация после загрузки страницы
