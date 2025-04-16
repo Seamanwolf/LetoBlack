@@ -12,6 +12,22 @@
     padding-left: 250px; /* Добавляем отступ слева для боковой панели */
   }
   
+  /* Стили для кнопок в модальных окнах */
+  .modal .btn {
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.875rem !important;
+    height: auto !important;
+    min-height: auto !important;
+  }
+  
+  /* Стили для кнопок фильтров и добавления сотрудника */
+  .btn-group-sm .btn-sm {
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.875rem !important;
+    height: auto !important;
+    min-height: auto !important;
+  }
+  
   /* Стили для боковой панели */
   .sidebar {
     position: fixed;
@@ -86,7 +102,9 @@
   
   /* Основной контент */
   .main-content {
-    padding: 20px;
+    width: calc(100% - 240px) !important;
+    margin-left: 240px !important;
+    padding: 20px !important;
   }
   
   /* Стили для карточек статистики */
@@ -198,17 +216,17 @@
   }
   
   .manager-row {
-    background-color: rgba(52, 152, 219, 0.05);
+    background-color: rgba(52, 152, 219, 0.1) !important;
   }
   
   .deputy-row {
-    background-color: rgba(46, 204, 113, 0.05);
+    background-color: rgba(52, 152, 219, 0.05) !important;
   }
   
   .employee-status {
     display: inline-block;
-    width: 10px;
-    height: 10px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
     margin-right: 5px;
   }
@@ -276,14 +294,15 @@
     display: flex;
     gap: 10px;
     margin-bottom: 20px;
+    flex-wrap: wrap;
   }
   
   .filter-btn {
     border: none;
     background-color: white;
     border-radius: 50px;
-    padding: 10px 20px;
-    font-size: 0.9rem;
+    padding: 6px 12px;
+    font-size: 0.85rem;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
     transition: all 0.3s;
   }
@@ -292,46 +311,157 @@
     background-color: #3498db;
     color: white;
   }
+
+  /* Select2 кастомные стили */
+  .select2-container--bootstrap-5 .select2-selection {
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+    font-size: 0.85rem;
+    height: calc(1.5em + 0.5rem + 2px) !important;
+  }
+  .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice {
+    background-color: #3498db;
+    border-color: #3498db;
+    color: #fff;
+    font-size: 0.85rem;
+    padding: 0.2rem 0.4rem;
+    margin: 3px;
+    height: calc(1.5em + 0.15rem) !important;
+  }
+  .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove {
+    padding: 0 3px;
+  }
+  .select2-container--bootstrap-5 .select2-dropdown {
+    border-radius: 8px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    font-size: 0.85rem;
+  }
+
+  /* Стили для поля логина */
+  #systemLoginContainer {
+    background-color: #f1f8f1; /* Светло-зеленый фон */
+    border: 2px solid #66bb6a; /* Светло-зеленая обводка */
+    border-radius: 5px;
+    padding: 5px;
+    margin-bottom: 15px;
+  }
+  
+  #systemLoginContainer label {
+    font-weight: bold;
+    color: #2e7d32; /* Темно-зеленый цвет для метки */
+  }
+  
+  #systemLoginContainer input {
+    background-color: #f1f8f1;
+    border: 1px solid #66bb6a;
+    font-weight: bold;
+  }
+  
+  #editSystemLogin {
+    display: block !important;
+    border: 2px solid #66bb6a;
+    font-weight: bold;
+  }
+
+  /* Стили для модальных окон */
+  .modal {
+    z-index: 1055 !important;
+  }
+  
+  .modal-content {
+    border: none;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    background-color: #fff !important;
+    opacity: 1 !important;
+    z-index: 1056 !important;
+  }
+
+  .modal-backdrop {
+    opacity: 0.5 !important;
+    background-color: rgba(0, 0, 0, 0.6) !important;
+    z-index: 1054 !important;
+  }
+
+  .modal-dialog {
+    z-index: 1055 !important;
+  }
+
+  .modal-body {
+    background-color: #fff !important;
+    opacity: 1 !important;
+  }
+
+  .modal-header, .modal-footer {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+  }
+  
+  /* Стили для фильтров как на странице уволенных */
+  .filter-section {
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  
+  .filter-section .filter-title {
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: #2c3e50;
+  }
+  
+  .filter-section .filter-group {
+    margin-bottom: 15px;
+  }
+  
+  .filter-section .filter-label {
+    font-weight: 500;
+    margin-bottom: 5px;
+    color: #6c757d;
+  }
+  
+  .filter-section .filter-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 15px;
+  }
 </style>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+<!-- Добавляем только jQuery в head -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+// Заглушка для аналитики, если она не определена
+if (typeof analytics === 'undefined') {
+    window.analytics = {
+        // Заглушки функций аналитики
+        trackEvent: function() { console.log('Analytics trackEvent called but not defined'); },
+        pageView: function() { console.log('Analytics pageView called but not defined'); }
+    };
+}
+</script>
 {% endblock %}
 
 {% block content %}
-<!-- Боковая панель -->
-<div class="sidebar">
-    <div class="nav flex-column">
-        <a href="{{ url_for('admin_routes_unique.personnel') }}" class="nav-link active">
-            <i class="fas fa-users"></i>
-            Сотрудники
-        </a>
-        <a href="{{ url_for('admin_routes_unique.fired_employees') }}" class="nav-link">
-            <i class="fas fa-user-times"></i>
-            Уволенные
-        </a>
-        <a href="{{ url_for('admin_routes_unique.personnel_dashboard') }}" class="nav-link">
-            <i class="fas fa-chart-line"></i>
-            Дашборд
-        </a>
-    </div>
+<!-- Навигационное меню -->
+<div class="nav-menu">
+    <a href="{{ url_for('admin_routes_unique.personnel') }}" class="active">
+        <i class="fas fa-users"></i>
+        Активные
+    </a>
+    <a href="{{ url_for('admin_routes_unique.fired_employees') }}">
+        <i class="fas fa-user-times"></i>
+        Уволенные
+    </a>
+    <a href="{{ url_for('admin_routes_unique.personnel_dashboard') }}">
+        <i class="fas fa-chart-line"></i>
+        Дашборд
+    </a>
 </div>
 
 <!-- Основной контент -->
 <div class="main-content">
-    <!-- Навигационное меню -->
-    <div class="nav-menu">
-        <a href="{{ url_for('admin_routes_unique.personnel') }}" class="active">
-            <i class="fas fa-users"></i>
-            Активные
-        </a>
-        <a href="{{ url_for('admin_routes_unique.fired_employees') }}">
-            <i class="fas fa-user-times"></i>
-            Уволенные
-        </a>
-        <a href="{{ url_for('admin_routes_unique.personnel_dashboard') }}">
-            <i class="fas fa-chart-line"></i>
-            Дашборд
-        </a>
-    </div>
-
     <!-- Статистика -->
     <div class="row mb-4">
         <div class="col-md-3">
@@ -372,12 +502,61 @@
                 <input type="text" class="form-control" id="searchInput" placeholder="Поиск сотрудников...">
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="filters">
-                <button class="filter-btn active">Все</button>
-                <button class="filter-btn">Руководители</button>
-                <button class="filter-btn">Заместители</button>
-                <button class="filter-btn">Сотрудники</button>
+        <div class="col-md-6 text-end">
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filtersCollapse" aria-expanded="false" aria-controls="filtersCollapse">
+                    <i class="fas fa-filter"></i> Фильтры
+                </button>
+                <button class="btn btn-success btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#addEmployeeModal" id="addEmployeeBtn">
+                    <i class="fas fa-user-plus"></i> Добавить сотрудника
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Выпадающие фильтры -->
+    <div class="collapse mb-4" id="filtersCollapse">
+        <div class="card card-body">
+            <h5 class="mb-3">Фильтры сотрудников</h5>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Отделы</label>
+                        <select class="form-select filter-select" id="departmentSelect" multiple="multiple" style="width: 100%;">
+                            <option value="all" selected>Все отделы</option>
+                            {% for department in departments %}
+                            <option value="{{ department.id }}">{{ department.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Должности</label>
+                        <select class="form-select filter-select" id="positionSelect" multiple="multiple" style="width: 100%;">
+                            <option value="all" selected>Все должности</option>
+                            {% for position in positions %}
+                            <option value="{{ position.name }}">{{ position.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Роли</label>
+                        <select class="form-select filter-select" id="roleSelect" multiple="multiple" style="width: 100%;">
+                            <option value="all" selected>Все роли</option>
+                            <option value="leader">Руководитель</option>
+                            <option value="deputy">Заместитель</option>
+                            <option value="user">Сотрудник</option>
+                            <option value="admin">Администратор</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex justify-content-end">
+                <button class="btn btn-primary btn-sm me-2" id="applyFilters">Применить</button>
+                <button class="btn btn-outline-secondary btn-sm" id="resetFilters">Сбросить</button>
             </div>
         </div>
     </div>
@@ -389,7 +568,7 @@
             <div class="department-header">
                 <span>{{ department.name }}</span>
                 <div class="department-controls">
-                    <span class="badge">{{ employees_by_department[department.name]|default(0) }}</span>
+                    <span class="badge">{{ employees_by_department[department.name]|default([])|length }}</span>
                     <i class="fas fa-chevron-up toggle-department" title="Свернуть/развернуть"></i>
                     <i class="fas fa-arrow-up move-up" title="Переместить вверх" data-id="{{ department.id }}"></i>
                     <i class="fas fa-arrow-down move-down" title="Переместить вниз" data-id="{{ department.id }}"></i>
@@ -410,24 +589,33 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for employee in employees|sort(attribute='role', reverse=true) %}
-                            {% if employee.department_id == department.id %}
-                            <tr class="employee-row {% if employee.role == 'leader' %}manager-row{% elif employee.role == 'deputy' %}deputy-row{% endif %}">
-                                <td>{{ employee.id }}</td>
+                            {% if department.name in employees_by_department %}
+                                {% set employees = employees_by_department[department.name] %}
+                                {% set managers = employees|selectattr('role', 'equalto', 'leader')|list %}
+                                {% set deputies = employees|selectattr('role', 'equalto', 'deputy')|list %}
+                                {% set regular_employees = employees|rejectattr('role', 'equalto', 'leader')|rejectattr('role', 'equalto', 'deputy')|list %}
+                                
+                                {% for employee in managers + deputies + regular_employees %}
+                                <tr class="employee-row {% if employee.role == 'leader' %}manager-row{% elif employee.role == 'deputy' %}deputy-row{% endif %}">
+                                    <td>{{ employee.id }}</td>
                                     <td>
                                         <span class="employee-status {% if employee.status == 'online' %}status-online{% else %}status-offline{% endif %}"></span>
                                     </td>
-                                <td>{{ employee.full_name }}</td>
-                                <td>{{ employee.position }}</td>
-                                <td>{{ employee.corporate_number }}</td>
-                                <td>{{ employee.corporate_email }}</td>
-                                <td>
-                                    <i class="fas fa-edit edit-icon" title="Редактировать" data-bs-toggle="modal" data-bs-target="#editEmployeeModal" data-id="{{ employee.id }}"></i>
-                                    <i class="fas fa-user-slash fire-icon" title="Уволить" data-id="{{ employee.id }}"></i>
+                                    <td>{{ employee.full_name }}</td>
+                                    <td>{{ employee.position }}</td>
+                                    <td>{{ employee.phone }}</td>
+                                    <td>{{ employee.corporate_email }}</td>
+                                    <td>
+                                        <i class="fas fa-edit edit-icon" title="Редактировать" data-bs-toggle="modal" data-bs-target="#editEmployeeModal" data-id="{{ employee.id }}"></i>
+                                        <i class="fas fa-user-slash fire-icon" title="Уволить" data-id="{{ employee.id }}"></i>
                                     </td>
                                 </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center">Нет сотрудников в этом отделе</td>
+                                </tr>
                             {% endif %}
-                            {% endfor %}
                         </tbody>
                     </table>
                 </div>
@@ -438,54 +626,69 @@
 </div>
 
 <!-- Модальное окно для редактирования сотрудника -->
-<div class="modal fade" id="editEmployeeModal" tabindex="-1" aria-labelledby="editEmployeeModalLabel" aria-hidden="true">
+<div class="modal fade" id="editEmployeeModal" tabindex="-1" aria-labelledby="editEmployeeModalLabel" aria-hidden="true" data-bs-backdrop="static">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="editEmployeeModalLabel">Редактировать сотрудника</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" style="background-color: #fff; z-index: 1060;">
                 <form id="editEmployeeForm">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h5 class="mt-3 mb-3">Редактирование сотрудника</h5>
                     <input type="hidden" id="editEmployeeId" name="id">
+                        </div>
+                    </div>
+                    
                     <div class="row">
                         <div class="col-md-4">
+                            <!-- Основная информация -->
                             <!-- Блок для фото с возможностью загрузки -->
                             <div class="mb-3 text-center">
                                 <div id="photoContainer" class="mb-2" style="height: 200px; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center;">
                                     <img id="employeePhotoPreview" src="" alt="Фото сотрудника" style="max-width: 100%; max-height: 100%; display: none;">
                                     <span id="photoPlaceholder">Нет фото</span>
-                        </div>
+                                </div>
                                 <input type="file" class="form-control form-control-sm" id="employeePhoto" name="employee_photo">
-                        </div>
+                            </div>
                             
-                            <!-- Основные данные -->
+                            <div id="systemLoginContainer" class="mb-2">
+                                <label for="editLogin" class="form-label">Логин в системе</label>
+                                <input type="text" class="form-control" id="editLogin" name="login">
+                            </div>
+                            
                             <div class="mb-2">
                                 <label for="editFullName" class="form-label">ФИО</label>
-                                <input type="text" class="form-control" id="editFullName" name="full_name" required>
-                    </div>
+                                <input type="text" class="form-control" id="editFullName" name="full_name">
+                            </div>
                             <div class="mb-2">
                                 <label for="editDepartment" class="form-label">Отдел</label>
                                 <select class="form-select" id="editDepartment" name="department_id" required>
-                                {% for department in departments %}
-                                <option value="{{ department.id }}">{{ department.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
+                                    {% for department in departments %}
+                                    <option value="{{ department.id }}">{{ department.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
                             <div class="mb-2">
                                 <label for="editPosition" class="form-label">Должность</label>
-                                <input type="text" class="form-control" id="editPosition" name="position" required>
-                    </div>
+                                <select class="form-select" id="editPosition" name="position" required>
+                                    {% for position in positions %}
+                                    <option value="{{ position.name }}">{{ position.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
                             <div class="mb-2">
                                 <label for="editRole" class="form-label">Роль</label>
                                 <select class="form-select" id="editRole" name="role" required>
-                                <option value="user">Сотрудник</option>
-                                <option value="deputy">Заместитель</option>
+                                    <option value="user">Сотрудник</option>
+                                    <option value="deputy">Заместитель</option>
                                     <option value="leader">Руководитель</option>
                                     <option value="admin">Администратор</option>
-                            </select>
+                                </select>
+                            </div>
                         </div>
-                    </div>
                         
                         <div class="col-md-4">
                             <!-- Контактная информация -->
@@ -517,6 +720,10 @@
                                 <label for="editPasswordPC" class="form-label">Пароль ПК</label>
                                 <input type="text" class="form-control" id="editPasswordPC" name="pc_password">
                             </div>
+                            <div class="mb-2">
+                                <label for="editCRMId" class="form-label">CRM ID</label>
+                                <input type="text" class="form-control" id="editCRMId" name="crm_id">
+                            </div>
                         </div>
                         
                         <div class="col-md-4">
@@ -536,10 +743,6 @@
                             <div class="mb-2">
                                 <label for="editExperience" class="form-label">Стаж работы</label>
                                 <input type="text" class="form-control" id="editExperience" name="experience" readonly>
-                            </div>
-                            <div class="mb-2">
-                                <label for="editCRMId" class="form-label">CRM ID</label>
-                                <input type="text" class="form-control" id="editCRMId" name="crm_id">
                             </div>
                             
                             <!-- Чекбоксы -->
@@ -597,15 +800,115 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                <button type="button" class="btn btn-primary" id="saveEmployeeChanges">Сохранить</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" tabindex="-1">Отмена</button>
+                <button type="button" class="btn btn-warning" id="changePasswordBtn" tabindex="-1">Сменить пароль</button>
+                <button type="button" class="btn btn-primary" id="saveEmployeeChanges" tabindex="-1">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для добавления сотрудника -->
+<div class="modal fade" id="addEmployeeModal" tabindex="-1" aria-labelledby="addEmployeeModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addEmployeeModalLabel">Добавить сотрудника</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addEmployeeForm">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <!-- Основная информация -->
+                            <div class="mb-2">
+                                <label for="addFullName" class="form-label">ФИО</label>
+                                <input type="text" class="form-control" id="addFullName" name="full_name" required>
+                            </div>
+                            <div class="mb-2">
+                                <label for="addDepartment" class="form-label">Отдел</label>
+                                <select class="form-select" id="addDepartment" name="department_id" required>
+                                    {% for department in departments %}
+                                    <option value="{{ department.id }}">{{ department.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <label for="addPosition" class="form-label">Должность</label>
+                                <select class="form-select" id="addPosition" name="position" required>
+                                    {% for position in positions %}
+                                    <option value="{{ position.name }}">{{ position.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <label for="addRole" class="form-label">Роль</label>
+                                <select class="form-select" id="addRole" name="role" required>
+                                    <option value="user">Сотрудник</option>
+                                    <option value="deputy">Заместитель</option>
+                                    <option value="leader">Руководитель</option>
+                                    <option value="admin">Администратор</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <!-- Контактная информация -->
+                            <div class="mb-2">
+                                <label for="addCorporateNumber" class="form-label">Корпоративный номер</label>
+                                <input type="text" class="form-control" id="addCorporateNumber" name="corporate_number">
+                            </div>
+                            <div class="mb-2">
+                                <label for="addPersonalPhone" class="form-label">Личный телефон</label>
+                                <input type="text" class="form-control" id="addPersonalPhone" name="phone">
+                            </div>
+                            <div class="mb-2">
+                                <label for="addCorporateEmail" class="form-label">Корпоративная почта</label>
+                                <input type="email" class="form-control" id="addCorporateEmail" name="corporate_email">
+                            </div>
+                            <div class="mb-2">
+                                <label for="addPersonalEmail" class="form-label">Личная почта</label>
+                                <input type="email" class="form-control" id="addPersonalEmail" name="personal_email">
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <!-- Системная информация -->
+                            <div class="mb-2">
+                                <label for="addLogin" class="form-label">Логин в системе</label>
+                                <input type="text" class="form-control" id="addLogin" name="login" required>
+                            </div>
+                            <div class="mb-2">
+                                <label for="addPassword" class="form-label">Пароль</label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="addPassword" name="password" required>
+                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <label for="addHireDate" class="form-label">Дата приема</label>
+                                <input type="date" class="form-control" id="addHireDate" name="hire_date" required>
+                            </div>
+                            <div class="mb-2">
+                                <label for="addBirthDate" class="form-label">Дата рождения</label>
+                                <input type="date" class="form-control" id="addBirthDate" name="birth_date">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" tabindex="-1">Отмена</button>
+                <button type="button" class="btn btn-primary" id="saveNewEmployee" tabindex="-1">Сохранить</button>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Модальное окно для увольнения сотрудника -->
-<div class="modal fade" id="fireEmployeeModal" tabindex="-1" aria-labelledby="fireEmployeeModalLabel" aria-hidden="true">
+<div class="modal fade" id="fireEmployeeModal" tabindex="-1" aria-labelledby="fireEmployeeModalLabel" aria-hidden="true" data-bs-backdrop="static">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -613,76 +916,107 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>Вы уверены, что хотите уволить этого сотрудника?</p>
-                <form id="fireEmployeeForm">
-                    <input type="hidden" id="fireEmployeeId" name="id">
+                <input type="hidden" id="fireEmployeeId">
+                <p>Вы действительно хотите уволить сотрудника <strong id="fireEmployeeName"></strong>?</p>
                     <div class="mb-3">
                         <label for="fireDate" class="form-label">Дата увольнения</label>
-                        <input type="date" class="form-control" id="fireDate" name="fire_date" required>
+                    <input type="date" class="form-control" id="fireDate" required>
                     </div>
                     <div class="mb-3">
                         <label for="fireReason" class="form-label">Причина увольнения</label>
-                        <textarea class="form-control" id="fireReason" name="fire_reason" rows="3"></textarea>
+                    <textarea class="form-control" id="fireReason" rows="3"></textarea>
                     </div>
-                </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                <button type="button" class="btn btn-danger" id="confirmFireEmployee">Уволить</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" tabindex="-1">Отмена</button>
+                <button type="button" class="btn btn-danger" id="confirmFire" tabindex="-1">Уволить</button>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
+<!-- Убираем дублирование скриптов, так как jQuery и Select2 уже подключены в head -->
 <script>
-// Функция для загрузки списка должностей
-async function loadPositions() {
-    try {
-        const response = await fetch('/admin/settings/positions');
-        const positions = await response.json();
-        const positionSelect = document.getElementById('position');
-        positionSelect.innerHTML = '<option value="">Выберите должность</option>';
-        positions.forEach(position => {
-            positionSelect.innerHTML += `<option value="${position.id}">${position.name}</option>`;
-        });
-    } catch (error) {
-        console.error('Ошибка при загрузке должностей:', error);
-        showNotification('Ошибка при загрузке списка должностей', 'error');
+// Расчет стажа работы
+function calculateExperience(hireDate) {
+    if (!hireDate) return '';
+    
+    const hire = new Date(hireDate);
+    const now = new Date();
+    
+    let years = now.getFullYear() - hire.getFullYear();
+    let months = now.getMonth() - hire.getMonth();
+    
+    if (months < 0) {
+        years--;
+        months += 12;
+    }
+    
+    if (years > 0 && months > 0) {
+    return `${years} г. ${months} мес.`;
+    } else if (years > 0) {
+        return `${years} г.`;
+    } else if (months > 0) {
+        return `${months} мес.`;
+        } else {
+        const diffTime = Math.abs(now - hire);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return `${diffDays} дн.`;
     }
 }
 
-// Функция для загрузки данных сотрудника
-async function loadEmployeeData(employeeId) {
+// Форматирование даты для input
+function formatDateForInput(dateString) {
+    if (!dateString) return '';
+    return new Date(dateString).toISOString().split('T')[0];
+}
+
+// Функция загрузки данных сотрудника для редактирования
+async function loadEmployeeDataForEdit(employeeId) {
     try {
-        const response = await fetch(`/admin/get_employee/${employeeId}`);
-        const employee = await response.json();
+        // Загружаем должности для выпадающего списка в модальном окне редактирования
+        const positionsResponse = await fetch('/admin/settings/positions');
+        const positions = await positionsResponse.json();
         
-        // Заполняем поля формы
-        document.getElementById('editEmployeeId').value = employee.id;
-        document.getElementById('editFullName').value = employee.full_name;
-        document.getElementById('editPosition').value = employee.position;
-        document.getElementById('editDepartment').value = employee.department_id;
-        document.getElementById('editRole').value = employee.role;
-        document.getElementById('editCorporateNumber').value = employee.corporate_number;
-        document.getElementById('editCorporateEmail').value = employee.corporate_email;
-        document.getElementById('editPersonalPhone').value = employee.phone;
-        document.getElementById('editPersonalEmail').value = employee.personal_email;
-        document.getElementById('editLoginPC').value = employee.pc_login;
-        document.getElementById('editPasswordPC').value = employee.pc_password;
-        document.getElementById('editHireDate').value = employee.hire_date ? new Date(employee.hire_date).toISOString().split('T')[0] : '';
-        document.getElementById('editBirthDate').value = employee.birth_date ? new Date(employee.birth_date).toISOString().split('T')[0] : '';
-        document.getElementById('editCRMId').value = employee.crm_id || '';
-        document.getElementById('editPreviousNumber').value = employee.previous_number || '';
-        document.getElementById('editNotes').value = employee.notes || '';
+        const editPositionSelect = document.getElementById('editPosition');
+        editPositionSelect.innerHTML = '<option value="">Выберите должность</option>';
         
-        // Проверяем чекбоксы
-        document.getElementById('editDocuments').checked = employee.documents === 1;
-        document.getElementById('editRR').checked = employee.rr === 1;
-        document.getElementById('editSite').checked = employee.site === 1;
+        positions.forEach(position => {
+            const option = document.createElement('option');
+            option.value = position.name;
+            option.textContent = position.name;
+            editPositionSelect.appendChild(option);
+        });
         
-        // Отображение фото если есть
+        // Загружаем роли для выпадающего списка в модальном окне редактирования
+        const rolesResponse = await fetch('/admin/settings/roles/get_available_roles');
+        const rolesResult = await rolesResponse.json();
+        
+        const editRoleSelect = document.getElementById('editRole');
+        editRoleSelect.innerHTML = '<option value="">Выберите роль</option>';
+        
+        if (rolesResult.roles && Array.isArray(rolesResult.roles)) {
+            rolesResult.roles.forEach(role => {
+                const option = document.createElement('option');
+                option.value = role.id || role.name;
+                option.textContent = role.name;
+                editRoleSelect.appendChild(option);
+            });
+        }
+        
+        // Загружаем данные сотрудника
+        const employeeResponse = await fetch(`/admin/api/get_employee?id=${employeeId}`);
+        const employeeData = await employeeResponse.json();
+        console.log('Полные данные сотрудника:', employeeData);
+        
+        // Выведем полную структуру ответа в виде JSON для отладки
+        console.log('Данные API в JSON-формате:', JSON.stringify(employeeData, null, 2));
+        
+        if (employeeData.success) {
+            // Для обратной совместимости
+            let employee = employeeData.data || employeeData.employee;
+            
+            // Обработка фото сотрудника, если есть
         if (employee.photo_url) {
             document.getElementById('employeePhotoPreview').src = employee.photo_url;
             document.getElementById('employeePhotoPreview').style.display = 'block';
@@ -692,331 +1026,731 @@ async function loadEmployeeData(employeeId) {
             document.getElementById('photoPlaceholder').style.display = 'block';
         }
         
-        // Загрузка истории изменений
-        loadEmployeeHistory(employee.id);
-        // Загрузка истории номеров
-        loadNumberHistory(employee.id);
-    } catch (error) {
-        console.error('Ошибка при загрузке данных сотрудника:', error);
-        showNotification('Ошибка при загрузке данных сотрудника', 'error');
-    }
-}
-
-// Функция для сохранения изменений
-async function saveEmployeeChanges() {
-    const employeeId = document.getElementById('editEmployeeId').value;
-    const formData = {
-        id: employeeId,
-        full_name: document.getElementById('editFullName').value,
-        position: document.getElementById('editPosition').value,
-        department_id: document.getElementById('editDepartment').value,
-        role: document.getElementById('editRole').value,
-        corporate_number: document.getElementById('editCorporateNumber').value,
-        corporate_email: document.getElementById('editCorporateEmail').value,
-        phone: document.getElementById('editPersonalPhone').value,
-        personal_email: document.getElementById('editPersonalEmail').value,
-        pc_login: document.getElementById('editLoginPC').value,
-        pc_password: document.getElementById('editPasswordPC').value,
-        hire_date: document.getElementById('editHireDate').value,
-        birth_date: document.getElementById('editBirthDate').value,
-        crm_id: document.getElementById('editCRMId').value,
-        previous_number: document.getElementById('editPreviousNumber').value,
-        notes: document.getElementById('editNotes').value,
-        documents: document.getElementById('editDocuments').checked ? 1 : 0,
-        rr: document.getElementById('editRR').checked ? 1 : 0,
-        site: document.getElementById('editSite').checked ? 1 : 0
-    };
-
-    try {
-        const response = await fetch(`/admin/update_employee/${employeeId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(formData)
-        });
-
-        if (response.ok) {
-            showNotification('Данные сотрудника успешно обновлены', 'success');
-            const modal = bootstrap.Modal.getInstance(document.getElementById('editEmployeeModal'));
-            modal.hide();
-            location.reload(); // Перезагружаем страницу для обновления данных
+            // Остальная загрузка данных
+            if (!employee) {
+                throw new Error('Не удалось получить данные сотрудника');
+            }
+            
+            console.log('Данные сотрудника для заполнения формы:', employee);
+            
+            // ВАЖНО: Принудительно делаем поле логина видимым и заметным
+            const systemLoginContainer = document.getElementById('systemLoginContainer');
+            if (systemLoginContainer) {
+                systemLoginContainer.style.display = 'block';
+                systemLoginContainer.classList.remove('d-none');
+                // Делаем стиль более заметным
+                systemLoginContainer.style.backgroundColor = '#e6f7ff'; // Светло-голубой
+                systemLoginContainer.style.border = '3px solid #1890ff'; // Синяя обводка
+                systemLoginContainer.style.padding = '10px';
+                systemLoginContainer.style.borderRadius = '8px';
+                systemLoginContainer.style.marginBottom = '20px';
+                systemLoginContainer.style.boxShadow = '0 0 10px rgba(24, 144, 255, 0.3)';
+            }
+            
+            // Заполняем форму данными сотрудника
+            document.getElementById('editEmployeeId').value = employee.id;
+            
+            // Явно заполняем поле логина и делаем его более заметным
+            const loginField = document.getElementById('editLogin');
+            if (loginField) {
+                // Проверяем наличие логина в ответе API или запрашиваем отдельно
+                if (employee.login) {
+                    console.log('Устанавливаем логин из ответа API:', employee.login);
+                    setLoginValue(loginField, employee.login);
+                } else {
+                    console.log('Логин не найден в ответе, запрашиваем отдельно');
+                    // Запрашиваем логин напрямую
+                    fetch(`/admin/api/get_employee_login?id=${employee.id}`)
+        .then(response => response.json())
+        .then(data => {
+                            if (data.success && data.login) {
+                                console.log('Получен логин из API:', data.login);
+                                setLoginValue(loginField, data.login);
+            } else {
+                                console.error('Не удалось получить логин сотрудника через API');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Ошибка при запросе логина:', error);
+                        });
+                }
+            } else {
+                console.error('Элемент с ID editLogin не найден!');
+            }
+            
+            document.getElementById('editFullName').value = employee.full_name || '';
+            
+            // Устанавливаем значения выпадающих списков
+            if (employee.department_id) {
+                document.getElementById('editDepartment').value = employee.department_id;
+            }
+            
+            if (employee.position) {
+                // Ищем опцию с таким значением
+                const positionOption = Array.from(editPositionSelect.options).find(option => option.value === employee.position);
+                if (positionOption) {
+                    positionOption.selected = true;
         } else {
-            throw new Error('Ошибка при обновлении данных');
+                    // Если опции нет, добавляем её
+                    const option = document.createElement('option');
+                    option.value = employee.position;
+                    option.textContent = employee.position;
+                    editPositionSelect.appendChild(option);
+                    option.selected = true;
+                }
+            }
+            
+            if (employee.role) {
+                // Ищем опцию с таким значением
+                const roleOption = Array.from(editRoleSelect.options).find(option => option.value === employee.role);
+                if (roleOption) {
+                    roleOption.selected = true;
+                }
+            }
+            
+            // Заполняем остальные поля
+            document.getElementById('editCorporateNumber').value = employee.corporate_number || '';
+            document.getElementById('editPersonalPhone').value = employee.phone || '';
+            document.getElementById('editPreviousNumber').value = employee.previous_number || '';
+            document.getElementById('editCorporateEmail').value = employee.corporate_email || '';
+            document.getElementById('editPersonalEmail').value = employee.personal_email || '';
+            document.getElementById('editLoginPC').value = employee.login_pc || employee.login || '';
+            document.getElementById('editPasswordPC').value = employee.pc_password || '';
+            document.getElementById('editCRMId').value = employee.crm_id || '';
+            
+            if (employee.hire_date) {
+                document.getElementById('editHireDate').value = formatDateForInput(employee.hire_date);
+            }
+            
+            if (employee.birth_date) {
+                document.getElementById('editBirthDate').value = formatDateForInput(employee.birth_date);
+            }
+            
+            document.getElementById('editExperience').value = calculateExperience(employee.hire_date) || '';
+            
+            // Чекбоксы
+            document.getElementById('editDocuments').checked = employee.documents || false;
+            document.getElementById('editRR').checked = employee.rr || false;
+            document.getElementById('editSite').checked = employee.site || false;
+            } else {
+            showNotification('Ошибка при загрузке данных сотрудника', 'danger');
         }
     } catch (error) {
-        console.error('Ошибка при сохранении изменений:', error);
-        showNotification('Ошибка при сохранении изменений', 'error');
+        console.error('Ошибка при загрузке данных для редактирования:', error);
+        showNotification('Ошибка при загрузке данных для редактирования: ' + error.message, 'danger');
     }
 }
 
-// Функция для увольнения сотрудника
-async function fireEmployee(employeeId) {
-    if (!confirm('Вы уверены, что хотите уволить этого сотрудника?')) {
-        return;
-    }
-
+// Функция увольнения сотрудника с данными из формы
+async function fireEmployeeWithData(employeeId, fireDate, fireReason) {
     try {
-        const response = await fetch(`/admin/fire_employee/${employeeId}`, {
-            method: 'POST'
+        const response = await fetch('/admin/api/fire_employee', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                id: employeeId,
+                fire_date: fireDate,
+                fire_reason: fireReason
+            })
         });
 
         if (response.ok) {
-            showNotification('Сотрудник успешно уволен', 'success');
-            location.reload(); // Перезагружаем страницу для обновления данных
+            const data = await response.json();
+                if (data.success) {
+            // Закрываем модальное окно
+                const modal = bootstrap.Modal.getInstance(document.getElementById('fireEmployeeModal'));
+                modal.hide();
+                
+                showNotification(data.message || 'Сотрудник успешно уволен', 'success');
+                
+                // Перезагружаем страницу через небольшую задержку
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
         } else {
-            throw new Error('Ошибка при увольнении сотрудника');
+                throw new Error(data.message || 'Ошибка при увольнении сотрудника');
+            }
+        } else {
+            throw new Error('Ошибка при увольнении сотрудника: ' + response.status);
         }
     } catch (error) {
         console.error('Ошибка при увольнении сотрудника:', error);
-        showNotification('Ошибка при увольнении сотрудника', 'error');
+        showNotification('Ошибка при увольнении сотрудника: ' + error.message, 'danger');
     }
 }
 
-// Функция для отображения уведомлений
-function showNotification(message, type = 'info') {
-    const toast = document.createElement('div');
-    toast.className = `toast align-items-center text-white bg-${type} border-0`;
-    toast.setAttribute('role', 'alert');
-    toast.setAttribute('aria-live', 'assertive');
-    toast.setAttribute('aria-atomic', 'true');
+function updateUIAfterChanges() {
+    // Обновляем сортировку сотрудников
+    sortEmployeesInDepartments();
     
-    toast.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body">
-                ${message}
-            </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-    `;
-    
-    const container = document.getElementById('toast-container') || document.body;
-    container.appendChild(toast);
-    
-    const bsToast = new bootstrap.Toast(toast);
-    bsToast.show();
-    
-    toast.addEventListener('hidden.bs.toast', () => {
-        toast.remove();
-    });
+    // Перезагружаем страницу для отображения обновлений
+    location.reload();
 }
 
-// Инициализация при загрузке страницы
-document.addEventListener('DOMContentLoaded', () => {
-    loadPositions();
+function updateEmployee() {
+    console.log('Вызвана функция updateEmployee');
+    const form = document.getElementById('editEmployeeForm');
     
-    // Инициализация всех тултипов
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-});
-
-// Загрузка истории изменений
-function loadEmployeeHistory(employeeId) {
-    fetch(`/admin/get_employee_history/${employeeId}`)
-        .then(response => response.json())
-        .then(data => {
-            const historyContainer = document.getElementById('historyEntries');
-            historyContainer.innerHTML = '';
-            
-            if (data.history && data.history.length > 0) {
-                data.history.forEach(entry => {
-                    const historyItem = document.createElement('div');
-                    historyItem.className = 'history-item p-2 border-bottom';
-                    historyItem.innerHTML = `
-                        <div class="d-flex justify-content-between">
-                            <small class="text-muted">${new Date(entry.date).toLocaleString()}</small>
-                            <small class="text-muted">${entry.user}</small>
-                        </div>
-                        <div>${entry.field}: ${entry.old_value} → ${entry.new_value}</div>
-                    `;
-                    historyContainer.appendChild(historyItem);
-                });
-            } else {
-                historyContainer.innerHTML = '<div class="p-2">История изменений отсутствует</div>';
-            }
-        });
-}
-
-// Загрузка истории номеров
-function loadNumberHistory(employeeId) {
-    fetch(`/admin/get_number_history/${employeeId}`)
-        .then(response => response.json())
-        .then(data => {
-            const numberContainer = document.getElementById('numberHistory');
-            numberContainer.innerHTML = '';
-            
-            if (data.numbers && data.numbers.length > 0) {
-                data.numbers.forEach(number => {
-                    const numberItem = document.createElement('div');
-                    numberItem.className = 'number-item p-2 border-bottom';
-                    numberItem.innerHTML = `
-                        <div class="d-flex justify-content-between">
-                            <span>${number.number}</span>
-                            <small class="text-muted">${new Date(number.date).toLocaleDateString()}</small>
-                        </div>
-                    `;
-                    numberContainer.appendChild(numberItem);
-                });
-            } else {
-                numberContainer.innerHTML = '<div class="p-2">История номеров отсутствует</div>';
-            }
-        });
-}
-
-// Расчет стажа работы
-function calculateExperience(hireDate) {
-    if (!hireDate) return '';
+    // Используем FormData для отправки данных формы с файлами
+    const formData = new FormData(form);
     
-    const hire = new Date(hireDate);
-    const now = new Date();
+    // Получаем исходные данные для сравнения и логирования изменений
+    const originalData = {
+        full_name: document.getElementById('editFullName').defaultValue,
+        department_id: document.getElementById('editDepartment').defaultValue,
+        position: document.getElementById('editPosition').defaultValue,
+        role: document.getElementById('editRole').defaultValue,
+        login: document.getElementById('editLogin').defaultValue
+    };
     
-    const years = now.getFullYear() - hire.getFullYear();
-    const months = now.getMonth() - hire.getMonth();
+    // Явно добавляем значение логина в данные, чтобы оно было отправлено на сервер
+    const systemLoginValue = document.getElementById('editLogin').value;
+    console.log('Отправляем логин в системе:', systemLoginValue);
     
-    if (months < 0) {
-        years--;
-        months += 12;
+    // Убеждаемся, что логин добавлен
+    formData.set('login', systemLoginValue);
+    
+    // Подготовка данных для логирования изменений
+    const changes = {};
+    for (const [key, value] of formData.entries()) {
+        if (key !== 'employee_photo' && originalData[key] !== undefined && value !== originalData[key]) {
+            changes[key] = {
+                old: originalData[key],
+                new: value
+            };
+        }
     }
     
-    return `${years} г. ${months} мес.`;
-}
-
-// Форматирование даты для input
-function formatDateForInput(dateString) {
-    if (!dateString) return '';
-    return new Date(dateString).toISOString().split('T')[0];
-}
-
-// Поиск сотрудников
-document.getElementById('searchInput').addEventListener('input', function() {
-    const searchText = this.value.toLowerCase();
-    const departments = document.querySelectorAll('.department-section');
+    // Добавляем информацию об изменениях в виде JSON-строки
+    formData.append('changes', JSON.stringify(changes));
     
-    departments.forEach(department => {
-        const rows = department.querySelectorAll('.employee-row');
-        let hasVisibleEmployees = false;
+    // Проверяем, есть ли фото для загрузки
+    const photoInput = document.getElementById('employeePhoto');
+    if (photoInput.files.length > 0) {
+        console.log('Добавляем фото для загрузки');
+        // Явно добавляем фото в formData с нужным именем
+        formData.set('employee_photo', photoInput.files[0]);
+    }
+    
+    console.log('Отправка данных формы');
+    
+    fetch('/admin/api/update_employee', {
+        method: 'POST',
+        body: formData  // Отправляем FormData без заголовка Content-Type
+    })
+    .then(response => {
+        console.log('Получен ответ от сервера:', response.status);
+        return response.json();
+    })
+    .then(result => {
+        console.log('Ответ сервера:', result);
         
-        rows.forEach(row => {
-            const employeeName = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
-            const employeePosition = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
-            
-            if (employeeName.includes(searchText) || employeePosition.includes(searchText)) {
-                row.style.display = '';
-                hasVisibleEmployees = true;
+        if (result.success) {
+            showNotification('Данные сотрудника успешно обновлены', 'success');
+            // Закрываем модальное окно
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editEmployeeModal'));
+            modal.hide();
+            // Перезагружаем страницу для отображения обновленных данных
+            setTimeout(() => {
+                updateUIAfterChanges();
+            }, 1000);
             } else {
-                row.style.display = 'none';
+            throw new Error(result.message || 'Ошибка при обновлении данных сотрудника');
+                }
+            })
+            .catch(error => {
+        console.error('Ошибка при обновлении данных сотрудника:', error);
+        showNotification('Ошибка при обновлении данных сотрудника: ' + error.message, 'danger');
+    });
+}
+
+// Открытие модального окна редактирования сотрудника
+document.querySelectorAll('.edit-icon').forEach(icon => {
+    icon.addEventListener('click', function() {
+        const employeeId = this.getAttribute('data-id');
+        
+        // Убедимся, что поле логина видимо и заметно
+        const systemLoginContainer = document.getElementById('systemLoginContainer');
+        if (systemLoginContainer) {
+            systemLoginContainer.style.display = 'block';
+            systemLoginContainer.style.visibility = 'visible';
+            systemLoginContainer.style.opacity = '1';
+            // Добавляем заметное оформление
+            systemLoginContainer.style.backgroundColor = '#e6f7ff';
+            systemLoginContainer.style.border = '3px solid #1890ff';
+            systemLoginContainer.style.padding = '10px';
+            systemLoginContainer.style.borderRadius = '8px';
+            systemLoginContainer.style.boxShadow = '0 0 10px rgba(24, 144, 255, 0.3)';
+            
+            const systemLoginField = document.getElementById('editLogin');
+            if (systemLoginField) {
+                systemLoginField.style.display = 'block';
+                systemLoginField.style.visibility = 'visible';
+            }
+        }
+        
+        // Прямой запрос логина для надежности
+        fetch(`/admin/api/get_employee_login?id=${employeeId}`)
+        .then(response => response.json())
+        .then(data => {
+                if (data.success && data.login) {
+                    console.log('Получен логин напрямую:', data.login);
+                    const loginField = document.getElementById('editLogin');
+                    if (loginField) {
+                        setLoginValue(loginField, data.login);
+                    }
+        }
+    })
+    .catch(error => {
+                console.error('Ошибка при запросе логина напрямую:', error);
+            });
+        
+        // Загружаем данные сотрудника
+        loadEmployeeDataForEdit(employeeId);
+        
+        // Дополнительная проверка через небольшую задержку
+        setTimeout(() => {
+            const loginField = document.getElementById('editLogin');
+            if (loginField) {
+                console.log('Значение логина через 500мс:', loginField.value);
+                if (!loginField.value || loginField.value === '') {
+                    // Логин все еще не установлен, делаем еще один запрос
+                    console.warn('Логин не установлен, делаем финальный запрос');
+                    fetch(`/admin/api/get_employee_login?id=${employeeId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success && data.login) {
+                                console.log('Получен логин финальный:', data.login);
+                                setLoginValue(loginField, data.login);
+                            }
+                        });
+                }
+            }
+        }, 500);
+    });
+});
+
+// Добавляем обработчик для превью загружаемого фото
+document.getElementById('employeePhoto').addEventListener('change', function(e) {
+    const file = this.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            document.getElementById('employeePhotoPreview').src = event.target.result;
+            document.getElementById('employeePhotoPreview').style.display = 'block';
+            document.getElementById('photoPlaceholder').style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+    } else {
+        // Если файл не выбран, скрываем превью
+        document.getElementById('employeePhotoPreview').style.display = 'none';
+        document.getElementById('photoPlaceholder').style.display = 'block';
+    }
+});
+
+// Функция для установки значения и стилей логина
+function setLoginValue(field, value) {
+    field.value = value;
+    field.defaultValue = value;
+    
+    // Делаем поле логина более заметным
+    field.style.backgroundColor = '#e6f7ff';
+    field.style.fontWeight = 'bold';
+    field.style.color = '#1890ff';
+    field.style.border = '2px solid #1890ff';
+    field.style.fontSize = '16px';
+    field.style.boxShadow = '0 0 5px rgba(24, 144, 255, 0.5)';
+}
+
+// Функция для сортировки сотрудников в отделах
+function sortEmployeesInDepartments() {
+    const departmentSections = document.querySelectorAll('.department-section');
+    
+    departmentSections.forEach(section => {
+        const tbody = section.querySelector('tbody');
+        if (!tbody) return;
+        
+        const rows = Array.from(tbody.querySelectorAll('tr.employee-row'));
+        if (rows.length <= 1) return;
+        
+        // Сортируем строки: сначала руководители, потом заместители, потом обычные сотрудники
+        rows.sort((a, b) => {
+            const aIsManager = a.classList.contains('manager-row');
+            const bIsManager = b.classList.contains('manager-row');
+            
+            if (aIsManager && !bIsManager) return -1;
+            if (!aIsManager && bIsManager) return 1;
+            
+            const aIsDeputy = a.classList.contains('deputy-row');
+            const bIsDeputy = b.classList.contains('deputy-row');
+            
+            if (aIsDeputy && !bIsDeputy) return -1;
+            if (!aIsDeputy && bIsDeputy) return 1;
+            
+            // Если оба имеют одинаковую роль, сортируем по имени
+            const aName = a.cells[2].textContent;
+            const bName = b.cells[2].textContent;
+            return aName.localeCompare(bName);
+        });
+        
+        // Очищаем tbody и добавляем отсортированные строки
+        tbody.innerHTML = '';
+        rows.forEach(row => tbody.appendChild(row));
+    });
+}
+
+// Вызываем функцию сортировки при загрузке страницы
+$(document).ready(function() {
+    console.log('Document ready event fired');
+    
+    try {
+        // Инициализация Select2
+        if (typeof $.fn.select2 === 'function') {
+            console.log('Initializing Select2 (function exists)');
+            $('.filter-select').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Выберите значения',
+                allowClear: true
+            });
+        } else {
+            console.error('Select2 library is not loaded properly!');
+        }
+        
+        sortEmployeesInDepartments();
+        
+        // Обработчик для кнопки "Применить фильтры"
+        document.getElementById('applyFilters').addEventListener('click', function() {
+            const selectedDepartments = $('#departmentSelect').val() || [];
+            const selectedPositions = $('#positionSelect').val() || [];
+            const selectedRoles = $('#roleSelect').val() || [];
+            filterEmployeesByDepartment(selectedDepartments, selectedPositions, selectedRoles);
+        });
+        
+        // Обработчик для кнопки "Сбросить фильтры"
+        document.getElementById('resetFilters').addEventListener('click', function() {
+            $('#departmentSelect').val(null).trigger('change');
+            $('#positionSelect').val(null).trigger('change');
+            $('#roleSelect').val(null).trigger('change');
+            filterEmployeesByDepartment([], [], []);
+        });
+        
+        // Обработчик для поиска
+        document.getElementById('searchInput').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            searchEmployees(searchTerm);
+        });
+        
+        // Обработчики для кнопок перемещения отделов
+        document.querySelectorAll('.move-up').forEach(button => {
+            button.addEventListener('click', function() {
+                const departmentId = this.getAttribute('data-id');
+                moveDepartment(departmentId, 'up');
+            });
+        });
+        
+        document.querySelectorAll('.move-down').forEach(button => {
+            button.addEventListener('click', function() {
+                const departmentId = this.getAttribute('data-id');
+                moveDepartment(departmentId, 'down');
+            });
+        });
+        
+        // Обработчик для кнопок сворачивания/разворачивания отделов
+        document.querySelectorAll('.toggle-department').forEach(button => {
+            button.addEventListener('click', function() {
+                const content = this.closest('.department-section').querySelector('.department-content');
+                if (content.style.display === 'none') {
+                    content.style.display = 'block';
+                    this.classList.remove('fa-chevron-down');
+                    this.classList.add('fa-chevron-up');
+                } else {
+                    content.style.display = 'none';
+                    this.classList.remove('fa-chevron-up');
+                    this.classList.add('fa-chevron-down');
+                }
+            });
+        });
+        
+        // Обработчик для кнопки "Сменить пароль"
+        document.getElementById('changePasswordBtn').addEventListener('click', function() {
+            const employeeId = document.getElementById('editEmployeeId').value;
+            if (employeeId) {
+                // Здесь можно добавить логику для смены пароля
+                alert('Функция смены пароля будет реализована позже');
             }
         });
         
-        department.style.display = hasVisibleEmployees ? '' : 'none';
-    });
-});
-
-// Фильтрация по ролям
-document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
+        // Обработчик для кнопки "Сохранить" в модальном окне редактирования
+        document.getElementById('saveEmployeeChanges').addEventListener('click', function() {
+            updateEmployee();
+        });
         
-        const filter = this.textContent.trim();
-        document.querySelectorAll('.employee-row').forEach(row => {
-            if (filter === 'Все') {
-                row.style.display = '';
-            } else if (filter === 'Руководители' && row.classList.contains('manager-row')) {
-                row.style.display = '';
-            } else if (filter === 'Заместители' && row.classList.contains('deputy-row')) {
-                row.style.display = '';
-            } else if (filter === 'Сотрудники' && !row.classList.contains('manager-row') && !row.classList.contains('deputy-row')) {
-                row.style.display = '';
+        // Обработчик для кнопок увольнения
+        document.querySelectorAll('.fire-icon').forEach(icon => {
+            icon.addEventListener('click', function() {
+                const employeeId = this.getAttribute('data-id');
+                const employeeName = this.closest('tr').querySelector('td:nth-child(3)').textContent;
+                
+                // Заполняем данные в модальном окне увольнения
+                document.getElementById('fireEmployeeId').value = employeeId;
+                document.getElementById('fireEmployeeName').textContent = employeeName;
+                
+                // Устанавливаем текущую дату в поле даты увольнения
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('fireDate').value = today;
+                
+                // Открываем модальное окно увольнения
+                const fireModal = new bootstrap.Modal(document.getElementById('fireEmployeeModal'));
+                fireModal.show();
+            });
+        });
+        
+        // Обработчик для кнопки "Подтвердить" в модальном окне увольнения
+        document.getElementById('confirmFire').addEventListener('click', function() {
+            const employeeId = document.getElementById('fireEmployeeId').value;
+            const fireDate = document.getElementById('fireDate').value;
+            const fireReason = document.getElementById('fireReason').value;
+            
+            if (employeeId && fireDate) {
+                fireEmployeeWithData(employeeId, fireDate, fireReason);
             } else {
-                row.style.display = 'none';
+                showNotification('Пожалуйста, укажите дату увольнения', 'warning');
             }
         });
-    });
-});
-
-// Сворачивание/разворачивание отделов
-document.querySelectorAll('.toggle-department').forEach(icon => {
-    icon.addEventListener('click', function() {
-        const department = this.closest('.department-section');
-        const content = department.querySelector('.department-content');
-        const isCollapsed = content.style.display === 'none';
         
-        content.style.display = isCollapsed ? '' : 'none';
-        this.classList.toggle('fa-chevron-up');
-        this.classList.toggle('fa-chevron-down');
-    });
-});
-
-// Перемещение отделов и сохранение позиции
-document.querySelectorAll('.move-up').forEach(icon => {
-    icon.addEventListener('click', function() {
-        const departmentId = this.getAttribute('data-id');
-        const department = this.closest('.department-section');
-        const prevDepartment = department.previousElementSibling;
+        // Обработчик открытия модального окна добавления сотрудника
+        $('#addEmployeeModal').on('shown.bs.modal', function (e) {
+            console.log('Модальное окно добавления сотрудника открыто');
+            loadPositionsAndRoles();
+        });
         
-        if (prevDepartment && prevDepartment.classList.contains('department-section')) {
-            department.parentNode.insertBefore(department, prevDepartment);
+        // Обработчик для кнопки "Добавить сотрудника"
+        document.getElementById('addEmployeeBtn').addEventListener('click', function() {
+            console.log('Нажата кнопка "Добавить сотрудника"');
             
-            // Сохраняем новую позицию в базе данных
-            fetch('/admin/update_department_order', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    department_id: departmentId,
-                    direction: 'up'
-                })
+            // Устанавливаем текущую дату в поле даты приема
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('addHireDate').value = today;
+            
+            // Генерируем случайный пароль
+            const randomPassword = generateRandomPassword();
+            document.getElementById('addPassword').value = randomPassword;
+            
+            // Показываем пароль
+            document.getElementById('addPassword').type = 'text';
+        });
+        
+        // Обработчик для кнопки переключения видимости пароля
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const passwordField = document.getElementById('addPassword');
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                this.querySelector('i').classList.remove('fa-eye');
+                this.querySelector('i').classList.add('fa-eye-slash');
+            } else {
+                passwordField.type = 'password';
+                this.querySelector('i').classList.remove('fa-eye-slash');
+                this.querySelector('i').classList.add('fa-eye');
+            }
+        });
+        
+        // Обработчик для кнопки "Сохранить" в модальном окне добавления сотрудника
+        document.getElementById('saveNewEmployee').addEventListener('click', function() {
+            addNewEmployee();
+        });
+    } catch (e) {
+        console.error('Error in document ready handler:', e);
+    }
+});
+
+// Функция для генерации случайного пароля
+function generateRandomPassword() {
+    const length = 12;
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
+    let password = "";
+    for (let i = 0; i < length; i++) {
+        const randomIndex = Math.floor(Math.random() * charset.length);
+        password += charset[randomIndex];
+    }
+    return password;
+}
+
+// Функция для добавления нового сотрудника
+function addNewEmployee() {
+    const form = document.getElementById('addEmployeeForm');
+    const formData = new FormData(form);
+    
+    fetch('/admin/api/add_employee', {
+        method: 'POST',
+        body: formData
+    })
+            .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showNotification('Сотрудник успешно добавлен', 'success');
+            // Закрываем модальное окно
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addEmployeeModal'));
+            modal.hide();
+            // Перезагружаем страницу для отображения нового сотрудника
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            throw new Error(result.message || 'Ошибка при добавлении сотрудника');
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка при добавлении сотрудника:', error);
+        showNotification('Ошибка при добавлении сотрудника: ' + error.message, 'danger');
+    });
+}
+
+// Функция для фильтрации сотрудников по отделам, должностям и ролям
+function filterEmployeesByDepartment(selectedDepartments, selectedPositions, selectedRoles) {
+    const departmentSections = document.querySelectorAll('.department-section');
+    
+    departmentSections.forEach(section => {
+        const departmentId = section.getAttribute('data-department-id');
+        const departmentName = section.querySelector('.department-header span').textContent;
+        
+        // Проверяем, соответствует ли отдел выбранным фильтрам
+        const departmentMatch = selectedDepartments.length === 0 || 
+                              selectedDepartments.includes('all') || 
+                              selectedDepartments.includes(departmentId);
+        
+        if (departmentMatch) {
+            section.style.display = 'block';
+            
+            // Фильтруем сотрудников внутри отдела
+            const rows = section.querySelectorAll('.employee-row');
+            rows.forEach(row => {
+                const position = row.cells[3].textContent;
+                const role = row.classList.contains('manager-row') ? 'leader' : 
+                            row.classList.contains('deputy-row') ? 'deputy' : 'user';
+                
+                const positionMatch = selectedPositions.length === 0 || 
+                                     selectedPositions.includes('all') || 
+                                     selectedPositions.includes(position);
+                
+                const roleMatch = selectedRoles.length === 0 || 
+                                 selectedRoles.includes('all') || 
+                                 selectedRoles.includes(role);
+                
+                if (positionMatch && roleMatch) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
             });
+                } else {
+            section.style.display = 'none';
         }
     });
-});
+}
 
-document.querySelectorAll('.move-down').forEach(icon => {
-    icon.addEventListener('click', function() {
-        const departmentId = this.getAttribute('data-id');
-        const department = this.closest('.department-section');
-        const nextDepartment = department.nextElementSibling;
+// Функция для поиска сотрудников
+function searchEmployees(searchTerm) {
+    const rows = document.querySelectorAll('.employee-row');
+    
+    rows.forEach(row => {
+        const fullName = row.cells[2].textContent.toLowerCase();
+        const position = row.cells[3].textContent.toLowerCase();
+        const phone = row.cells[4].textContent.toLowerCase();
+        const email = row.cells[5].textContent.toLowerCase();
         
-        if (nextDepartment && nextDepartment.classList.contains('department-section')) {
-            department.parentNode.insertBefore(nextDepartment, department);
-            
-            // Сохраняем новую позицию в базе данных
-            fetch('/admin/update_department_order', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    department_id: departmentId,
-                    direction: 'down'
-                })
-            });
+        if (fullName.includes(searchTerm) || position.includes(searchTerm) || 
+            phone.includes(searchTerm) || email.includes(searchTerm)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
         }
     });
-});
+}
 
-// Обработка истории изменений
-document.querySelector('.history-toggle').addEventListener('click', function() {
-    const historySection = document.getElementById('historySection');
-    const isHidden = historySection.style.display === 'none';
-    
-    historySection.style.display = isHidden ? 'block' : 'none';
-    this.textContent = isHidden ? 'История изменений ↑' : 'История изменений ↓';
-});
-
-// Фильтрация истории изменений
-document.getElementById('historyFilter').addEventListener('input', function() {
-    const filterText = this.value.toLowerCase();
-    const historyItems = document.querySelectorAll('.history-item');
-    
-    historyItems.forEach(item => {
-        const text = item.textContent.toLowerCase();
-        item.style.display = text.includes(filterText) ? '' : 'none';
+// Функция для перемещения отдела вверх или вниз
+function moveDepartment(departmentId, direction) {
+    fetch('/admin/api/update_department_order', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            department_id: departmentId,
+            direction: direction
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Перезагружаем страницу для отображения обновленного порядка
+            location.reload();
+        } else {
+            showNotification(data.message || 'Ошибка при обновлении порядка отдела', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка при обновлении порядка отдела:', error);
+        showNotification('Ошибка при обновлении порядка отдела: ' + error.message, 'danger');
     });
-});
+}
+
+// Функция для загрузки должностей и ролей при открытии модального окна добавления сотрудника
+async function loadPositionsAndRoles() {
+    try {
+        console.log('Загрузка должностей и ролей для модального окна добавления');
+        
+        // Загружаем должности для выпадающего списка
+        const positionsResponse = await fetch('/admin/settings/positions');
+        const positions = await positionsResponse.json();
+        
+        const addPositionSelect = document.getElementById('addPosition');
+        addPositionSelect.innerHTML = '<option value="">Выберите должность</option>';
+        
+        positions.forEach(position => {
+            const option = document.createElement('option');
+            option.value = position.name;
+            option.textContent = position.name;
+            addPositionSelect.appendChild(option);
+        });
+        
+        // Загружаем роли для выпадающего списка
+        const rolesResponse = await fetch('/admin/settings/roles/get_available_roles');
+        const rolesResult = await rolesResponse.json();
+        
+        const addRoleSelect = document.getElementById('addRole');
+        addRoleSelect.innerHTML = '<option value="">Выберите роль</option>';
+        
+        if (rolesResult.roles && Array.isArray(rolesResult.roles)) {
+            rolesResult.roles.forEach(role => {
+                const option = document.createElement('option');
+                option.value = role.id || role.name;
+                option.textContent = role.name;
+                addRoleSelect.appendChild(option);
+            });
+        } else {
+            // Добавляем стандартные роли, если API не вернул список
+            const defaultRoles = [
+                { id: 'user', name: 'Сотрудник' },
+                { id: 'deputy', name: 'Заместитель' },
+                { id: 'leader', name: 'Руководитель' },
+                { id: 'admin', name: 'Администратор' }
+            ];
+            
+            defaultRoles.forEach(role => {
+                const option = document.createElement('option');
+                option.value = role.id;
+                option.textContent = role.name;
+                addRoleSelect.appendChild(option);
+            });
+        }
+        
+        console.log('Должности и роли успешно загружены');
+    } catch (error) {
+        console.error('Ошибка при загрузке должностей и ролей:', error);
+        showNotification('Ошибка при загрузке должностей и ролей: ' + error.message, 'danger');
+    }
+}
 </script>
 {% endblock %}
