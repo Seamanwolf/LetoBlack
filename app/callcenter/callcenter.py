@@ -926,7 +926,7 @@ def operator_dashboard():
         cursor = connection.cursor(dictionary=True)
         
         # Получаем статус оператора из CallCenterOperators
-            cursor.execute("""
+        cursor.execute("""
             SELECT status 
             FROM CallCenterOperators 
             WHERE user_id = %s
@@ -970,6 +970,8 @@ def operator_dashboard():
             """
             params = ()
             logger.info("Admin user. Fetching all entries.")
+            cursor.execute(query, params)
+            entries = cursor.fetchall()
         else:
             # Для обычного оператора - только его записи
             query = """
@@ -987,7 +989,6 @@ def operator_dashboard():
             """
             params = (user_id,)
             logger.info(f"Regular user {user_id}. Fetching user's entries.")
-        
             cursor.execute(query, params)
             entries = cursor.fetchall()
         
@@ -1004,12 +1005,12 @@ def operator_dashboard():
         sources = cursor.fetchall()
         
         # Получаем список брокеров для селекта
-            cursor.execute("""
-            SELECT id, full_name 
-            FROM User 
+        cursor.execute("""
+            SELECT id, full_name
+            FROM User
             WHERE role = 'broker' AND active = 1
             ORDER BY full_name
-        """)
+            """)
         brokers = cursor.fetchall()
         
         # Получаем список отделов
@@ -1415,8 +1416,8 @@ def before_request():
 def report_dashboard():
     try:
         report_type = request.args.get('type', 'daily')
-    start_date = request.args.get('start_date')
-    end_date = request.args.get('end_date')
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
     
         connection = create_db_connection()
         cursor = connection.cursor(dictionary=True)
