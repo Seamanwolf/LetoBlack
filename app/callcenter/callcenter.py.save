@@ -555,9 +555,11 @@ def deauthorize_google():
         
         # Удаляем записи авторизации из базы данных
         cursor.execute("DELETE FROM GoogleAuth")
-        connection.commit()    except Exception as e:
+        connection.commit()
+    except Exception as e:
         logger.error(f"Ошибка при деавторизации: {e}")
         connection.rollback()
+        flash(f"Ошибка при загрузке данных: {str(e)}", "error")
     finally:
         cursor.close()
         connection.close()
@@ -565,7 +567,7 @@ def deauthorize_google():
     # Удаляем все данные, связанные с Google из сессии
     keys_to_remove = [key for key in session.keys() if key.startswith('google_')]
     for key in keys_to_remove:
-        session.pop(key, None)        flash(f"Ошибка при загрузке данных: {str(e)}", "error")
+        session.pop(key, None)
     return redirect(url_for('callcenter.integrations'))
 
 def refresh_google_credentials():
@@ -719,7 +721,8 @@ def sync_data():
         connection.commit()
         logger.info("Synchronization completed successfully.")
 
-        return jsonify({'success': True, 'message': 'Синхронизация завершена успешно!'})    except Exception as e:
+        return jsonify({'success': True, 'message': 'Синхронизация завершена успешно!'})
+    except Exception as e:
         logger.error(f"Error during synchronization: {e}", exc_info=True)
         return jsonify({'success': False, 'message': f'Ошибка синхронизации: {e}'}), 500
     finally:
@@ -1301,9 +1304,12 @@ def integrations():
                         "INSERT INTO Integrations (type, url) VALUES ('GoogleSheet', %s)",
                         (google_sheet_url,)
                     )
-                connection.commit()        flash(f"Ошибка при загрузке данных: {str(e)}", "error")    except Exception as e:
+                connection.commit()
+                flash("Интеграция успешно обновлена", "success")
+            except Exception as e:
                 connection.rollback()
-                logger.error(f"Error saving integration: {e}", exc_info=True)        flash(f"Ошибка при загрузке данных: {str(e)}", "error")
+                logger.error(f"Error saving integration: {e}", exc_info=True)
+                flash(f"Ошибка при загрузке данных: {str(e)}", "error")
 
     # Проверяем авторизацию
     cursor.execute("SELECT * FROM GoogleAuth LIMIT 1")
@@ -1385,9 +1391,11 @@ def google_auth_callback():
                     json.dumps(credentials.scopes),
                     user_info.get("email")
                 ))
-            connection.commit()    except Exception as e:
+            connection.commit()
+        except Exception as e:
             logger.error(f"Error saving Google credentials: {e}", exc_info=True)
-            connection.rollback()        flash(f"Ошибка при загрузке данных: {str(e)}", "error")
+            connection.rollback()
+            flash(f"Ошибка при загрузке данных: {str(e)}", "error")
         finally:
             cursor.close()
             connection.close()
@@ -1407,8 +1415,11 @@ def google_auth_callback():
             'client_id': credentials.client_id,
             'client_secret': credentials.client_secret,
             'scopes': credentials.scopes
-        }        flash(f"Ошибка при загрузке данных: {str(e)}", "error")    except Exception as e:
-        logger.error(f"Ошибка при авторизации Google: {e}", exc_info=True)        flash(f"Ошибка при загрузке данных: {str(e)}", "error")
+        }
+        
+    except Exception as e:
+        logger.error(f"Ошибка при авторизации Google: {e}", exc_info=True)
+        flash(f"Ошибка при загрузке данных: {str(e)}", "error")
 
     return redirect(url_for('callcenter.integrations'))
 
@@ -1464,7 +1475,8 @@ def before_request():
                     namespace='/call_center'
                 )
         except mysql.connector.Error as err:
-            current_app.logger.error(f"Database error in before_request: {err}")    except Exception as e:
+            current_app.logger.error(f"Database error in before_request: {err}")
+        except Exception as e:
             current_app.logger.error(f"Unexpected error in before_request: {e}")
         finally:
             if connection and connection.is_connected():
@@ -1473,110 +1485,129 @@ def before_request():
 @callcenter_bp.route('/report_dashboard')
 @login_required
 def report_dashboard():
-    report_type = request.args.get('report_type', 'day')  # По умолчанию 'day'
-    start_date = request.args.get('start_date')
-    end_date = request.args.get('end_date')
-    
-    if report_type not in ['year', 'month', 'day', 'custom']:        flash(f"Ошибка при загрузке данных: {str(e)}", "error")
-        return redirect(url_for('callcenter.report_dashboard'))
-    
-    if report_type == "custom":
-        if not start_date or not end_date:        flash(f"Ошибка при загрузке данных: {str(e)}", "error")
+    try:
+        report_type = request.args.get('report_type', 'day')  # По умолчанию 'day'
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        
+        if report_type not in ['year', 'month', 'day', 'custom']:
+            flash("Неверный тип отчета", "error")
             return redirect(url_for('callcenter.report_dashboard'))
         
-        date_pattern = r'^\d{4}-\d{2}-\d{2}$'
-        if not re.match(date_pattern, start_date) or not re.match(date_pattern, end_date):        flash(f"Ошибка при загрузке данных: {str(e)}", "error")
-            return redirect(url_for('callcenter.report_dashboard'))
+        if report_type == "custom":
+            if not start_date or not end_date:
+                flash("Для периодического отчета необходимо указать начальную и конечную даты", "error")
+                return redirect(url_for('callcenter.report_dashboard'))
+            
+            date_pattern = r'^\d{4}-\d{2}-\d{2}$'
+            if not re.match(date_pattern, start_date) or not re.match(date_pattern, end_date):
+                flash("Неверный формат даты. Используйте YYYY-MM-DD", "error")
+                return redirect(url_for('callcenter.report_dashboard'))
+            
+            try:
+                start_date_obj = datetime.strptime(start_date, '%Y-%m-%d')
+                end_date_obj = datetime.strptime(end_date, '%Y-%m-%d')
+                if start_date_obj > end_date_obj:
+                    flash("Начальная дата не может быть позже конечной", "error")
+                    return redirect(url_for('callcenter.report_dashboard'))
+            except ValueError:
+                flash("Ошибка при обработке дат", "error")
+                return redirect(url_for('callcenter.report_dashboard'))
+            
+            first_day = start_date
+            last_day = end_date
+            report_title = f"Отчет за период {start_date} - {end_date}"
+        else:
+            today = datetime.now()
+            if report_type == "year":
+                first_day = today.replace(month=1, day=1).strftime('%Y-%m-%d')
+                last_day = today.strftime('%Y-%m-%d')
+                report_title = "Отчет за год"
+            elif report_type == "month":
+                first_day = today.replace(day=1).strftime('%Y-%m-%d')
+                last_day = today.strftime('%Y-%m-%d')
+                report_title = "Отчет за месяц"
+            elif report_type == "day":
+                first_day = today.strftime('%Y-%m-%d')
+                last_day = first_day
+                report_title = "Отчет за день"
+        
+        entries = []
+        cursor = None
+        connection = None
         
         try:
-            start_date_obj = datetime.strptime(start_date, '%Y-%m-%d')
-            end_date_obj = datetime.strptime(end_date, '%Y-%m-%d')
-            if start_date_obj > end_date_obj:        flash(f"Ошибка при загрузке данных: {str(e)}", "error")
-                return redirect(url_for('callcenter.report_dashboard'))
-        except ValueError:        flash(f"Ошибка при загрузке данных: {str(e)}", "error")
-            return redirect(url_for('callcenter.report_dashboard'))
-        
-        first_day = start_date
-        last_day = end_date
-        report_title = f"Отчет за период {start_date} - {end_date}"
-    else:
-        today = datetime.now()
-        if report_type == "year":
-            first_day = today.replace(month=1, day=1).strftime('%Y-%m-%d')
-            last_day = today.strftime('%Y-%m-%d')
-            report_title = "Отчет за год"
-        elif report_type == "month":
-            first_day = today.replace(day=1).strftime('%Y-%m-%d')
-            last_day = today.strftime('%Y-%m-%d')
-            report_title = "Отчет за месяц"
-        elif report_type == "day":
-            first_day = today.strftime('%Y-%m-%d')
-            last_day = first_day
-            report_title = "Отчет за день"
+            connection = create_db_connection()
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute('''
+                SELECT 
+                    ScoringKC.id, 
+                    ScoringKC.date, 
+                    ScoringKC.time,
+                    broker.full_name AS broker_name,
+                    ScoringKC.department_id,
+                    CallCategories.category_name AS floor_name,
+                    ObjectKC.object_name AS object_name,
+                    SourceKC.source_name AS source_name,
+                    ScoringKC.client_id,
+                    operator.full_name AS operator_name,
+                    operator.ukc_kc
+                FROM 
+                    ScoringKC
+                LEFT JOIN 
+                    User AS broker ON ScoringKC.broker_id = broker.id
+                LEFT JOIN 
+                    User AS operator ON ScoringKC.operator_id = operator.id
+                LEFT JOIN 
+                    CallCategories ON ScoringKC.floor_id = CallCategories.id
+                LEFT JOIN 
+                    ObjectKC ON ScoringKC.object_id = ObjectKC.id
+                LEFT JOIN 
+                    SourceKC ON ScoringKC.source_id = SourceKC.id
+                WHERE 
+                    ScoringKC.date BETWEEN %s AND %s
+                ORDER BY 
+                    ScoringKC.date DESC, ScoringKC.time DESC
+            ''', (first_day, last_day))
+            
+            entries = cursor.fetchall()
+        except mysql.connector.Error as err:
+            print(f"Database Error in report_dashboard: {err}")
+            current_app.logger.error(f"Ошибка при выполнении SQL-запроса: {err}")
+            flash(f"Ошибка при загрузке данных: {str(err)}", "error")
+        except Exception as e:
+            current_app.logger.error(f"Ошибка при выполнении отчета: {e}")
+            flash(f"Ошибка при загрузке данных: {str(e)}", "error")
+        finally:
+            if cursor:
+                cursor.close()
+            if connection:
+                connection.close()
     
-    try:
-        connection = create_db_connection()
-        cursor = connection.cursor(dictionary=True)
-        cursor.execute('''
-            SELECT 
-                ScoringKC.id, 
-                ScoringKC.date, 
-                ScoringKC.time,
-                broker.full_name AS broker_name,
-                ScoringKC.department_id,
-                CallCategories.category_name AS floor_name,
-                ObjectKC.object_name AS object_name,
-                SourceKC.source_name AS source_name,
-                ScoringKC.client_id,
-                operator.full_name AS operator_name,
-                operator.ukc_kc
-            FROM 
-                ScoringKC
-            LEFT JOIN 
-                User AS broker ON ScoringKC.broker_id = broker.id
-            LEFT JOIN 
-                User AS operator ON ScoringKC.operator_id = operator.id
-            LEFT JOIN 
-                CallCategories ON ScoringKC.floor_id = CallCategories.id
-            LEFT JOIN 
-                ObjectKC ON ScoringKC.object_id = ObjectKC.id
-            LEFT JOIN 
-                SourceKC ON ScoringKC.source_id = SourceKC.id
-            WHERE 
-                ScoringKC.date BETWEEN %s AND %s
-            ORDER BY 
-                ScoringKC.date DESC, ScoringKC.time DESC
-        ''', (first_day, last_day))
-        
-        entries = cursor.fetchall()
-    except mysql.connector.Error as err:
-        print(f"Database Error in report_dashboard: {err}")
-        current_app.logger.error(f"Ошибка при выполнении SQL-запроса: {err}")        flash(f"Ошибка при загрузке данных: {str(e)}", "error")
-        entries = []
-    finally:
-        cursor.close()
-        connection.close()
+        common_data = get_common_data()
     
-    common_data = get_common_data()
-    
-    if report_type == "custom":
-        return render_template(
-            'report_dashboard.html',
-            entries=entries,
-            report_title=report_title,
-            report_type=report_type,
-            start_date=start_date,
-            end_date=end_date,
-            **common_data
-        )
-    else:
-        return render_template(
-            'report_dashboard.html',
-            entries=entries,
-            report_title=report_title,
-            report_type=report_type,
-            **common_data
-        )
+        if report_type == "custom":
+            return render_template(
+                'report_dashboard.html',
+                entries=entries,
+                report_title=report_title,
+                report_type=report_type,
+                start_date=start_date,
+                end_date=end_date,
+                **common_data
+            )
+        else:
+            return render_template(
+                'report_dashboard.html',
+                entries=entries,
+                report_title=report_title,
+                report_type=report_type,
+                **common_data
+            )
+    except Exception as e:
+        current_app.logger.error(f"Неожиданная ошибка в report_dashboard: {e}")
+        flash("Произошла ошибка при формировании отчета", "error")
+        return redirect(url_for('callcenter.index'))
 
 @callcenter_bp.route('/api/leads/yearly', methods=['GET'])
 @login_required
@@ -1709,7 +1740,8 @@ def report_by_day():
     cursor.close()
     connection.close()
     report_title = "Отчет за день"
-    report_type = "day"        return render_template("call_center_dashboard.html",
+    report_type = "day"
+    return render_template('report_dashboard.html', entries=entries, report_title=report_title, report_type=report_type, **common_data)
 
 @callcenter_bp.route('/report_by_month')
 @login_required
@@ -1754,7 +1786,8 @@ def report_by_month():
     cursor.close()
     connection.close()
     report_title = "Отчет за месяц"
-    report_type = "month"        return render_template("call_center_dashboard.html",
+    report_type = "month"
+    return render_template('report_dashboard.html', entries=entries, report_title=report_title, report_type=report_type, **common_data)
 
 @callcenter_bp.route('/report_by_year')
 @login_required
@@ -1799,14 +1832,16 @@ def report_by_year():
     cursor.close()
     connection.close()
     report_title = "Отчет за год"
-    report_type = "year"        return render_template("call_center_dashboard.html",
+    report_type = "year"
+    return render_template('report_dashboard.html', entries=entries, report_title=report_title, report_type=report_type, **common_data)
 
 @callcenter_bp.route('/report_custom', methods=['POST'])
 @login_required
 def report_custom():
     start_date = request.form.get('start_date')
     end_date = request.form.get('end_date')
-    if not start_date or not end_date:        flash(f"Ошибка при загрузке данных: {str(e)}", "error")
+    if not start_date or not end_date:
+        flash("Пожалуйста, выберите оба периода.", "warning")
         return redirect(url_for('report_dashboard'))
     connection = create_db_connection()
     cursor = connection.cursor(dictionary=True)
@@ -1846,7 +1881,8 @@ def report_custom():
     cursor.close()
     connection.close()
     report_title = f"Отчет за период {start_date} - {end_date}"
-    report_type = "custom"        return render_template("call_center_dashboard.html",
+    report_type = "custom"
+    return render_template('report_dashboard.html', entries=entries, report_title=report_title, report_type=report_type, **common_data)
 
 @callcenter_bp.route('/export_excel')
 @login_required
