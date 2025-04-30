@@ -1,11 +1,36 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session, current_app
 from flask_login import current_user
 from app.utils import create_db_connection, login_required
 import logging
 from datetime import datetime
 from app.routes.admin import admin_routes_bp
+from app.routes.auth import redirect_based_on_role
+import hashlib
+import os
+from werkzeug.utils import secure_filename
+import time
 
+# Настройка логирования
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# Создаем обработчик для записи в файл
+log_file = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'app.log')
+file_handler = logging.FileHandler(log_file)
+file_handler.setLevel(logging.DEBUG)
+
+# Создаем обработчик для вывода в консоль
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+# Создаем форматтер для логов
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+console_handler.setFormatter(formatter)
+
+# Добавляем обработчики к логгеру
+logger.addHandler(file_handler)
+logger.addHandler(console_handler)
 
 @admin_routes_bp.route('/personnel')
 @login_required
@@ -14,7 +39,7 @@ def personnel():
     if current_user.role != 'admin' and current_user.role != 'leader':
         logger.warning(f"Отказано в доступе пользователю {current_user.login} с ролью {current_user.role}")
         flash('У вас нет доступа к этой странице', 'error')
-        return redirect(url_for('admin_dashboard.admin_dashboard'))
+        return redirect_based_on_role(current_user)
     
     try:
         conn = create_db_connection()
@@ -42,7 +67,8 @@ def personnel():
                     u.id,
                     u.full_name,
                     u.position,
-                    u.phone,
+                    u.Phone as personal_number,
+                    u.corp_phone as corporate_number,
                     u.role,
                     u.status,
                     u.fire_date,
@@ -73,7 +99,8 @@ def personnel():
                     u.id,
                     u.full_name,
                     u.position,
-                    u.phone,
+                    u.Phone as personal_number,
+                    u.corp_phone as corporate_number,
                     u.role,
                     u.status,
                     u.fire_date,
@@ -101,11 +128,12 @@ def personnel():
                              fired_employees=stats['fired_employees'],
                              avg_score=0,  # Временно установим 0, так как колонки score нет
                              departments=departments,
+                             now=datetime.now(),
                              employees_by_department=employees_by_department)
     except Exception as e:
         logger.error(f"Ошибка при загрузке страницы персонала: {str(e)}")
         flash('Произошла ошибка при загрузке данных', 'error')
-        return redirect(url_for('admin_dashboard.admin_dashboard'))
+        return redirect_based_on_role(current_user)
     finally:
         if 'conn' in locals():
             conn.close()
@@ -130,29 +158,34 @@ def get_employee_api():
         conn = create_db_connection()
         cursor = conn.cursor(dictionary=True)
         
-        # Получаем данные сотрудника
-        cursor.execute("""
+        # Получаем данные сотрудника с учетом новой структуры телефонов
+        query = """
             SELECT 
-                id, 
-                full_name, 
-                position, 
-                department_id,
-                (SELECT name FROM Department WHERE id = User.department_id) as department,
-                phone as Phone,
-                role,
-                hire_date,
-                status,
-                fire_date,
-                corporate_email
-            FROM User 
-            WHERE id = %s
-        """, (employee_id,))
-        
+                u.id, u.full_name, u.login, u.Phone as personal_number,
+                u.department_id, u.role, u.hire_date, u.fire_date,
+                u.fired, u.personal_email, u.pc_login, u.pc_password,
+                u.birth_date, u.position, u.office, u.corporate_email,
+                u.corp_phone as corporate_number,
+                u.previous_number,
+                u.documents, u.rr, u.site, u.crm_id,
+                d.name as department_name,
+                ep.photo_url
+            FROM User u
+            LEFT JOIN Department d ON u.department_id = d.id
+            LEFT JOIN EmployeePhotos ep ON u.id = ep.employee_id
+            WHERE u.id = %s
+        """
+        logger.debug(f"SQL запрос для получения данных сотрудника: {query}")
+        cursor.execute(query, (employee_id,))
         employee = cursor.fetchone()
+
         if not employee:
             logger.warning(f"Сотрудник с ID={employee_id} не найден")
             return jsonify({'success': False, 'message': 'Сотрудник не найден'}), 404
             
+        # Логируем полученные данные
+        logger.debug(f"Полученные данные сотрудника: {employee}")
+
         # Преобразуем даты в строковый формат для JSON
         if employee.get('hire_date'):
             employee['hire_date'] = employee['hire_date'].strftime('%Y-%m-%d')
@@ -171,10 +204,50 @@ def get_employee_api():
         if 'conn' in locals():
             conn.close()
 
-@admin_routes_bp.route('/api/update_employee', methods=['POST'])
+@admin_routes_bp.route('/api/get_employee_login', methods=['GET'])
+@login_required
+def get_employee_login_api():
+    """Получение логина сотрудника по ID"""
+    logger.debug("Начало выполнения функции get_employee_login_api")
+    
+    if current_user.role != 'admin' and current_user.role != 'leader':
+        logger.warning(f"Отказано в доступе пользователю {current_user.login} с ролью {current_user.role}")
+        return jsonify({'success': False, 'message': 'Недостаточно прав для выполнения операции'})
+
+    try:
+        # Получаем ID сотрудника из запроса
+        employee_id = request.args.get('id')
+        if not employee_id:
+            logger.warning("ID сотрудника не указан в запросе")
+            return jsonify({'success': False, 'message': 'ID сотрудника не указан'}), 400
+            
+        conn = create_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        # Получаем логин сотрудника
+        cursor.execute("SELECT login FROM User WHERE id = %s", (employee_id,))
+        result = cursor.fetchone()
+        
+        if not result or not result.get('login'):
+            logger.warning(f"Логин для сотрудника с ID={employee_id} не найден")
+            return jsonify({'success': False, 'message': 'Логин не найден'}), 404
+            
+        logger.info(f"Логин сотрудника с ID={employee_id} успешно получен")
+        return jsonify({'success': True, 'login': result['login']})
+        
+    except Exception as e:
+        logger.error(f"Ошибка при получении логина сотрудника: {str(e)}")
+        return jsonify({'success': False, 'message': f'Ошибка при получении логина: {str(e)}'}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
+
+@admin_routes_bp.route('/api/update_employee_json', methods=['POST'])
 @login_required
 def update_employee_api():
-    """Обновление данных сотрудника через API"""
+    """Обновление данных сотрудника через API (JSON)"""
     logger.debug("Начало выполнения функции update_employee_api")
     
     if current_user.role != 'admin' and current_user.role != 'leader':
@@ -209,28 +282,32 @@ def update_employee_api():
 
         # Обработка текстовых полей
         text_fields = [
-            'full_name', 'position', 'phone', 'department', 'role', 'corporate_email'
+            'full_name', 'position', 'Phone', 'corp_phone', 'department_id', 'role', 'corporate_email'
         ]
 
         for field in text_fields:
             new_value = data.get(field)
-            if new_value is not None and field in employee and new_value != employee[field]:
-                update_fields[field] = new_value
+            if new_value is not None:
+                # Обработка телефонных номеров
+                if field == 'corp_phone' and new_value:
+                    if new_value.startswith('+7'):
+                        new_value = new_value[2:]
+                if field in employee and new_value != employee[field]:
+                    update_fields[field] = new_value
 
-        # Обработка дат
-        date_fields = ['hire_date']
-        for field in date_fields:
-            new_value = data.get(field)
-            if new_value and field in employee:
-                try:
-                    # Проверяем формат даты
-                    if isinstance(new_value, str):
-                        formatted_date = datetime.strptime(new_value, '%Y-%m-%d').date()
-                        if formatted_date != employee[field]:
-                            update_fields[field] = formatted_date
-                except ValueError:
-                    logger.warning(f"Неверный формат даты для поля {field}: {new_value}")
-                    continue
+        # Специальная обработка corporate_number -> corp_phone
+        if 'corporate_number' in data:
+            value = data.get('corporate_number')
+            if value and value.startswith('+7'):
+                value = value[2:]
+            update_fields['corp_phone'] = value
+
+        # Специальная обработка personal_number -> corp_phone
+        if 'personal_number' in data:
+            value = data.get('personal_number')
+            if value and value.startswith('+7'):
+                value = value[2:]
+            update_fields['corp_phone'] = value
 
         # Если есть поля для обновления
         if update_fields:
@@ -243,9 +320,18 @@ def update_employee_api():
             update_query = update_query.rstrip(", ") + " WHERE id = %s"
             update_values.append(employee_id)
 
+            # Логируем SQL запрос и значения
+            logger.debug(f"SQL запрос: {update_query}")
+            logger.debug(f"Значения: {update_values}")
+
             # Выполняем обновление
             cursor.execute(update_query, tuple(update_values))
             conn.commit()
+            
+            # Проверяем результат обновления
+            cursor.execute("SELECT * FROM User WHERE id = %s", (employee_id,))
+            updated_employee = cursor.fetchone()
+            logger.debug(f"Обновленные данные сотрудника: {updated_employee}")
             
             logger.info(f"Данные сотрудника с ID={employee_id} успешно обновлены")
             return jsonify({'success': True, 'message': 'Данные сотрудника успешно обновлены'})
@@ -263,6 +349,7 @@ def update_employee_api():
             conn.close()
 
 @admin_routes_bp.route('/api/fire_employee', methods=['POST'])
+@admin_routes_bp.route('/admin/api/fire_employee', methods=['POST'])
 @login_required
 def fire_employee_api():
     """Увольнение сотрудника через API"""
@@ -300,24 +387,14 @@ def fire_employee_api():
             logger.warning(f"Сотрудник с ID={employee_id} не найден")
             return jsonify({'success': False, 'message': 'Сотрудник не найден'}), 404
         
-        # Получаем дополнительные данные
-        corporate_email = data.get('corporate_email', '')
-        personal_email = data.get('personal_email', '')
-        crm_id = data.get('crm_id', '')
-        password = data.get('password', '')
-        
         # Обновляем данные сотрудника
         cursor.execute("""
             UPDATE User 
             SET 
                 fire_date = %s,
-                corporate_email = %s,
-                personal_email = %s,
-                crm_id = %s,
-                password = %s,
-                status = 'offline'
+                status = 'fired'
             WHERE id = %s
-        """, (fire_date, corporate_email, personal_email, crm_id, password, employee_id))
+        """, (fire_date, employee_id))
         
         conn.commit()
         
@@ -342,40 +419,113 @@ def fired_employees():
     """Страница уволенных сотрудников"""
     if current_user.role != 'admin':
         flash('У вас нет доступа к этой странице', 'danger')
-        return redirect(url_for('auth.login'))
+        return redirect_based_on_role(current_user)
     
     connection = create_db_connection()
     cursor = connection.cursor(dictionary=True)
     
     try:
+        # Получаем статистику
+        cursor.execute('''
+            SELECT 
+                COUNT(*) as total_employees,
+                SUM(CASE WHEN fire_date IS NULL THEN 1 ELSE 0 END) as active_employees,
+                SUM(CASE WHEN fire_date IS NOT NULL THEN 1 ELSE 0 END) as fired_employees
+            FROM User
+        ''')
+        stats = cursor.fetchone()
+        
+        # Получаем список отделов из таблицы Department
+        cursor.execute('SELECT id, name FROM Department ORDER BY name')
+        departments = cursor.fetchall()
+        
         # Получаем список уволенных сотрудников
         cursor.execute("""
-            SELECT u.*, d.name as department_name
+            SELECT u.*, d.name as department_name, 
+                   DATEDIFF(u.fire_date, u.hire_date) as days_worked
             FROM User u
             LEFT JOIN Department d ON u.department_id = d.id
             WHERE u.status = 'fired' OR u.fire_date IS NOT NULL
             ORDER BY u.fire_date DESC
         """)
-        fired_employees = cursor.fetchall()
+        fired_employees_list = cursor.fetchall()
         
         # Форматируем даты для отображения
-        for employee in fired_employees:
+        for employee in fired_employees_list:
             if employee['fire_date']:
-                employee['fire_date'] = employee['fire_date'].strftime('%d.%m.%Y')
+                employee['fire_date_formatted'] = employee['fire_date'].strftime('%d.%m.%Y')
+            else:
+                employee['fire_date_formatted'] = ''
+                
             if employee['hire_date']:
-                employee['hire_date'] = employee['hire_date'].strftime('%d.%m.%Y')
+                employee['hire_date_formatted'] = employee['hire_date'].strftime('%d.%m.%Y')
+            else:
+                employee['hire_date_formatted'] = ''
         
         return render_template('admin/fired_employees.html',
-                              fired_employees=fired_employees)
+                              total_employees=stats['total_employees'],
+                              active_employees=stats['active_employees'],
+                              fired_employees=stats['fired_employees'],
+                              departments=departments,
+                              employees=fired_employees_list)
     
     except Exception as e:
         logger.error(f"Ошибка при загрузке страницы уволенных сотрудников: {e}")
         flash(f'Ошибка при получении данных: {str(e)}', 'danger')
-        return redirect(url_for('admin_dashboard.admin_dashboard'))
+        return redirect_based_on_role(current_user)
     
     finally:
         cursor.close()
         connection.close()
+
+@admin_routes_bp.route('/admin/rehire_employee', methods=['POST'])
+@login_required
+def rehire_employee():
+    """Восстановление уволенного сотрудника"""
+    if current_user.role != 'admin':
+        return jsonify({'success': False, 'message': 'У вас нет доступа к этой операции'})
+    
+    try:
+        data = request.json
+        employee_id = data.get('id')
+        
+        if not employee_id:
+            return jsonify({'success': False, 'message': 'ID сотрудника не указан'})
+        
+        connection = create_db_connection()
+        cursor = connection.cursor(dictionary=True)
+        
+        # Проверяем, что сотрудник существует и уволен
+        cursor.execute("SELECT id, full_name, status FROM User WHERE id = %s", (employee_id,))
+        employee = cursor.fetchone()
+        
+        if not employee:
+            return jsonify({'success': False, 'message': 'Сотрудник не найден'})
+        
+        # Обновляем запись сотрудника
+        cursor.execute("""
+            UPDATE User 
+            SET status = 'offline', 
+                fire_date = NULL 
+            WHERE id = %s
+        """, (employee_id,))
+        
+        connection.commit()
+        
+        return jsonify({
+            'success': True, 
+            'message': f"Сотрудник успешно восстановлен"
+        })
+    
+    except Exception as e:
+        logger.error(f"Ошибка при восстановлении сотрудника: {str(e)}")
+        return jsonify({'success': False, 'message': f'Ошибка при восстановлении сотрудника: {str(e)}'})
+    
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'connection' in locals():
+            connection.close()
 
 @admin_routes_bp.route('/api/update_department_order', methods=['POST'])
 @login_required
@@ -393,42 +543,429 @@ def update_department_order_api():
             logger.warning("Данные не получены в запросе")
             return jsonify({'success': False, 'message': 'Данные не получены'}), 400
         
-        department_id = data.get('id')
-        new_order = data.get('order')
+        department_id = data.get('department_id')
+        direction = data.get('direction')
         
-        if not department_id or not new_order:
-            logger.warning("ID отдела или порядок не указаны")
-            return jsonify({'success': False, 'message': 'ID отдела или порядок не указаны'}), 400
+        if not department_id or not direction:
+            logger.warning("ID отдела или направление не указаны")
+            return jsonify({'success': False, 'message': 'ID отдела или направление не указаны'}), 400
         
         conn = create_db_connection()
         cursor = conn.cursor(dictionary=True)
         
         # Проверяем существование отдела
-        cursor.execute("SELECT id, name FROM Department WHERE id = %s", (department_id,))
+        cursor.execute("SELECT id, name, display_order FROM Department WHERE id = %s", (department_id,))
         department = cursor.fetchone()
         
         if not department:
             logger.warning(f"Отдел с ID={department_id} не найден")
             return jsonify({'success': False, 'message': 'Отдел не найден'}), 404
         
-        # Обновляем порядок отдела
-        cursor.execute("""
-            UPDATE Department
-            SET display_order = %s 
-            WHERE id = %s
-        """, (new_order, department_id))
+        current_order = department.get('display_order') or 0
+        
+        if direction == 'up':
+            # Найти отдел с меньшим порядком
+            cursor.execute("""
+                SELECT id, display_order FROM Department 
+                WHERE display_order < %s
+                ORDER BY display_order DESC
+                LIMIT 1
+            """, (current_order,))
+            prev_dept = cursor.fetchone()
+            
+            if prev_dept:
+                # Меняем местами порядок
+                cursor.execute("UPDATE Department SET display_order = %s WHERE id = %s", 
+                              (current_order, prev_dept['id']))
+                cursor.execute("UPDATE Department SET display_order = %s WHERE id = %s", 
+                              (prev_dept['display_order'], department_id))
+                
+        elif direction == 'down':
+            # Найти отдел с большим порядком
+            cursor.execute("""
+                SELECT id, display_order FROM Department 
+                WHERE display_order > %s
+                ORDER BY display_order ASC
+                LIMIT 1
+            """, (current_order,))
+            next_dept = cursor.fetchone()
+            
+            if next_dept:
+                # Меняем местами порядок
+                cursor.execute("UPDATE Department SET display_order = %s WHERE id = %s", 
+                              (current_order, next_dept['id']))
+                cursor.execute("UPDATE Department SET display_order = %s WHERE id = %s", 
+                              (next_dept['display_order'], department_id))
         
         conn.commit()
         
         logger.info(f"Порядок отдела {department['name']} (ID={department_id}) успешно обновлен")
         return jsonify({
             'success': True, 
-            'message': f"Порядок отдела {department['name']} успешно обновлен"
+            'message': f"Порядок отдела успешно обновлен"
         })
     
     except Exception as e:
         logger.error(f"Ошибка при обновлении порядка отдела: {str(e)}")
         return jsonify({'success': False, 'message': f'Ошибка при обновлении порядка отдела: {str(e)}'}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
+
+@admin_routes_bp.route('/api/add_employee', methods=['POST'])
+@login_required
+def add_employee_api():
+    """Добавление нового сотрудника через API"""
+    logger.debug("Начало выполнения функции add_employee_api")
+    
+    if current_user.role != 'admin' and current_user.role != 'leader':
+        logger.warning(f"Отказано в доступе пользователю {current_user.login} с ролью {current_user.role}")
+        return jsonify({'success': False, 'message': 'Недостаточно прав для выполнения операции'})
+
+    try:
+        data = request.json
+        if not data:
+            logger.warning("Данные не получены в запросе")
+            return jsonify({'success': False, 'message': 'Данные не получены'}), 400
+        
+        # Обязательные поля
+        full_name = data.get('full_name')
+        department_id = data.get('department_id')
+        position = data.get('position')
+        role = data.get('role')
+        login = data.get('login')
+        password = data.get('password')
+        corporate_email = data.get('corporate_email')
+        
+        # Проверка обязательных полей
+        if not all([full_name, department_id, position, role, login, password, corporate_email]):
+            missing_fields = []
+            if not full_name: missing_fields.append('ФИО')
+            if not department_id: missing_fields.append('Отдел')
+            if not position: missing_fields.append('Должность')
+            if not role: missing_fields.append('Роль')
+            if not login: missing_fields.append('Логин')
+            if not password: missing_fields.append('Пароль')
+            if not corporate_email: missing_fields.append('Корпоративная почта')
+            
+            logger.warning(f"Не заполнены обязательные поля: {', '.join(missing_fields)}")
+            return jsonify({
+                'success': False, 
+                'message': f'Не заполнены обязательные поля: {", ".join(missing_fields)}'
+            }), 400
+        
+        # Дополнительные поля
+        Phone = data.get('Phone', '')
+        hire_date = data.get('hire_date', datetime.now().strftime('%Y-%m-%d'))
+        
+        conn = create_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        # Проверяем, существует ли уже пользователь с таким логином
+        cursor.execute("SELECT id FROM User WHERE login = %s", (login,))
+        if cursor.fetchone():
+            logger.warning(f"Пользователь с логином {login} уже существует")
+            return jsonify({
+                'success': False, 
+                'message': f'Пользователь с логином {login} уже существует'
+            }), 400
+        
+        # Проверяем, существует ли уже пользователь с такой почтой
+        cursor.execute("SELECT id FROM User WHERE corporate_email = %s", (corporate_email,))
+        if cursor.fetchone():
+            logger.warning(f"Пользователь с почтой {corporate_email} уже существует")
+            return jsonify({
+                'success': False, 
+                'message': f'Пользователь с почтой {corporate_email} уже существует'
+            }), 400
+        
+        # Хешируем пароль перед сохранением
+        hashed_password = hashlib.md5(password.encode()).hexdigest()
+        
+        # Создаем нового пользователя
+        cursor.execute("""
+            INSERT INTO User (
+                full_name, department_id, position, role, login, password, 
+                corporate_email, Phone, hire_date, status, created_at
+            ) VALUES (
+                %s, %s, %s, %s, %s, %s, 
+                %s, %s, %s, %s, %s
+            )
+        """, (
+            full_name, department_id, position, role, login, hashed_password,
+            corporate_email, Phone, hire_date, 'offline', datetime.now()
+        ))
+        
+        conn.commit()
+        new_employee_id = cursor.lastrowid
+        
+        logger.info(f"Сотрудник {full_name} успешно добавлен с ID={new_employee_id}")
+        return jsonify({
+            'success': True, 
+            'message': f"Сотрудник {full_name} успешно добавлен",
+            'employee_id': new_employee_id
+        })
+    
+    except Exception as e:
+        logger.error(f"Ошибка при добавлении сотрудника: {str(e)}")
+        return jsonify({'success': False, 'message': f'Ошибка при добавлении сотрудника: {str(e)}'}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
+
+@admin_routes_bp.route('/admin/delete_employee', methods=['POST'])
+@login_required
+def delete_employee():
+    """Полное удаление сотрудника из системы"""
+    if current_user.role != 'admin':
+        return jsonify({'success': False, 'message': 'У вас нет доступа к этой операции'})
+    
+    try:
+        data = request.json
+        employee_id = data.get('id')
+        
+        if not employee_id:
+            return jsonify({'success': False, 'message': 'ID сотрудника не указан'})
+        
+        connection = create_db_connection()
+        cursor = connection.cursor(dictionary=True)
+        
+        # Проверяем, что сотрудник существует и уволен
+        cursor.execute("SELECT id, full_name, status, fire_date FROM User WHERE id = %s", (employee_id,))
+        employee = cursor.fetchone()
+        
+        if not employee:
+            return jsonify({'success': False, 'message': 'Сотрудник не найден'})
+        
+        if employee['fire_date'] is None and employee['status'] != 'fired':
+            return jsonify({'success': False, 'message': 'Нельзя удалить активного сотрудника. Сначала его необходимо уволить.'})
+        
+        # Получаем login сотрудника
+        cursor.execute("SELECT login FROM User WHERE id = %s", (employee_id,))
+        user_data = cursor.fetchone()
+        user_login = user_data['login'] if user_data else None
+        
+        # Удаляем связанные записи из UserHistory
+        cursor.execute("DELETE FROM UserHistory WHERE user_id = %s", (employee_id,))
+        
+        # Удаляем связанные записи из UserNotifications, если они существуют
+        cursor.execute("DELETE FROM UserNotifications WHERE user_id = %s", (employee_id,))
+        
+        # Удаляем связанные записи из Rating, если они существуют
+        cursor.execute("DELETE FROM Rating WHERE user_id = %s", (employee_id,))
+        
+        # Удаляем связанную запись из Candidates, если она существует
+        if user_login:
+            cursor.execute("DELETE FROM Candidates WHERE login_pc = %s", (user_login,))
+        
+        # Удаляем запись из User
+        cursor.execute("DELETE FROM User WHERE id = %s", (employee_id,))
+        
+        connection.commit()
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Сотрудник успешно удален'
+        })
+    
+    except Exception as e:
+        logger.error(f"Ошибка при удалении сотрудника: {str(e)}")
+        return jsonify({'success': False, 'message': f'Ошибка при удалении сотрудника: {str(e)}'})
+    
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'connection' in locals():
+            connection.close()
+
+@admin_routes_bp.route('/api/update_employee', methods=['POST'])
+@admin_routes_bp.route('/admin/api/update_employee', methods=['POST'])
+@login_required
+def update_employee():
+    """Обновление данных сотрудника через API (form-data)"""
+    logger.setLevel(logging.DEBUG)  # Устанавливаем уровень логирования
+    logger.debug("=== Начало функции update_employee ===")
+    logger.debug(f"Текущий пользователь: {current_user.login}, роль: {current_user.role}")
+    
+    if current_user.role != 'admin' and current_user.role != 'leader':
+        logger.warning(f"Отказано в доступе пользователю {current_user.login} с ролью {current_user.role}")
+        return jsonify({'success': False, 'message': 'Недостаточно прав для выполнения операции'})
+
+    try:
+        # Проверяем наличие данных формы
+        if not request.form and not request.files:
+            logger.warning("Данные не получены в запросе (ни form, ни files)")
+            return jsonify({'success': False, 'message': 'Данные не получены'}), 400
+            
+        # Получаем данные из формы
+        employee_id = request.form.get('id')
+        if not employee_id:
+            logger.warning("ID сотрудника не указан в запросе")
+            return jsonify({'success': False, 'message': 'ID сотрудника не указан'}), 400
+
+        # Логируем все полученные данные формы
+        logger.debug("=== Полученные данные формы ===")
+        logger.debug(f"Все поля формы: {dict(request.form)}")
+        logger.debug(f"Все файлы: {dict(request.files)}")
+        logger.debug("=== Конец данных формы ===")
+
+        conn = create_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Получаем текущие данные сотрудника
+        cursor.execute("SELECT * FROM User WHERE id = %s", (employee_id,))
+        employee = cursor.fetchone()
+        if not employee:
+            logger.warning(f"Сотрудник с ID={employee_id} не найден")
+            return jsonify({'success': False, 'message': 'Сотрудник не найден'}), 404
+
+        # Проверяем, нужно ли удалить фото
+        if request.form.get('delete_photo') == '1':
+            try:
+                # Получаем текущее фото
+                cursor.execute("SELECT photo_url FROM EmployeePhotos WHERE employee_id = %s", (employee_id,))
+                photo = cursor.fetchone()
+                
+                if photo and photo['photo_url']:
+                    # Удаляем файл с диска
+                    file_path = os.path.join(current_app.root_path, photo['photo_url'].lstrip('/'))
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+                    
+                    # Удаляем запись из БД
+                    cursor.execute("DELETE FROM EmployeePhotos WHERE employee_id = %s", (employee_id,))
+                    conn.commit()
+                    logger.info(f"Фото сотрудника {employee_id} успешно удалено")
+            except Exception as e:
+                logger.error(f"Ошибка при удалении фото: {str(e)}")
+                return jsonify({'success': False, 'message': f'Ошибка при удалении фото: {str(e)}'}), 500
+
+        # Обработка фото, если оно было загружено
+        if 'employee_photo' in request.files:
+            photo_file = request.files['employee_photo']
+            if photo_file and photo_file.filename:
+                try:
+                    # Проверяем тип файла
+                    allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
+                    if not photo_file.filename.lower().endswith(tuple(allowed_extensions)):
+                        return jsonify({'success': False, 'message': 'Недопустимый формат файла. Разрешены: PNG, JPG, JPEG, GIF'}), 400
+                    
+                    # Проверяем размер файла (максимум 5MB)
+                    if photo_file.content_length and photo_file.content_length > 5 * 1024 * 1024:
+                        return jsonify({'success': False, 'message': 'Размер файла превышает 5MB'}), 400
+                    
+                    # Генерируем уникальное имя файла
+                    filename = secure_filename(f"{employee_id}_{int(time.time())}_{photo_file.filename}")
+                    upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'employee_photos')
+                    
+                    # Создаем директорию, если она не существует
+                    os.makedirs(upload_folder, exist_ok=True)
+                    
+                    # Сохраняем файл
+                    file_path = os.path.join(upload_folder, filename)
+                    photo_file.save(file_path)
+                    
+                    # Относительный путь для сохранения в БД
+                    relative_path = f'/static/uploads/employee_photos/{filename}'
+                    
+                    # Проверяем, есть ли уже фото у сотрудника
+                    cursor.execute("SELECT id FROM EmployeePhotos WHERE employee_id = %s", (employee_id,))
+                    existing_photo = cursor.fetchone()
+                    
+                    if existing_photo:
+                        # Обновляем существующее фото
+                        cursor.execute("UPDATE EmployeePhotos SET photo_url = %s WHERE employee_id = %s", 
+                                    (relative_path, employee_id))
+                    else:
+                        # Добавляем новое фото
+                        cursor.execute("INSERT INTO EmployeePhotos (employee_id, photo_url) VALUES (%s, %s)", 
+                                    (employee_id, relative_path))
+                    
+                    conn.commit()
+                    logger.info(f"Фото сотрудника {employee_id} успешно сохранено: {file_path}")
+                    
+                except Exception as e:
+                    logger.error(f"Ошибка при сохранении фото: {str(e)}")
+                    return jsonify({'success': False, 'message': f'Ошибка при сохранении фото: {str(e)}'}), 500
+
+        # Подготовка данных для обновления
+        update_data = {}
+        fields_to_update = [
+            'full_name', 'department_id', 'position', 'role', 
+            'Phone', 'corporate_email', 'personal_email', 'pc_login', 'pc_password',
+            'crm_id', 'hire_date', 'birth_date', 'notes',
+            'documents', 'rr', 'site'
+        ]
+
+        # Обработка чекбоксов
+        boolean_fields = ['documents', 'rr', 'site']
+        logger.debug("=== Обработка чекбоксов ===")
+        for field in boolean_fields:
+            if field in request.form:
+                value = 1 if request.form.get(field) == 'on' else 0
+                update_data[field] = value
+                logger.debug(f"Чекбокс {field}: {value}")
+            else:
+                update_data[field] = 0
+                logger.debug(f"Чекбокс {field} не установлен, значение: 0")
+
+        # Обработка текстовых полей и остальных данных
+        logger.debug("=== Обработка текстовых полей ===")
+        for field in fields_to_update:
+            if field in boolean_fields:
+                continue  # Чекбоксы уже обработаны выше
+                
+            if field in request.form and field not in ['hire_date', 'birth_date']:
+                value = request.form.get(field)
+                if value is not None:
+                    update_data[field] = value
+                    logger.debug(f"Текстовое поле {field}: {value}")
+
+        # Обработка дат
+        for date_field in ['hire_date', 'birth_date']:
+            if date_field in request.form and request.form.get(date_field):
+                try:
+                    date_value = datetime.strptime(request.form.get(date_field), '%Y-%m-%d').date()
+                    update_data[date_field] = date_value
+                except ValueError:
+                    logger.warning(f"Неверный формат даты для поля {date_field}: {request.form.get(date_field)}")
+
+        # Если есть поля для обновления
+        if update_data:
+            # Формируем SQL-запрос для обновления
+            update_query = "UPDATE User SET "
+            update_values = []
+            
+            for field, value in update_data.items():
+                update_query += f"{field} = %s, "
+                update_values.append(value)
+                
+            update_query = update_query.rstrip(", ") + " WHERE id = %s"
+            update_values.append(employee_id)
+
+            # Логируем финальный SQL запрос и значения
+            logger.debug("=== Финальный SQL запрос ===")
+            logger.debug(f"SQL запрос: {update_query}")
+            logger.debug(f"Значения: {update_values}")
+            logger.debug("=== Конец отладки SQL ===")
+
+            # Выполняем обновление
+            cursor.execute(update_query, tuple(update_values))
+            conn.commit()
+            
+            logger.info(f"Данные сотрудника с ID={employee_id} успешно обновлены")
+            return jsonify({'success': True, 'message': 'Данные сотрудника успешно обновлены'})
+        else:
+            logger.info(f"Нет изменений для сотрудника с ID={employee_id}")
+            return jsonify({'success': True, 'message': 'Нет изменений для сохранения'})
+    
+    except Exception as e:
+        logger.error(f"Ошибка при обновлении данных сотрудника: {str(e)}")
+        return jsonify({'success': False, 'message': f'Ошибка при обновлении данных: {str(e)}'}), 500
     finally:
         if 'cursor' in locals():
             cursor.close()

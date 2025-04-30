@@ -426,6 +426,157 @@
     justify-content: flex-end;
     margin-top: 15px;
   }
+
+  /* Стили для контейнера фото */
+  .photo-container {
+    position: relative;
+    display: inline-block;
+    margin-top: 10px;
+    width: 100%;
+    height: 200px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .delete-photo-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background-color: #f44336;
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    transition: all 0.3s;
+    z-index: 10;
+  }
+  
+  .delete-photo-btn:hover {
+    background-color: #d32f2f;
+    transform: scale(1.1);
+  }
+  
+  .delete-photo-btn i {
+    font-size: 12px;
+  }
+  
+  /* Стили для модального окна подтверждения */
+  .confirm-delete-modal .modal-content {
+    border-radius: 8px;
+  }
+  
+  .confirm-delete-modal .modal-header {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  
+  .confirm-delete-modal .modal-body {
+    text-align: center;
+    padding: 20px;
+  }
+  
+  .confirm-delete-modal .modal-footer {
+    border-top: none;
+    justify-content: center;
+    padding-top: 0;
+  }
+  
+  .confirm-delete-modal .btn {
+    min-width: 100px;
+    margin: 0 10px;
+  }
+  
+  /* Стили для уведомлений */
+  .toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+  }
+
+  .toast {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 16px;
+    margin-bottom: 10px;
+    min-width: 300px;
+    max-width: 400px;
+    display: flex;
+    align-items: center;
+    animation: slideIn 0.3s ease-out;
+  }
+
+  .toast.success {
+    border-left: 4px solid #28a745;
+  }
+
+  .toast.error {
+    border-left: 4px solid #dc3545;
+  }
+
+  .toast .toast-icon {
+    margin-right: 12px;
+    font-size: 20px;
+  }
+
+  .toast.success .toast-icon {
+    color: #28a745;
+  }
+
+  .toast.error .toast-icon {
+    color: #dc3545;
+  }
+
+  .toast .toast-content {
+    flex: 1;
+  }
+
+  .toast .toast-title {
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .toast .toast-message {
+    color: #6c757d;
+    font-size: 0.9rem;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideOut {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+  }
+
+  .toast.hide {
+    animation: slideOut 0.3s ease-in forwards;
+  }
 </style>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
@@ -444,6 +595,8 @@ if (typeof analytics === 'undefined') {
 {% endblock %}
 
 {% block content %}
+<div class="toast-container" id="toastContainer"></div>
+<div class="container-fluid">
 <!-- Навигационное меню -->
 <div class="nav-menu">
     <a href="{{ url_for('admin_routes_unique.personnel') }}" class="active">
@@ -603,7 +756,7 @@ if (typeof analytics === 'undefined') {
                                     </td>
                                     <td>{{ employee.full_name }}</td>
                                     <td>{{ employee.position }}</td>
-                                    <td>{{ employee.phone }}</td>
+                                    <td>{{ employee.corporate_number }}</td>
                                     <td>{{ employee.corporate_email }}</td>
                                     <td>
                                         <i class="fas fa-edit edit-icon" title="Редактировать" data-bs-toggle="modal" data-bs-target="#editEmployeeModal" data-id="{{ employee.id }}"></i>
@@ -634,7 +787,7 @@ if (typeof analytics === 'undefined') {
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" style="background-color: #fff; z-index: 1060;">
-                <form id="editEmployeeForm">
+                <form id="editEmployeeForm" enctype="multipart/form-data">
                     <div class="row">
                         <div class="col-md-12">
                             <h5 class="mt-3 mb-3">Редактирование сотрудника</h5>
@@ -647,11 +800,15 @@ if (typeof analytics === 'undefined') {
                             <!-- Основная информация -->
                             <!-- Блок для фото с возможностью загрузки -->
                             <div class="mb-3 text-center">
-                                <div id="photoContainer" class="mb-2" style="height: 200px; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center;">
+                                <div id="photoContainer" class="photo-container mb-2">
                                     <img id="employeePhotoPreview" src="" alt="Фото сотрудника" style="max-width: 100%; max-height: 100%; display: none;">
                                     <span id="photoPlaceholder">Нет фото</span>
+                                    <button type="button" class="delete-photo-btn" onclick="confirmDeletePhoto()" id="deletePhotoBtn" style="display: none;">
+                                        <i class="fas fa-times"></i>
+                                    </button>
                                 </div>
-                                <input type="file" class="form-control form-control-sm" id="employeePhoto" name="employee_photo">
+                                <input type="file" class="form-control form-control-sm" id="employeePhoto" name="employee_photo" onchange="handlePhotoUpload(event)">
+                                <input type="hidden" id="deletePhotoFlag" name="delete_photo" value="0">
                             </div>
                             
                             <div id="systemLoginContainer" class="mb-2">
@@ -694,15 +851,24 @@ if (typeof analytics === 'undefined') {
                             <!-- Контактная информация -->
                             <div class="mb-2">
                                 <label for="editCorporateNumber" class="form-label">Корпоративный номер</label>
-                                <input type="text" class="form-control" id="editCorporateNumber" name="corporate_number">
+                                <div class="input-group">
+                                    <span class="input-group-text">+7</span>
+                                    <input type="text" class="form-control" id="editCorporateNumber" name="corp_phone" placeholder="Введите номер без +7">
+                                </div>
                             </div>
                             <div class="mb-2">
                                 <label for="editPersonalPhone" class="form-label">Личный телефон</label>
-                                <input type="text" class="form-control" id="editPersonalPhone" name="phone">
+                                <div class="input-group">
+                                    <span class="input-group-text">+7</span>
+                                    <input type="text" class="form-control" id="editPersonalPhone" name="phone" placeholder="Введите номер без +7">
+                                </div>
                             </div>
                             <div class="mb-2">
                                 <label for="editPreviousNumber" class="form-label">Предыдущий номер</label>
-                                <input type="text" class="form-control" id="editPreviousNumber" name="previous_number">
+                                <div class="input-group">
+                                    <span class="input-group-text">+7</span>
+                                    <input type="text" class="form-control" id="editPreviousNumber" name="previous_number" placeholder="Введите номер без +7">
+                                </div>
                             </div>
                             <div class="mb-2">
                                 <label for="editCorporateEmail" class="form-label">Корпоративная почта</label>
@@ -856,11 +1022,17 @@ if (typeof analytics === 'undefined') {
                             <!-- Контактная информация -->
                             <div class="mb-2">
                                 <label for="addCorporateNumber" class="form-label">Корпоративный номер</label>
-                                <input type="text" class="form-control" id="addCorporateNumber" name="corporate_number">
+                                <div class="input-group">
+                                    <span class="input-group-text">+7</span>
+                                    <input type="text" class="form-control" id="addCorporateNumber" name="corporate_number" placeholder="Введите номер без +7">
+                                </div>
                             </div>
                             <div class="mb-2">
                                 <label for="addPersonalPhone" class="form-label">Личный телефон</label>
-                                <input type="text" class="form-control" id="addPersonalPhone" name="phone">
+                                <div class="input-group">
+                                    <span class="input-group-text">+7</span>
+                                    <input type="text" class="form-control" id="addPersonalPhone" name="phone" placeholder="Введите номер без +7">
+                                </div>
                             </div>
                             <div class="mb-2">
                                 <label for="addCorporateEmail" class="form-label">Корпоративная почта</label>
@@ -930,6 +1102,25 @@ if (typeof analytics === 'undefined') {
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" tabindex="-1">Отмена</button>
                 <button type="button" class="btn btn-danger" id="confirmFire" tabindex="-1">Уволить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Добавляем модальное окно подтверждения удаления фото после основных модальных окон -->
+<div class="modal fade confirm-delete-modal" id="confirmDeleteModal" tabindex="-1" role="dialog" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmDeleteModalLabel">Подтверждение удаления</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить фотографию сотрудника?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-danger" onclick="deletePhoto()">Удалить</button>
             </div>
         </div>
     </div>
@@ -1017,15 +1208,25 @@ async function loadEmployeeDataForEdit(employeeId) {
             let employee = employeeData.data || employeeData.employee;
             
             // Обработка фото сотрудника, если есть
-        if (employee.photo_url) {
-            document.getElementById('employeePhotoPreview').src = employee.photo_url;
-            document.getElementById('employeePhotoPreview').style.display = 'block';
-            document.getElementById('photoPlaceholder').style.display = 'none';
-        } else {
-            document.getElementById('employeePhotoPreview').style.display = 'none';
-            document.getElementById('photoPlaceholder').style.display = 'block';
-        }
-        
+            const photoPreview = document.getElementById('employeePhotoPreview');
+            const photoPlaceholder = document.getElementById('photoPlaceholder');
+            const deletePhotoBtn = document.getElementById('deletePhotoBtn');
+            const deletePhotoFlag = document.getElementById('deletePhotoFlag');
+            
+            // Сбрасываем флаг удаления при загрузке данных
+            deletePhotoFlag.value = '0';
+            
+            if (employee.photo_url) {
+                photoPreview.src = employee.photo_url;
+                photoPreview.style.display = 'block';
+                photoPlaceholder.style.display = 'none';
+                deletePhotoBtn.style.display = 'block';
+            } else {
+                photoPreview.style.display = 'none';
+                photoPlaceholder.style.display = 'block';
+                deletePhotoBtn.style.display = 'none';
+            }
+            
             // Остальная загрузка данных
             if (!employee) {
                 throw new Error('Не удалось получить данные сотрудника');
@@ -1061,12 +1262,12 @@ async function loadEmployeeDataForEdit(employeeId) {
                     console.log('Логин не найден в ответе, запрашиваем отдельно');
                     // Запрашиваем логин напрямую
                     fetch(`/admin/api/get_employee_login?id=${employee.id}`)
-        .then(response => response.json())
-        .then(data => {
+                        .then(response => response.json())
+                        .then(data => {
                             if (data.success && data.login) {
                                 console.log('Получен логин из API:', data.login);
                                 setLoginValue(loginField, data.login);
-            } else {
+                            } else {
                                 console.error('Не удалось получить логин сотрудника через API');
                             }
                         })
@@ -1090,7 +1291,7 @@ async function loadEmployeeDataForEdit(employeeId) {
                 const positionOption = Array.from(editPositionSelect.options).find(option => option.value === employee.position);
                 if (positionOption) {
                     positionOption.selected = true;
-        } else {
+                } else {
                     // Если опции нет, добавляем её
                     const option = document.createElement('option');
                     option.value = employee.position;
@@ -1132,12 +1333,18 @@ async function loadEmployeeDataForEdit(employeeId) {
             document.getElementById('editDocuments').checked = employee.documents || false;
             document.getElementById('editRR').checked = employee.rr || false;
             document.getElementById('editSite').checked = employee.site || false;
-            } else {
-            showNotification('Ошибка при загрузке данных сотрудника', 'danger');
+            
+            // CRM ID
+            document.getElementById('editCRMId').value = employee.crm_id || '';
+            
+            // Корпоративная почта
+            document.getElementById('editCorporateEmail').value = employee.corporate_email || '';
+        } else {
+            showNotification('Ошибка при загрузке данных сотрудника', 'error');
         }
     } catch (error) {
         console.error('Ошибка при загрузке данных для редактирования:', error);
-        showNotification('Ошибка при загрузке данных для редактирования: ' + error.message, 'danger');
+        showNotification('Ошибка при загрузке данных для редактирования: ' + error.message, 'error');
     }
 }
 
@@ -1189,81 +1396,26 @@ function updateUIAfterChanges() {
     location.reload();
 }
 
+// Функция для обновления данных сотрудника
 function updateEmployee() {
-    console.log('Вызвана функция updateEmployee');
-    const form = document.getElementById('editEmployeeForm');
+    console.log('Началось обновление данных сотрудника');
     
-    // Используем FormData для отправки данных формы с файлами
+    const form = document.getElementById('editEmployeeForm');
     const formData = new FormData(form);
     
-    // Получаем исходные данные для сравнения и логирования изменений
-    const originalData = {
-        full_name: document.getElementById('editFullName').defaultValue,
-        department_id: document.getElementById('editDepartment').defaultValue,
-        position: document.getElementById('editPosition').defaultValue,
-        role: document.getElementById('editRole').defaultValue,
-        login: document.getElementById('editLogin').defaultValue
-    };
+    // Проверяем, установлен ли флаг удаления фото
+    const deletePhotoFlag = document.getElementById('deletePhotoFlag').value;
+    if (deletePhotoFlag === '1') {
+        formData.set('delete_photo', '1');
+    }
     
-    // Явно добавляем значение логина в данные, чтобы оно было отправлено на сервер
+    // Явно добавляем значение логина в данные
     const systemLoginValue = document.getElementById('editLogin').value;
     console.log('Отправляем логин в системе:', systemLoginValue);
-    
-    // Убеждаемся, что логин добавлен
     formData.set('login', systemLoginValue);
     
-    // Подготовка данных для логирования изменений
-    const changes = {};
-    for (const [key, value] of formData.entries()) {
-        if (key !== 'employee_photo' && originalData[key] !== undefined && value !== originalData[key]) {
-            changes[key] = {
-                old: originalData[key],
-                new: value
-            };
-        }
-    }
-    
-    // Добавляем информацию об изменениях в виде JSON-строки
-    formData.append('changes', JSON.stringify(changes));
-    
-    // Проверяем, есть ли фото для загрузки
-    const photoInput = document.getElementById('employeePhoto');
-    if (photoInput.files.length > 0) {
-        console.log('Добавляем фото для загрузки');
-        // Явно добавляем фото в formData с нужным именем
-        formData.set('employee_photo', photoInput.files[0]);
-    }
-    
-    console.log('Отправка данных формы');
-    
-    fetch('/admin/api/update_employee', {
-        method: 'POST',
-        body: formData  // Отправляем FormData без заголовка Content-Type
-    })
-    .then(response => {
-        console.log('Получен ответ от сервера:', response.status);
-        return response.json();
-    })
-    .then(result => {
-        console.log('Ответ сервера:', result);
-        
-        if (result.success) {
-            showNotification('Данные сотрудника успешно обновлены', 'success');
-            // Закрываем модальное окно
-            const modal = bootstrap.Modal.getInstance(document.getElementById('editEmployeeModal'));
-            modal.hide();
-            // Перезагружаем страницу для отображения обновленных данных
-            setTimeout(() => {
-                updateUIAfterChanges();
-            }, 1000);
-            } else {
-            throw new Error(result.message || 'Ошибка при обновлении данных сотрудника');
-                }
-            })
-            .catch(error => {
-        console.error('Ошибка при обновлении данных сотрудника:', error);
-        showNotification('Ошибка при обновлении данных сотрудника: ' + error.message, 'danger');
-    });
+    // Используем улучшенную функцию для обновления данных
+    updateEmployeeData(formData);
 }
 
 // Открытие модального окна редактирования сотрудника
@@ -1336,6 +1488,21 @@ document.querySelectorAll('.edit-icon').forEach(icon => {
 document.getElementById('employeePhoto').addEventListener('change', function(e) {
     const file = this.files[0];
     if (file) {
+        // Проверяем размер файла
+        if (file.size > 5 * 1024 * 1024) {
+            showNotification('Размер файла превышает 5MB', 'danger');
+            this.value = '';
+            return;
+        }
+        
+        // Проверяем тип файла
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+        if (!allowedTypes.includes(file.type)) {
+            showNotification('Недопустимый формат файла. Разрешены: PNG, JPG, JPEG, GIF', 'danger');
+            this.value = '';
+            return;
+        }
+        
         const reader = new FileReader();
         reader.onload = function(event) {
             document.getElementById('employeePhotoPreview').src = event.target.result;
@@ -1751,6 +1918,458 @@ async function loadPositionsAndRoles() {
         console.error('Ошибка при загрузке должностей и ролей:', error);
         showNotification('Ошибка при загрузке должностей и ролей: ' + error.message, 'danger');
     }
+}
+
+// Модифицируем функцию для обработки номеров телефона
+function formatPhoneNumbersForDisplay() {
+    // Функция для добавления +7 к номеру при отображении
+    function formatPhone(input) {
+        const phoneInput = document.getElementById(input);
+        if (phoneInput && phoneInput.value) {
+            // Если номер не начинается с +7, добавляем его
+            if (!phoneInput.value.startsWith('+7')) {
+                phoneInput.value = phoneInput.value.trim();
+            }
+        }
+    }
+    
+    // Применяем форматирование для всех полей телефонов
+    document.querySelectorAll('input[name="corporate_number"], input[name="phone"], input[name="previous_number"]').forEach(input => {
+        input.addEventListener('blur', function() {
+            // Удаляем +7, если пользователь вручную его ввел
+            if (this.value.startsWith('+7')) {
+                this.value = this.value.substring(2);
+            }
+            // Удаляем все нецифровые символы
+            this.value = this.value.replace(/\D/g, '');
+        });
+    });
+}
+
+// Вызываем функцию при загрузке документа
+document.addEventListener('DOMContentLoaded', function() {
+    formatPhoneNumbersForDisplay();
+});
+
+// Добавляем обработчик для модальных окон
+document.getElementById('editEmployeeModal').addEventListener('shown.bs.modal', function() {
+    formatPhoneNumbersForDisplay();
+});
+
+document.getElementById('addEmployeeModal').addEventListener('shown.bs.modal', function() {
+    formatPhoneNumbersForDisplay();
+});
+
+// Добавляем в функцию loadEmployeeDataForEdit обработку номеров телефонов
+const originalLoadEmployeeDataForEdit = loadEmployeeDataForEdit;
+loadEmployeeDataForEdit = async function(employeeId) {
+    await originalLoadEmployeeDataForEdit(employeeId);
+    
+    // Обработка номеров после загрузки данных
+    const corporateNumber = document.getElementById('editCorporateNumber');
+    const personalPhone = document.getElementById('editPersonalPhone');
+    const previousNumber = document.getElementById('editPreviousNumber');
+    
+    if (corporateNumber && corporateNumber.value && corporateNumber.value.startsWith('+7')) {
+        corporateNumber.value = corporateNumber.value.substring(2);
+    }
+    
+    if (personalPhone && personalPhone.value && personalPhone.value.startsWith('+7')) {
+        personalPhone.value = personalPhone.value.substring(2);
+    }
+    
+    if (previousNumber && previousNumber.value && previousNumber.value.startsWith('+7')) {
+        previousNumber.value = previousNumber.value.substring(2);
+    }
+};
+
+function showNotification(message, type = 'success') {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    const icon = document.createElement('i');
+    icon.className = `toast-icon ${type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'}`;
+    
+    const content = document.createElement('div');
+    content.className = 'toast-content';
+    
+    const title = document.createElement('div');
+    title.className = 'toast-title';
+    title.textContent = type === 'success' ? 'Успешно' : 'Ошибка';
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'toast-message';
+    messageDiv.textContent = message;
+    
+    content.appendChild(title);
+    content.appendChild(messageDiv);
+    
+    toast.appendChild(icon);
+    toast.appendChild(content);
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.classList.add('hide');
+        setTimeout(() => {
+            container.removeChild(toast);
+        }, 300);
+    }, 3000);
+}
+
+// Обновляем обработку ответа в функции updateEmployeeData
+function updateEmployeeData(formData) {
+    const employeeId = formData.get('id');
+    
+    // Добавляем индикатор загрузки
+    const saveButton = document.getElementById('saveEmployeeChanges');
+    const originalText = saveButton.textContent;
+    saveButton.textContent = 'Сохранение...';
+    saveButton.disabled = true;
+    
+    fetch('/admin/api/update_employee', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Ошибка сервера');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Показываем уведомление об успехе
+            showNotification('Изменения сохранены', 'success');
+            
+            // Перезагружаем данные сотрудника
+            loadEmployeeDataForEdit(employeeId);
+            
+            // Закрываем модальное окно после успешного сохранения
+            $('#editEmployeeModal').modal('hide');
+        } else {
+            // Показываем уведомление об ошибке
+            showNotification(data.message || 'Ошибка сохранения', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+        // Показываем уведомление об ошибке
+        showNotification('Ошибка сохранения', 'error');
+    })
+    .finally(() => {
+        // Восстанавливаем кнопку
+        saveButton.textContent = originalText;
+        saveButton.disabled = false;
+    });
+}
+
+// Обновляем обработку ошибок в функции handlePhotoUpload
+function handlePhotoUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Проверка размера файла (максимум 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        showNotification('Размер файла не должен превышать 5MB', 'error');
+        event.target.value = '';
+        return;
+    }
+
+    // Проверка типа файла
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+        showNotification('Допустимые форматы: JPEG, PNG, GIF', 'error');
+        event.target.value = '';
+        return;
+    }
+
+    // Показываем превью
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const preview = document.getElementById('photoPreview');
+        const placeholder = document.getElementById('photoPlaceholder');
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        placeholder.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+}
+
+function deletePhoto() {
+    const photoInput = document.getElementById('employee_photo');
+    const photoPreview = document.getElementById('photoPreview');
+    const photoPlaceholder = document.getElementById('photoPlaceholder');
+    const deletePhotoBtn = document.getElementById('deletePhotoBtn');
+    
+    // Очищаем input
+    photoInput.value = '';
+    
+    // Скрываем превью и показываем плейсхолдер
+    photoPreview.style.display = 'none';
+    photoPlaceholder.style.display = 'block';
+    
+    // Скрываем кнопку удаления
+    deletePhotoBtn.style.display = 'none';
+    
+    // Добавляем скрытое поле для удаления фото
+    const deletePhotoInput = document.createElement('input');
+    deletePhotoInput.type = 'hidden';
+    deletePhotoInput.name = 'delete_photo';
+    deletePhotoInput.value = '1';
+    photoInput.parentNode.appendChild(deletePhotoInput);
+}
+
+function handlePhotoUpload(event) {
+    const file = event.target.files[0];
+    const deletePhotoBtn = document.getElementById('deletePhotoBtn');
+    
+    if (!file) {
+        deletePhotoBtn.style.display = 'none';
+        return;
+    }
+
+    // Проверка размера файла (максимум 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        showNotification('Размер файла не должен превышать 5MB', 'error');
+        event.target.value = '';
+        deletePhotoBtn.style.display = 'none';
+        return;
+    }
+
+    // Проверка типа файла
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+        showNotification('Допустимые форматы: JPEG, PNG, GIF', 'error');
+        event.target.value = '';
+        deletePhotoBtn.style.display = 'none';
+        return;
+    }
+
+    // Показываем превью
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const preview = document.getElementById('photoPreview');
+        const placeholder = document.getElementById('photoPlaceholder');
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        placeholder.style.display = 'none';
+        deletePhotoBtn.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+}
+
+// Обновляем функцию loadEmployeeData для отображения кнопки удаления
+function loadEmployeeData(employeeId) {
+    // ... existing code ...
+    
+    // Проверяем наличие фото
+    if (data.employee.photo_url) {
+        const photoPreview = document.getElementById('photoPreview');
+        const photoPlaceholder = document.getElementById('photoPlaceholder');
+        const deletePhotoBtn = document.getElementById('deletePhotoBtn');
+        
+        photoPreview.src = data.employee.photo_url;
+        photoPreview.style.display = 'block';
+        photoPlaceholder.style.display = 'none';
+        deletePhotoBtn.style.display = 'block';
+    }
+    
+    // ... existing code ...
+}
+
+function confirmDeletePhoto() {
+    $('#confirmDeleteModal').modal('show');
+}
+
+function deletePhoto() {
+    const photoInput = document.getElementById('employee_photo');
+    const photoPreview = document.getElementById('photoPreview');
+    const photoPlaceholder = document.getElementById('photoPlaceholder');
+    const deletePhotoBtn = document.getElementById('deletePhotoBtn');
+    
+    // Очищаем input
+    photoInput.value = '';
+    
+    // Скрываем превью и показываем плейсхолдер
+    photoPreview.style.display = 'none';
+    photoPlaceholder.style.display = 'block';
+    
+    // Скрываем кнопку удаления
+    deletePhotoBtn.style.display = 'none';
+    
+    // Добавляем скрытое поле для удаления фото
+    const deletePhotoInput = document.createElement('input');
+    deletePhotoInput.type = 'hidden';
+    deletePhotoInput.name = 'delete_photo';
+    deletePhotoInput.value = '1';
+    photoInput.parentNode.appendChild(deletePhotoInput);
+    
+    // Закрываем модальное окно
+    $('#confirmDeleteModal').modal('hide');
+    
+    // Показываем уведомление об успешном удалении
+    showNotification('Фотография успешно удалена', 'success');
+}
+
+function handlePhotoUpload(event) {
+    const file = event.target.files[0];
+    const deletePhotoBtn = document.getElementById('deletePhotoBtn');
+    
+    if (!file) {
+        deletePhotoBtn.style.display = 'none';
+        return;
+    }
+
+    // Проверка размера файла (максимум 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        showNotification('Размер файла не должен превышать 5MB', 'error');
+        event.target.value = '';
+        deletePhotoBtn.style.display = 'none';
+        return;
+    }
+
+    // Проверка типа файла
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+        showNotification('Допустимые форматы: JPEG, PNG, GIF', 'error');
+        event.target.value = '';
+        deletePhotoBtn.style.display = 'none';
+        return;
+    }
+
+    // Показываем превью
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const preview = document.getElementById('photoPreview');
+        const placeholder = document.getElementById('photoPlaceholder');
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        placeholder.style.display = 'none';
+        deletePhotoBtn.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+}
+
+// Обновляем функцию loadEmployeeData для отображения кнопки удаления
+function loadEmployeeData(employeeId) {
+    // ... existing code ...
+    
+    // Проверяем наличие фото
+    if (data.employee.photo_url) {
+        const photoPreview = document.getElementById('photoPreview');
+        const photoPlaceholder = document.getElementById('photoPlaceholder');
+        const deletePhotoBtn = document.getElementById('deletePhotoBtn');
+        
+        photoPreview.src = data.employee.photo_url;
+        photoPreview.style.display = 'block';
+        photoPlaceholder.style.display = 'none';
+        deletePhotoBtn.style.display = 'block';
+    }
+    
+    // ... existing code ...
+}
+
+// Функция для показа уведомлений
+function showNotification(message, type) {
+    const container = document.getElementById('toastContainer');
+    if (!container) {
+        console.error('Контейнер для уведомлений не найден');
+        return;
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    const icon = type === 'success' ? 'check-circle' : 'exclamation-circle';
+    toast.innerHTML = `
+        <i class="fas fa-${icon}"></i>
+        <span>${message}</span>
+    `;
+    
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease-out forwards';
+        setTimeout(() => {
+            container.removeChild(toast);
+        }, 300);
+    }, 3000);
+}
+
+// Функция для обработки загрузки фото
+function handlePhotoUpload(event) {
+    const file = event.target.files[0];
+    const photoPreview = document.getElementById('employeePhotoPreview');
+    const photoPlaceholder = document.getElementById('photoPlaceholder');
+    const deletePhotoBtn = document.getElementById('deletePhotoBtn');
+    const deletePhotoFlag = document.getElementById('deletePhotoFlag');
+    
+    // Сбрасываем флаг удаления
+    deletePhotoFlag.value = '0';
+    
+    if (!file) {
+        photoPreview.style.display = 'none';
+        photoPlaceholder.style.display = 'block';
+        deletePhotoBtn.style.display = 'none';
+        return;
+    }
+    
+    // Проверка размера (максимум 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        showNotification('Размер файла не должен превышать 5MB', 'error');
+        event.target.value = '';
+        return;
+    }
+    
+    // Проверка формата
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+        showNotification('Допустимые форматы: JPEG, PNG, GIF', 'error');
+        event.target.value = '';
+        return;
+    }
+    
+    // Показываем превью фото
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        photoPreview.src = e.target.result;
+        photoPreview.style.display = 'block';
+        photoPlaceholder.style.display = 'none';
+        deletePhotoBtn.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+}
+
+// Функция для подтверждения удаления фото
+function confirmDeletePhoto() {
+    $('#confirmDeleteModal').modal('show');
+}
+
+// Функция для удаления фото
+function deletePhoto() {
+    const photoInput = document.getElementById('employeePhoto');
+    const photoPreview = document.getElementById('employeePhotoPreview');
+    const photoPlaceholder = document.getElementById('photoPlaceholder');
+    const deletePhotoBtn = document.getElementById('deletePhotoBtn');
+    const deletePhotoFlag = document.getElementById('deletePhotoFlag');
+    
+    // Очищаем input и устанавливаем флаг удаления
+    photoInput.value = '';
+    deletePhotoFlag.value = '1';
+    
+    // Скрываем превью и показываем плейсхолдер
+    photoPreview.style.display = 'none';
+    photoPlaceholder.style.display = 'block';
+    deletePhotoBtn.style.display = 'none';
+    
+    // Закрываем модальное окно
+    $('#confirmDeleteModal').modal('hide');
+    
+    // Показываем уведомление
+    showNotification('Фотография будет удалена после сохранения', 'success');
 }
 </script>
 {% endblock %}
