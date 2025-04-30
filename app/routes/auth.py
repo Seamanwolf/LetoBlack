@@ -3,6 +3,7 @@ from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.security import check_password_hash
 from app.utils import create_db_connection, update_operator_status
 from app.models.user import User
+from app.models.action import Action
 from datetime import datetime
 from os import path
 import time
@@ -65,6 +66,13 @@ def login():
                 cursor.execute("UPDATE User SET status = 'Онлайн' WHERE id = %s", (user_data['id'],))
                 connection.commit()
                 
+                # Логируем вход пользователя
+                Action.log_activity(
+                    username=user_data['login'], 
+                    action='вход в систему',
+                    details=f"Пользователь {user_data['full_name']} ({user_data['login']}) вошел в систему"
+                )
+                
                 # Если есть next параметр, используем его
                 next_page = request.args.get('next')
                 if next_page:
@@ -105,7 +113,8 @@ def redirect_based_on_role(user):
         update_operator_status(user.id, 'Онлайн')
         return redirect(url_for('callcenter.operator_dashboard'))
     elif user.role == 'admin':
-        return redirect(url_for('admin_routes_unique.index'))
+        # Здесь возможен циклический редирект, перенаправляем на страницу персонала вместо дашборда
+        return redirect(url_for('admin_routes_unique.personnel'))
     elif user.role == 'leader':
         return redirect(url_for('leader.leader_dashboard'))
     elif user.role == 'backoffice':
@@ -119,7 +128,7 @@ def redirect_based_on_role(user):
     elif user.role == 'user':
         return redirect('/vats')
     else:
-        return redirect(url_for('main.index'))
+        return redirect('/auth/login')
 
 @auth_bp.route('/logout')
 @login_required
@@ -132,6 +141,13 @@ def logout():
         try:
             cursor.execute("UPDATE User SET status = 'Офлайн' WHERE id = %s", (current_user.id,))
             connection.commit()
+            
+            # Логируем выход пользователя
+            Action.log_activity(
+                username=current_user.login, 
+                action='выход из системы',
+                details=f"Пользователь {current_user.full_name} ({current_user.login}) вышел из системы"
+            )
         finally:
             cursor.close()
             connection.close()

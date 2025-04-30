@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <title>Редактирование базы</title>
-    <link rel="stylesheet" href="{{ url_for(\'static\', filename=\'css/common.css\') }}?v={{ range(1, 100000) | random }}"
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/common.css') }}?v={{ range(1, 100000) | random }}"
     />
     <link
       rel="stylesheet"
@@ -160,6 +160,21 @@
       .edit-icon {
         z-index: 10;
       }
+      
+      /* Стили для кнопки архива */
+      .archive-btn {
+        background-color: #ffcc00;
+        color: black;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 12px;
+        margin-left: 10px;
+        cursor: pointer;
+      }
+      
+      .archive-btn:hover {
+        background-color: #e6b800;
+      }
     </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Подключение jQuery UI -->
@@ -199,6 +214,9 @@
         >
           <i class="fas fa-plus-circle icon"></i
           ><span class="text">Добавить группу</span>
+        </a>
+        <a href="{{ url_for('callcenter.archives') }}" class="button">
+          <i class="fas fa-archive icon"></i><span class="text">Архив</span>
         </a>
         <a
           href="#"
@@ -244,161 +262,202 @@
         class="search-input"
         placeholder="Поиск..."
       />
+      
+      <div class="d-flex justify-content-end mb-3 w-100" style="max-width: 800px;">
+        <a href="{{ url_for('callcenter.archives') }}" class="archive-btn">
+          <i class="fas fa-archive"></i> Архив
+        </a>
+      </div>
 
-      <!-- Таблица объектов -->
-      <h2>Объекты</h2>
-      <table class="object-table sortable">
-        <thead>
-          <tr>
-            <th>Название объекта</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for object in objects %}
-          <tr>
-            <td>
-              <span class="handle"><i class="fas fa-bars"></i></span>
-              {{ object.object_name }}
-              <i
-                class="fas fa-pencil-alt edit-icon edit-object-icon"
-                data-bs-toggle="modal"
-                data-bs-target="#editObjectModal"
-                data-id="{{ object.id }}"
-                data-name="{{ object.object_name }}"
-              ></i>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-
-      <!-- Таблица источников -->
-      <h2>Источники</h2>
-      <table class="source-table sortable">
-        <thead>
-          <tr>
-            <th>Название источника</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for source in sources %}
-          <tr>
-            <td>
-              <span class="handle"><i class="fas fa-bars"></i></span>
-              {{ source.source_name }}
-              <i
-                class="fas fa-pencil-alt edit-icon edit-source-icon"
-                data-bs-toggle="modal"
-                data-bs-target="#editSourceModal"
-                data-id="{{ source.id }}"
-                data-name="{{ source.source_name }}"
-              ></i>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-
-      <!-- Таблица категорий -->
-      <h2>Группы</h2>
-      <table class="category-table sortable">
-        <thead>
-          <tr>
-            <th>Название группы</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for category in categories %}
-          <tr>
-            <td>
-              <span class="handle"><i class="fas fa-bars"></i></span>
-              {{ category.category_name }}
-              <i
-                class="fas fa-pencil-alt edit-icon edit-category-icon"
-                data-bs-toggle="modal"
-                data-bs-target="#editCategoryModal"
-                data-id="{{ category.id }}"
-                data-name="{{ category.category_name }}"
-              ></i>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-
-      <!-- Таблица черного списка -->
-      <h2>Черный список</h2>
-      <table class="blacklist-table sortable">
-        <thead>
-          <tr>
-            <th>Имя брокера</th>
-            <th style="display: none">Добавил</th>
-            <th>Дата добавления</th>
-            <th>Действия</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for entry in blacklist %}
-          <tr>
-            <td>
-              <span class="handle"><i class="fas fa-bars"></i></span>
-              {{ entry.full_name }}
-              <!-- Предполагается, что у черного списка также есть рукоятки для сортировки, если необходимо -->
-            </td>
-            <td style="display: none">{{ entry.added_by }}</td>
-            <td>{{ entry.added_at.strftime('%d.%m.%Y %H:%M') }}</td>
-            <td>
-              <form
-                action="{{ url_for('callcenter.remove_from_blacklist', blacklist_id=entry.id) }}"
-                method="POST"
-                onsubmit="return confirm('Вы уверены, что хотите удалить этого брокера из ЧС?');"
-              >
-                <button type="submit" class="btn btn-sm btn-danger">
-                  <i class="fas fa-trash-alt"></i>
-                </button>
-              </form>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Таблица уведомлений -->
-    <div class="notification-table">
-      <h2>Уведомления</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Сообщение</th>
-            <th>Дата создания</th>
-            <th>Статус</th>
-            <th>Действие</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for notification in notifications %}
-          <tr>
-            <td>{{ notification.message }}</td>
-            <td>{{ notification.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
-            <td>{{ 'Новое' if not notification.is_read else 'Прочитано' }}</td>
-            <td>
-              <!-- Форма для удаления уведомления -->
-              <form method="post" class="delete-notification-form">
-                <button
-                  type="button"
-                  class="btn btn-sm btn-danger delete-notification-icon"
-                  data-id="{{ notification.id }}"
-                  onclick="return confirm('Вы уверены, что хотите удалить это уведомление?');"
-                >
-                  <i class="fas fa-trash-alt"></i>
-                </button>
-              </form>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      <div class="container mt-5">
+        <div class="row">
+          <div class="col-md-12">
+            <ul class="nav nav-tabs" id="myTab" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="sources-tab" data-bs-toggle="tab" data-bs-target="#sources" type="button" role="tab" aria-controls="sources" aria-selected="true">Источники</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="objects-tab" data-bs-toggle="tab" data-bs-target="#objects" type="button" role="tab" aria-controls="objects" aria-selected="false">Объекты</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="groups-tab" data-bs-toggle="tab" data-bs-target="#groups" type="button" role="tab" aria-controls="groups" aria-selected="false">Группы</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="blacklist-tab" data-bs-toggle="tab" data-bs-target="#blacklist" type="button" role="tab" aria-controls="blacklist" aria-selected="false">Черный список</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="notifications-tab" data-bs-toggle="tab" data-bs-target="#notifications" type="button" role="tab" aria-controls="notifications" aria-selected="false">Уведомления</button>
+              </li>
+            </ul>
+            <div class="tab-content" id="myTabContent">
+              <!-- Вкладка источников -->
+              <div class="tab-pane fade show active" id="sources" role="tabpanel" aria-labelledby="sources-tab">
+                <h2>Источники</h2>
+                <button class="btn btn-primary mb-3" id="add-source-btn" data-bs-toggle="modal" data-bs-target="#addSourceModal">Добавить источник</button>
+                <table class="sources-table sortable">
+                  <thead>
+                    <tr>
+                      <th>Имя источника</th>
+                      <th>Действия</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for source in sources %}
+                    <tr data-id="{{ source.id }}" data-name="{{ source.source_name }}" data-type="source">
+                      <td>
+                        <span class="handle"><i class="fas fa-bars"></i></span>
+                        {{ source.source_name }}
+                      </td>
+                      <td>
+                        <span class="edit-icon" data-id="{{ source.id }}" data-type="source">
+                          <i class="fas fa-edit"></i>
+                        </span>
+                        <span class="archive-icon" data-id="{{ source.id }}" data-type="source">
+                          <i class="fas fa-archive"></i>
+                        </span>
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              
+              <!-- Вкладка объектов -->
+              <div class="tab-pane fade" id="objects" role="tabpanel" aria-labelledby="objects-tab">
+                <h2>Объекты</h2>
+                <button class="btn btn-primary mb-3" id="add-object-btn" data-bs-toggle="modal" data-bs-target="#addObjectModal">Добавить объект</button>
+                <table class="objects-table sortable">
+                  <thead>
+                    <tr>
+                      <th>Имя объекта</th>
+                      <th>Действия</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for object in objects %}
+                    <tr data-id="{{ object.id }}" data-name="{{ object.object_name }}" data-type="object">
+                      <td>
+                        <span class="handle"><i class="fas fa-bars"></i></span>
+                        {{ object.object_name }}
+                      </td>
+                      <td>
+                        <span class="edit-icon" data-id="{{ object.id }}" data-type="object">
+                          <i class="fas fa-edit"></i>
+                        </span>
+                        <span class="archive-icon" data-id="{{ object.id }}" data-type="object">
+                          <i class="fas fa-archive"></i>
+                        </span>
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              
+              <!-- Вкладка групп -->
+              <div class="tab-pane fade" id="groups" role="tabpanel" aria-labelledby="groups-tab">
+                <h2>Группы</h2>
+                <button class="btn btn-primary mb-3" id="add-category-btn" data-bs-toggle="modal" data-bs-target="#addCategoryModal">Добавить группу</button>
+                <table class="categories-table sortable">
+                  <thead>
+                    <tr>
+                      <th>Имя группы</th>
+                      <th>Действия</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for category in categories %}
+                    <tr data-id="{{ category.id }}" data-name="{{ category.category_name }}" data-type="category">
+                      <td>
+                        <span class="handle"><i class="fas fa-bars"></i></span>
+                        {{ category.category_name }}
+                      </td>
+                      <td>
+                        <span class="edit-icon" data-id="{{ category.id }}" data-type="category">
+                          <i class="fas fa-edit"></i>
+                        </span>
+                        <span class="archive-icon" data-id="{{ category.id }}" data-type="category">
+                          <i class="fas fa-archive"></i>
+                        </span>
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              
+              <!-- Вкладка черного списка -->
+              <div class="tab-pane fade" id="blacklist" role="tabpanel" aria-labelledby="blacklist-tab">
+                <h2>Черный список</h2>
+                <button class="btn btn-primary mb-3" id="add-blacklist-btn" data-bs-toggle="modal" data-bs-target="#addBlacklistModal">Добавить в черный список</button>
+                <table class="blacklist-table">
+                  <thead>
+                    <tr>
+                      <th>Имя брокера</th>
+                      <th>Дата добавления</th>
+                      <th>Действия</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for entry in blacklist %}
+                    <tr>
+                      <td>{{ entry.full_name }}</td>
+                      <td>{{ entry.added_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                      <td>
+                        <form
+                          action="{{ url_for('callcenter.remove_from_blacklist', blacklist_id=entry.id) }}"
+                          method="POST"
+                          onsubmit="return confirm('Вы уверены, что хотите удалить этого брокера из ЧС?');"
+                        >
+                          <button type="submit" class="btn btn-sm btn-danger">
+                            <i class="fas fa-trash-alt"></i>
+                          </button>
+                        </form>
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              
+              <!-- Вкладка уведомлений -->
+              <div class="tab-pane fade" id="notifications" role="tabpanel" aria-labelledby="notifications-tab">
+                <h2>Уведомления</h2>
+                <button class="btn btn-primary mb-3" id="add-notification-btn" data-bs-toggle="modal" data-bs-target="#addNotificationModal">Добавить уведомление</button>
+                <table class="notifications-table">
+                  <thead>
+                    <tr>
+                      <th>Сообщение</th>
+                      <th>Дата создания</th>
+                      <th>Статус</th>
+                      <th>Действия</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for notification in notifications %}
+                    <tr>
+                      <td>{{ notification.message }}</td>
+                      <td>{{ notification.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                      <td>{{ 'Новое' if not notification.is_read else 'Прочитано' }}</td>
+                      <td>
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-danger delete-notification-icon"
+                          data-id="{{ notification.id }}"
+                          onclick="return confirm('Вы уверены, что хотите удалить это уведомление?');"
+                        >
+                          <i class="fas fa-trash-alt"></i>
+                        </button>
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Модальные окна -->
@@ -543,7 +602,7 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="editCategoryModalLabel">
-              Редактировать категорию
+              Редактировать группу
             </h5>
             <button
               type="button"
@@ -830,55 +889,61 @@
 
     <script>
       $(document).ready(function () {
-        console.log("Document ready");
-
-        // Логика для редактирования объекта
-        $(".edit-object-icon").on("click", function () {
-          const objectId = $(this).data("id");
-          const objectName = $(this).data("name");
-          console.log("Объект для редактирования:", objectId, objectName);
-          $("#editObjectId").val(objectId);
-          $("#editObjectName").val(objectName);
-          $("#archiveForm").attr(
-            "formaction",
-            `{{ url_for('callcenter.archive_object', object_id=0) }}`.replace(
-              "0",
-              objectId
-            )
-          );
+        // Обработка клика на иконки редактирования
+        $(document).on("click", ".edit-icon", function () {
+          const id = $(this).data("id");
+          const type = $(this).data("type");
+          const name = $(this).closest("tr").data("name");
+          
+          if (type === "object") {
+            $("#editObjectId").val(id);
+            $("#editObjectName").val(name);
+            $("#archiveForm").attr(
+              "formaction",
+              `{{ url_for('callcenter.archive_object', object_id=0) }}`.replace("0", id)
+            );
+            $("#editObjectModal").modal("show");
+          } else if (type === "source") {
+            $("#editSourceId").val(id);
+            $("#editSourceName").val(name);
+            $("#archiveSourceBtn").attr(
+              "formaction",
+              `{{ url_for('callcenter.archive_source', source_id=0) }}`.replace("0", id)
+            );
+            $("#editSourceModal").modal("show");
+          } else if (type === "category") {
+            $("#editCategoryId").val(id);
+            $("#editCategoryName").val(name);
+            $("#archiveCategoryForm").attr(
+              "formaction",
+              `{{ url_for('callcenter.archive_category', category_id=0) }}`.replace("0", id)
+            );
+            $("#editCategoryModal").modal("show");
+          }
+        });
+        
+        // Обработка клика на иконки архивирования
+        $(document).on("click", ".archive-icon", function() {
+          const id = $(this).data("id");
+          const type = $(this).data("type");
+          
+          if (confirm("Вы уверены, что хотите архивировать этот элемент?")) {
+            let url = "";
+            if (type === "object") {
+              url = `{{ url_for('callcenter.archive_object', object_id=0) }}`.replace("0", id);
+            } else if (type === "source") {
+              url = `{{ url_for('callcenter.archive_source', source_id=0) }}`.replace("0", id);
+            } else if (type === "category") {
+              url = `{{ url_for('callcenter.archive_category', category_id=0) }}`.replace("0", id);
+            }
+            
+            $.post(url, function() {
+              location.reload();
+            });
+          }
         });
 
-        // Логика для редактирования источника
-        $(".edit-source-icon").on("click", function () {
-          const sourceId = $(this).data("id");
-          const sourceName = $(this).data("name");
-          $("#editSourceId").val(sourceId);
-          $("#editSourceName").val(sourceName);
-          $("#archiveSourceBtn").attr(
-            "formaction",
-            `{{ url_for('callcenter.archive_source', source_id=0) }}`.replace(
-              "0",
-              sourceId
-            )
-          );
-        });
-
-        // Логика для редактирования категории
-        $(".edit-category-icon").on("click", function () {
-          const categoryId = $(this).data("id");
-          const categoryName = $(this).data("name");
-          $("#editCategoryId").val(categoryId);
-          $("#editCategoryName").val(categoryName);
-          $("#archiveCategoryForm").attr(
-            "formaction",
-            `{{ url_for('callcenter.archive_category', category_id=0) }}`.replace(
-              "0",
-              categoryId
-            )
-          );
-        });
-
-        // Сквозной поиск
+        // Поиск
         $("#search-input").on("input", function () {
           const filter = $(this).val().toLowerCase();
           $("table tbody tr").each(function () {
@@ -923,9 +988,8 @@
         });
 
         // Удаление уведомления
-        $(".delete-notification-icon").on("click", function () {
+        $(document).on("click", ".delete-notification-icon", function () {
           const notificationId = $(this).data("id");
-          console.log("Попытка удалить уведомление с ID:", notificationId);
 
           if (confirm("Вы уверены, что хотите удалить это уведомление?")) {
             $.ajax({
@@ -935,7 +999,6 @@
               ),
               method: "POST",
               success: function (response) {
-                console.log("Ответ сервера:", response);
                 if (response.status === "success") {
                   location.reload();
                 } else {
@@ -943,78 +1006,45 @@
                 }
               },
               error: function (xhr, status, error) {
-                console.error(
-                  "Ошибка при отправке запроса на удаление:",
-                  status,
-                  error
-                );
                 alert("Ошибка при удалении уведомления");
               },
             });
           }
         });
 
-        // Инициализация sortable и обработка обновлений порядка
-        $(".sortable tbody")
-          .sortable({
-            items: "> tr",
-            handle: ".handle",
-            placeholder: "ui-state-highlight",
-            start: function (event, ui) {
-              console.log("Sortable started");
-            },
-            update: function (event, ui) {
-              console.log("Sortable update triggered");
-              const tableClass = $(this)
-                .closest("table")
-                .attr("class")
-                .split(" ")[0];
-              console.log("Table class:", tableClass);
-
-              const order = [];
-              $(this)
-                .children("tr")
-                .each(function (index) {
-                  let id;
-                  if (tableClass === "object-table") {
-                    id = $(this).find(".edit-icon").data("id");
-                  } else if (tableClass === "source-table") {
-                    id = $(this).find(".edit-source-icon").data("id");
-                  } else if (tableClass === "category-table") {
-                    id = $(this).find(".edit-category-icon").data("id");
-                  }
-                  console.log("Found id:", id, "at position:", index);
-                  order.push({ id: id, position: index });
-                });
-
-              console.log("Sending data:", {
+        // Инициализация sortable для таблиц
+        $(".sortable tbody").sortable({
+          items: "> tr",
+          handle: ".handle",
+          placeholder: "ui-state-highlight",
+          update: function (event, ui) {
+            const tableClass = $(this).closest("table").attr("class").split(" ")[0];
+            const order = [];
+            
+            $(this).children("tr").each(function (index) {
+              const id = $(this).data("id");
+              order.push({ id: id, position: index });
+            });
+            
+            // Отправка запроса на обновление порядка
+            $.ajax({
+              url: "{{ url_for('callcenter.update_order') }}",
+              method: "POST",
+              contentType: "application/json",
+              data: JSON.stringify({
                 table: tableClass,
-                order: order,
-              });
-
-              // Отправка AJAX запроса для сохранения порядка
-              $.ajax({
-                url: "/update_order",
-                method: "POST",
-                contentType: "application/json",
-                data: JSON.stringify({
-                  table: tableClass,
-                  order: order,
-                }),
-                error: function (xhr, status, error) {
-                  console.error(
-                    "Ошибка при отправке запроса на обновление порядка:",
-                    status,
-                    error
-                  );
-                  alert("Ошибка при сохранении порядка");
-                },
-              });
-            },
-          })
-          .disableSelection();
-
-        console.log("Sortable initialized");
+                order: order
+              }),
+              success: function(response) {
+                console.log("Порядок обновлен");
+              },
+              error: function(xhr, status, error) {
+                console.error("Ошибка при обновлении порядка:", error);
+                alert("Не удалось обновить порядок элементов");
+              }
+            });
+          }
+        }).disableSelection();
       });
     </script>
   </body>

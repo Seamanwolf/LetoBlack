@@ -38,6 +38,28 @@ class Action:
         finally:
             cursor.close()
             connection.close()
+    
+    @staticmethod
+    def log_activity(username, action, details=None):
+        """Логирует действие пользователя в таблицу activity_log"""
+        connection = create_db_connection()
+        cursor = connection.cursor()
+        try:
+            cursor.execute(
+                """
+                INSERT INTO activity_log (username, action, details, created_at)
+                VALUES (%s, %s, %s, NOW())
+                """,
+                (username, action, details)
+            )
+            connection.commit()
+            return True
+        except Exception as e:
+            print(f"Ошибка при логировании действия: {e}")
+            return False
+        finally:
+            cursor.close()
+            connection.close()
 
 class ActionQuery:
     """Класс для выполнения запросов к таблице UserActivity"""

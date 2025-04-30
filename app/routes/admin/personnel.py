@@ -166,7 +166,6 @@ def get_employee_api():
                 u.fired, u.personal_email, u.pc_login, u.pc_password,
                 u.birth_date, u.position, u.office, u.corporate_email,
                 u.corp_phone as corporate_number,
-                u.previous_number,
                 u.documents, u.rr, u.site, u.crm_id,
                 d.name as department_name,
                 ep.photo_url
@@ -944,6 +943,13 @@ def update_employee():
                 update_query += f"{field} = %s, "
                 update_values.append(value)
                 
+                # Логируем изменение в историю
+                if field in employee and str(employee[field]) != str(value):
+                    cursor.execute("""
+                        INSERT INTO UserHistory (user_id, changed_field, old_value, new_value, changed_by)
+                        VALUES (%s, %s, %s, %s, %s)
+                    """, (employee_id, field, str(employee[field]), str(value), current_user.id))
+                
             update_query = update_query.rstrip(", ") + " WHERE id = %s"
             update_values.append(employee_id)
 
@@ -966,6 +972,76 @@ def update_employee():
     except Exception as e:
         logger.error(f"Ошибка при обновлении данных сотрудника: {str(e)}")
         return jsonify({'success': False, 'message': f'Ошибка при обновлении данных: {str(e)}'}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close() 
+
+@admin_routes_bp.route('/employee_history/<int:employee_id>', methods=['GET'])
+@login_required
+def employee_history(employee_id):
+    """Получение истории изменений сотрудника через прямой ID в пути"""
+    logger.debug(f"Запрос истории для сотрудника с ID={employee_id} через прямой путь")
+    
+    if current_user.role != 'admin' and current_user.role != 'leader':
+        logger.warning(f"Отказано в доступе пользователю {current_user.login} с ролью {current_user.role}")
+        return jsonify({'success': False, 'message': 'Недостаточно прав для выполнения операции'})
+
+    try:
+        conn = create_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Проверяем существование сотрудника
+        cursor.execute("SELECT id FROM User WHERE id = %s", (employee_id,))
+        if not cursor.fetchone():
+            logger.warning(f"Сотрудник с ID={employee_id} не найден")
+            return jsonify({'success': False, 'message': 'Сотрудник не найден'}), 404
+
+        # Получаем историю изменений
+        cursor.execute("""
+            SELECT 
+                uh.*,
+                u.full_name as changed_by_name,
+                CASE 
+                    WHEN uh.changed_field = 'department_id' THEN 'Отдел'
+                    WHEN uh.changed_field = 'position' THEN 'Должность'
+                    WHEN uh.changed_field = 'role' THEN 'Роль'
+                    WHEN uh.changed_field = 'Phone' THEN 'Личный телефон'
+                    WHEN uh.changed_field = 'corp_phone' THEN 'Корпоративный телефон'
+                    WHEN uh.changed_field = 'corporate_email' THEN 'Корпоративная почта'
+                    WHEN uh.changed_field = 'personal_email' THEN 'Личная почта'
+                    WHEN uh.changed_field = 'pc_login' THEN 'Логин ПК'
+                    WHEN uh.changed_field = 'pc_password' THEN 'Пароль ПК'
+                    WHEN uh.changed_field = 'documents' THEN 'Документы'
+                    WHEN uh.changed_field = 'rr' THEN 'РР'
+                    WHEN uh.changed_field = 'site' THEN 'Сайт'
+                    WHEN uh.changed_field = 'crm_id' THEN 'CRM ID'
+                    ELSE uh.changed_field
+                END as field_name
+            FROM UserHistory uh
+            LEFT JOIN User u ON uh.changed_by = u.id
+            WHERE uh.user_id = %s
+            ORDER BY uh.changed_at DESC
+        """, (employee_id,))
+        
+        history = cursor.fetchall()
+        
+        # Проверка наличия истории
+        if not history:
+            logger.info(f"История изменений для сотрудника с ID={employee_id} пуста")
+            return jsonify({'success': True, 'history': []})
+        
+        # Форматируем даты
+        for record in history:
+            record['changed_at'] = record['changed_at'].strftime('%d.%m.%Y %H:%M:%S')
+            
+        logger.info(f"История изменений для сотрудника с ID={employee_id} успешно получена")
+        return jsonify({'success': True, 'history': history})
+        
+    except Exception as e:
+        logger.error(f"Ошибка при получении истории изменений: {str(e)}")
+        return jsonify({'success': False, 'message': f'Ошибка при получении истории изменений: {str(e)}'}), 500
     finally:
         if 'cursor' in locals():
             cursor.close()

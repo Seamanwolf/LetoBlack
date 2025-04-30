@@ -48,15 +48,15 @@ def index():
                              recent_actions=recent_actions)
     except Exception as e:
         return render_template('admin/index.html',
-                             user_count=0,
-                             role_count=0,
-                             department_count=0,
-                             location_count=0,
-                             recent_actions=[],
-                             error_message=str(e))
+                              user_count=0,
+                              role_count=0,
+                              department_count=0,
+                              location_count=0,
+                              recent_actions=[],
+                              error_message=str(e))
     finally:
         cursor.close()
         connection.close()
 
 # Импортируем модули после создания Blueprint
-from app.routes.admin import roles, personnel, dashboard 
+from app.routes.admin import roles, personnel, dashboard, admin_routes 

@@ -1,19 +1,20 @@
-from flask import Blueprint, render_template, redirect, url_for, flash
+from flask import Blueprint, render_template, redirect, url_for, flash, abort
 from flask_login import login_required, current_user
 from app.routes.auth import redirect_based_on_role
 from app.models.user import User
 from app.models.action import Action
 from app import db
 
-admin_dashboard_bp = Blueprint('admin_dashboard', __name__)
+admin_dashboard_bp = Blueprint('admin_dashboard', __name__, url_prefix='/admin')
 
-@admin_dashboard_bp.route('/admin/dashboard')
+@admin_dashboard_bp.route('/dashboard')
 @login_required
 def admin_dashboard():
     """Панель управления администратора"""
     if current_user.role != 'admin':
         flash('У вас нет доступа к этой странице', 'error')
-        return redirect_based_on_role(current_user)
+        # Вместо redirect на main.index покажем страницу ошибки 403
+        abort(403)
     
     try:
         # Получаем статистику
@@ -36,10 +37,9 @@ def admin_dashboard():
             
             # Получаем последние действия
             cursor.execute("""
-                SELECT u.full_name, a.action_type, a.created_at
-                FROM UserActivity a
-                JOIN User u ON a.user_id = u.id
-                ORDER BY a.created_at DESC
+                SELECT username as full_name, action as action_type, created_at
+                FROM activity_log
+                ORDER BY created_at DESC
                 LIMIT 10
             """)
             recent_actions = cursor.fetchall()
@@ -55,4 +55,5 @@ def admin_dashboard():
                              recent_actions=recent_actions)
     except Exception as e:
         flash(f'Ошибка при загрузке данных: {str(e)}', 'error')
-        return redirect_based_on_role(current_user) 
+        # Вместо redirect на main.index покажем страницу ошибки 500
+        abort(500) 

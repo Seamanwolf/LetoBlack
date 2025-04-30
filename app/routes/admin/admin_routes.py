@@ -1,3 +1,10 @@
+from flask import Blueprint, render_template, redirect, url_for, flash, jsonify
+from flask_login import current_user, login_required
+from app.utils import create_db_connection
+from app.routes.auth import redirect_based_on_role
+from app.routes.admin import admin_routes_bp
+from datetime import datetime
+
 @admin_routes_bp.route('/personnel_dashboard')
 @login_required
 def personnel_dashboard():
@@ -25,10 +32,10 @@ def personnel_dashboard():
 
         # Получение данных для графиков
         cursor.execute("""
-            SELECT DATE(created_at) as date, COUNT(*) as count 
+            SELECT DATE(hire_date) as date, COUNT(*) as count 
                 FROM User
-            WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-            GROUP BY DATE(created_at)
+            WHERE hire_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+            GROUP BY DATE(hire_date)
             ORDER BY date
         """)
         staff_dynamics = cursor.fetchall()
@@ -54,11 +61,11 @@ def personnel_dashboard():
             department_counts.append(item['count'])
 
         cursor.execute("""
-            SELECT u.full_name, d.name as department, u.position, u.created_at as hire_date
+            SELECT u.full_name, d.name as department, u.position, u.hire_date
                     FROM User u
             JOIN Department d ON u.department_id = d.id
             WHERE u.status != 'fired'
-            ORDER BY u.created_at DESC
+            ORDER BY u.hire_date DESC
             LIMIT 5
         """)
         recent_hires = cursor.fetchall()

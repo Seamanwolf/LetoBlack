@@ -4,6 +4,19 @@
 
 {% block extra_css %}
 <style>
+    /* Установим корректное расположение по ширине страницы */
+    .main-content {
+        width: calc(100% - 240px) !important;
+        margin-left: 240px !important;
+        padding: 20px !important;
+    }
+
+    /* Устанавливаем активную навигацию в боковом меню */
+    .sidebar a[href*="fired_employees"] {
+        background-color: #3498db !important;
+        color: white !important;
+    }
+
     .nav-menu {
         background-color: white;
         padding: 0 1.2rem;
@@ -169,13 +182,6 @@
     
     .modal-backdrop {
         z-index: 1050 !important;
-    }
-    
-    /* Устанавливаем активную навигацию в боковом меню */
-    .sidebar .nav-link.personnel {
-        color: #3498db;
-        background: rgba(52, 152, 219, 0.1);
-        border-radius: 8px;
     }
     
     /* Стили для фильтров */
@@ -472,10 +478,6 @@
                             <label class="form-label fw-bold">Должность</label>
                             <p id="viewPosition"></p>
                         </div>
-                        <div class="mb-2">
-                            <label class="form-label fw-bold">Роль</label>
-                            <p id="viewRole"></p>
-                        </div>
                     </div>
                     
                     <div class="col-md-4">
@@ -597,7 +599,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch(`/admin/api/get_employee?id=${employeeId}`);
             const data = await response.json();
             if (data.success) {
-                return data.employee;
+                // Добавляем расчет стажа работы
+                const employee = data.employee;
+                if (employee.hire_date && employee.fire_date) {
+                    employee.experience = calculateExperience(employee.hire_date, employee.fire_date);
+                }
+                return employee;
             } else {
                 console.error('Ошибка при загрузке данных:', data.message);
                 return null;
@@ -606,6 +613,22 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Ошибка при запросе:', error);
             return null;
         }
+    }
+    
+    // Функция для расчета стажа работы
+    function calculateExperience(hireDateStr, fireDateStr) {
+        if (!hireDateStr) return 'Н/Д';
+        
+        const hireDate = new Date(hireDateStr);
+        const fireDate = fireDateStr ? new Date(fireDateStr) : new Date();
+        
+        if (isNaN(hireDate.getTime()) || isNaN(fireDate.getTime())) return 'Н/Д';
+        
+        // Расчет дней работы
+        const diffTime = Math.abs(fireDate - hireDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        return `${diffDays} дн.`;
     }
     
     // Обработчик клика на иконку просмотра сотрудника
@@ -620,7 +643,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('viewFullName').textContent = employee.full_name || 'Н/Д';
                 document.getElementById('viewDepartment').textContent = employee.department || 'Н/Д';
                 document.getElementById('viewPosition').textContent = employee.position || 'Н/Д';
-                document.getElementById('viewRole').textContent = translateRole(employee.role) || 'Н/Д';
                 document.getElementById('viewCorporateNumber').textContent = employee.Phone || 'Н/Д';
                 document.getElementById('viewPersonalPhone').textContent = employee.personal_phone || 'Н/Д';
                 document.getElementById('viewCorporateEmail').textContent = employee.corporate_email || 'Н/Д';
@@ -1315,7 +1337,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('viewFullName').textContent = employee.full_name || 'Н/Д';
                     document.getElementById('viewDepartment').textContent = employee.department || 'Н/Д';
                     document.getElementById('viewPosition').textContent = employee.position || 'Н/Д';
-                    document.getElementById('viewRole').textContent = translateRole(employee.role) || 'Н/Д';
                     document.getElementById('viewCorporateNumber').textContent = employee.Phone || 'Н/Д';
                     document.getElementById('viewPersonalPhone').textContent = employee.personal_phone || 'Н/Д';
                     document.getElementById('viewCorporateEmail').textContent = employee.corporate_email || 'Н/Д';

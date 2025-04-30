@@ -106,4 +106,123 @@ LEFT JOIN `UserActivity` a ON u.id = a.user_id;
 -- ALTER TABLE `User` DROP COLUMN `ukc_kc`;
 -- ALTER TABLE `User` DROP COLUMN `status`;
 -- ALTER TABLE `User` DROP COLUMN `last_active`;
--- ALTER TABLE `User` DROP COLUMN `role`; 
+-- ALTER TABLE `User` DROP COLUMN `role`;
+
+-- Создание новой таблицы для телефонных номеров
+CREATE TABLE IF NOT EXISTS PhoneNumbers (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    number VARCHAR(15) NOT NULL,
+    type ENUM('corporate', 'personal', 'previous') NOT NULL,
+    user_id INT NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE
+);
+
+-- Добавление новых колонок в таблицу User
+ALTER TABLE User 
+ADD COLUMN current_corp_phone_id INT NULL,
+ADD COLUMN current_personal_phone_id INT NULL,
+ADD COLUMN previous_phone_id INT NULL,
+ADD FOREIGN KEY (current_corp_phone_id) REFERENCES PhoneNumbers(id),
+ADD FOREIGN KEY (current_personal_phone_id) REFERENCES PhoneNumbers(id),
+ADD FOREIGN KEY (previous_phone_id) REFERENCES PhoneNumbers(id);
+
+-- Перенос существующих корпоративных номеров
+INSERT INTO PhoneNumbers (number, type, user_id, is_active)
+SELECT corp_phone, 'corporate', id, TRUE
+FROM User
+WHERE corp_phone IS NOT NULL AND corp_phone != '';
+
+-- Обновление ссылок на корпоративные номера
+UPDATE User u
+JOIN PhoneNumbers pn ON u.id = pn.user_id AND pn.type = 'corporate'
+SET u.current_corp_phone_id = pn.id
+WHERE u.corp_phone IS NOT NULL AND u.corp_phone != '';
+
+-- Перенос существующих личных номеров
+INSERT INTO PhoneNumbers (number, type, user_id, is_active)
+SELECT phone, 'personal', id, TRUE
+FROM User
+WHERE phone IS NOT NULL AND phone != '';
+
+-- Обновление ссылок на личные номера
+UPDATE User u
+JOIN PhoneNumbers pn ON u.id = pn.user_id AND pn.type = 'personal'
+SET u.current_personal_phone_id = pn.id
+WHERE u.phone IS NOT NULL AND u.phone != '';
+
+-- Перенос существующих предыдущих номеров
+INSERT INTO PhoneNumbers (number, type, user_id, is_active)
+SELECT previous_number, 'previous', id, TRUE
+FROM User
+WHERE previous_number IS NOT NULL AND previous_number != '';
+
+-- Обновление ссылок на предыдущие номера
+UPDATE User u
+JOIN PhoneNumbers pn ON u.id = pn.user_id AND pn.type = 'previous'
+SET u.previous_phone_id = pn.id
+WHERE u.previous_number IS NOT NULL AND u.previous_number != '';
+
+-- Создание индексов для оптимизации поиска
+CREATE INDEX idx_phone_numbers_user_id ON PhoneNumbers(user_id);
+CREATE INDEX idx_phone_numbers_type ON PhoneNumbers(type);
+CREATE INDEX idx_phone_numbers_number ON PhoneNumbers(number);
+CREATE INDEX idx_phone_numbers_is_active ON PhoneNumbers(is_active);
+
+-- Создание представления для удобного получения текущих номеров
+CREATE OR REPLACE VIEW UserPhoneNumbers AS
+SELECT 
+    u.id as user_id,
+    u.full_name,
+    corp_pn.number as corporate_number,
+    pers_pn.number as personal_number,
+    prev_pn.number as previous_number
+FROM User u
+LEFT JOIN PhoneNumbers corp_pn ON u.current_corp_phone_id = corp_pn.id
+LEFT JOIN PhoneNumbers pers_pn ON u.current_personal_phone_id = pers_pn.id
+LEFT JOIN PhoneNumbers prev_pn ON u.previous_phone_id = prev_pn.id;
+
+-- Создание триггера для автоматического обновления updated_at
+DELIMITER //
+CREATE TRIGGER before_phone_numbers_update
+BEFORE UPDATE ON PhoneNumbers
+FOR EACH ROW
+BEGIN
+    SET NEW.updated_at = CURRENT_TIMESTAMP;
+END//
+DELIMITER ;
+
+-- Создание процедуры для добавления нового номера
+DELIMITER //
+CREATE PROCEDURE AddPhoneNumber(
+    IN p_user_id INT,
+    IN p_number VARCHAR(15),
+    IN p_type ENUM('corporate', 'personal', 'previous')
+)
+BEGIN
+    DECLARE new_phone_id INT;
+    
+    -- Деактивируем старый номер того же типа
+    UPDATE PhoneNumbers 
+    SET is_active = FALSE 
+    WHERE user_id = p_user_id AND type = p_type AND is_active = TRUE;
+    
+    -- Добавляем новый номер
+    INSERT INTO PhoneNumbers (number, type, user_id, is_active)
+    VALUES (p_number, p_type, p_user_id, TRUE);
+    
+    SET new_phone_id = LAST_INSERT_ID();
+    
+    -- Обновляем ссылку в таблице User
+    CASE p_type
+        WHEN 'corporate' THEN
+            UPDATE User SET current_corp_phone_id = new_phone_id WHERE id = p_user_id;
+        WHEN 'personal' THEN
+            UPDATE User SET current_personal_phone_id = new_phone_id WHERE id = p_user_id;
+        WHEN 'previous' THEN
+            UPDATE User SET previous_phone_id = new_phone_id WHERE id = p_user_id;
+    END CASE;
+END//
+DELIMITER ; 

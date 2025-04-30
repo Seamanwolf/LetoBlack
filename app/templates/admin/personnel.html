@@ -578,19 +578,57 @@
     animation: slideOut 0.3s ease-in forwards;
   }
 </style>
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
-<!-- Добавляем только jQuery в head -->
+{% endblock %}
+
+{% block extra_js %}
+<!-- Подключаем jQuery первым -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-// Заглушка для аналитики, если она не определена
-if (typeof analytics === 'undefined') {
-    window.analytics = {
-        // Заглушки функций аналитики
-        trackEvent: function() { console.log('Analytics trackEvent called but not defined'); },
-        pageView: function() { console.log('Analytics pageView called but not defined'); }
-    };
+// Проверяем загрузку jQuery
+if (typeof jQuery === 'undefined') {
+    console.error('jQuery не загружен!');
+} else {
+    console.log('jQuery успешно загружен, версия:', jQuery.fn.jquery);
 }
+</script>
+
+<!-- Подключаем Select2 и его зависимости -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+
+<script>
+// Проверяем загрузку Select2
+function checkSelect2Loaded() {
+    if (typeof $.fn.select2 === 'function') {
+        console.log('Select2 успешно загружен');
+        return true;
+    } else {
+        console.error('Select2 не загружен');
+        return false;
+    }
+}
+
+// Инициализация Select2
+function initializeSelect2() {
+    if (checkSelect2Loaded()) {
+        $('.filter-select').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Выберите значения',
+            allowClear: true
+        });
+    }
+}
+
+// Вызываем инициализацию при загрузке документа
+$(document).ready(function() {
+    console.log('Document ready event fired');
+    
+    // Инициализируем Select2
+    initializeSelect2();
+    
+    // ... остальной код ...
+});
 </script>
 {% endblock %}
 
@@ -864,13 +902,6 @@ if (typeof analytics === 'undefined') {
                                 </div>
                             </div>
                             <div class="mb-2">
-                                <label for="editPreviousNumber" class="form-label">Предыдущий номер</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">+7</span>
-                                    <input type="text" class="form-control" id="editPreviousNumber" name="previous_number" placeholder="Введите номер без +7">
-                                </div>
-                            </div>
-                            <div class="mb-2">
                                 <label for="editCorporateEmail" class="form-label">Корпоративная почта</label>
                                 <input type="email" class="form-control" id="editCorporateEmail" name="corporate_email">
                             </div>
@@ -952,14 +983,27 @@ if (typeof analytics === 'undefined') {
                     </div>
 
                     <!-- История изменений -->
-                    <div class="mt-3">
-                        <div class="history-toggle" style="background-color: #0d6efd; color: #fff; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
-                            История изменений ↓
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center" id="historyHeader" style="cursor: pointer;" onclick="toggleHistoryCollapse()">
+                            <h5 class="mb-0 fw-bold" style="font-size: 0.9rem;">История изменений ↓</h5>
                         </div>
-                        <div class="history-section" id="historySection" style="display: none;">
-                            <input type="text" id="historyFilter" placeholder="Фильтровать по полю" class="form-control mb-2" style="font-size:0.75rem;">
-                            <div id="historyEntries" style="max-height: 200px; overflow-y: auto;">
-                                <!-- Здесь будут отображаться записи истории -->
+                        <div id="historyCollapse" class="collapse">
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped" id="historyTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Дата изменения</th>
+                                                <th>Поле</th>
+                                                <th>Старое значение</th>
+                                                <th>Новое значение</th>
+                                                <th>Кем изменено</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1312,7 +1356,6 @@ async function loadEmployeeDataForEdit(employeeId) {
             // Заполняем остальные поля
             document.getElementById('editCorporateNumber').value = employee.corporate_number || '';
             document.getElementById('editPersonalPhone').value = employee.phone || '';
-            document.getElementById('editPreviousNumber').value = employee.previous_number || '';
             document.getElementById('editCorporateEmail').value = employee.corporate_email || '';
             document.getElementById('editPersonalEmail').value = employee.personal_email || '';
             document.getElementById('editLoginPC').value = employee.login_pc || employee.login || '';
@@ -1461,6 +1504,14 @@ document.querySelectorAll('.edit-icon').forEach(icon => {
         
         // Загружаем данные сотрудника
         loadEmployeeDataForEdit(employeeId);
+        
+        // Загружаем историю изменений
+        try {
+            console.log('Пытаемся загрузить историю для ID:', employeeId);
+            loadEmployeeHistory(employeeId);
+        } catch (e) {
+            console.error('Ошибка при загрузке истории:', e);
+        }
         
         // Дополнительная проверка через небольшую задержку
         setTimeout(() => {
@@ -2099,7 +2150,7 @@ function handlePhotoUpload(event) {
 }
 
 function deletePhoto() {
-    const photoInput = document.getElementById('employee_photo');
+    const photoInput = document.getElementById('employeePhoto');
     const photoPreview = document.getElementById('photoPreview');
     const photoPlaceholder = document.getElementById('photoPlaceholder');
     const deletePhotoBtn = document.getElementById('deletePhotoBtn');
@@ -2120,6 +2171,12 @@ function deletePhoto() {
     deletePhotoInput.name = 'delete_photo';
     deletePhotoInput.value = '1';
     photoInput.parentNode.appendChild(deletePhotoInput);
+    
+    // Закрываем модальное окно
+    $('#confirmDeleteModal').modal('hide');
+    
+    // Показываем уведомление об успешном удалении
+    showNotification('Фотография успешно удалена', 'success');
 }
 
 function handlePhotoUpload(event) {
@@ -2185,10 +2242,11 @@ function confirmDeletePhoto() {
 }
 
 function deletePhoto() {
-    const photoInput = document.getElementById('employee_photo');
-    const photoPreview = document.getElementById('photoPreview');
+    const photoInput = document.getElementById('employeePhoto');
+    const photoPreview = document.getElementById('employeePhotoPreview');
     const photoPlaceholder = document.getElementById('photoPlaceholder');
     const deletePhotoBtn = document.getElementById('deletePhotoBtn');
+    const deletePhotoFlag = document.getElementById('deletePhotoFlag');
     
     // Очищаем input
     photoInput.value = '';
@@ -2371,5 +2429,159 @@ function deletePhoto() {
     // Показываем уведомление
     showNotification('Фотография будет удалена после сохранения', 'success');
 }
+
+// Функция для переключения видимости истории изменений
+function toggleHistoryCollapse() {
+    const historyCollapse = $('#historyCollapse');
+    historyCollapse.collapse('toggle');
+    
+    const arrow = $('#historyHeader').find('h5');
+    if (historyCollapse.hasClass('show')) {
+        arrow.text('История изменений ↑');
+    } else {
+        arrow.text('История изменений ↓');
+    }
+}
+
+// Функция для загрузки истории изменений сотрудника
+function loadEmployeeHistory(employeeId) {
+    console.log('Загрузка истории изменений для сотрудника из HTML:', employeeId);
+    
+    // Правильный маршрут для получения истории с префиксом /admin
+    const apiUrl = `/admin/employee_history/${employeeId}`;
+    console.log('URL запроса истории из HTML:', apiUrl);
+    
+    // Добавляем случайный параметр для предотвращения кэширования
+    const timestamp = new Date().getTime();
+    const noCacheUrl = apiUrl + '?_=' + timestamp;
+    console.log('URL запроса с антикэшем:', noCacheUrl);
+    
+    $.ajax({
+        url: noCacheUrl,
+        type: 'GET',
+        cache: false,
+        success: function(response) {
+            console.log('Получен ответ от сервера истории из HTML:', response);
+            if (response.success) {
+                const tbody = $('#historyTable tbody');
+                tbody.empty();
+                
+                if (response.history && response.history.length > 0) {
+                    response.history.forEach(function(record) {
+                        const row = $('<tr>');
+                        row.append($('<td>').text(record.changed_at));
+                        row.append($('<td>').text(record.field_name));
+                        row.append($('<td>').text(record.old_value || '-'));
+                        row.append($('<td>').text(record.new_value || '-'));
+                        row.append($('<td>').text(record.changed_by_name || 'Система'));
+                        tbody.append(row);
+                    });
+                } else {
+                    tbody.html('<tr><td colspan="5" class="text-center">История изменений отсутствует</td></tr>');
+                }
+            } else {
+                console.error('Ошибка при загрузке истории:', response.message);
+                const tbody = $('#historyTable tbody');
+                tbody.html('<tr><td colspan="5" class="text-center text-danger">Ошибка при загрузке истории: ' + response.message + '</td></tr>');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Ошибка при загрузке истории из HTML:', error);
+            console.error('Статус запроса:', status);
+            console.error('XHR:', xhr);
+            const tbody = $('#historyTable tbody');
+            tbody.html('<tr><td colspan="5" class="text-center text-danger">Ошибка при загрузке истории</td></tr>');
+        }
+    });
+}
+
+// Функция для переключения видимости истории изменений
+function toggleHistoryCollapse() {
+    const historyCollapse = $('#historyCollapse');
+    historyCollapse.collapse('toggle');
+    
+    const arrow = $('#historyHeader').find('h5');
+    if (historyCollapse.hasClass('show')) {
+        arrow.text('История изменений ↑');
+    } else {
+        arrow.text('История изменений ↓');
+    }
+}
+
+// Открытие модального окна редактирования сотрудника
+document.querySelectorAll('.edit-icon').forEach(icon => {
+    icon.addEventListener('click', function() {
+        const employeeId = this.getAttribute('data-id');
+        
+        // Убедимся, что поле логина видимо и заметно
+        const systemLoginContainer = document.getElementById('systemLoginContainer');
+        if (systemLoginContainer) {
+            systemLoginContainer.style.display = 'block';
+            systemLoginContainer.style.visibility = 'visible';
+            systemLoginContainer.style.opacity = '1';
+            // Добавляем заметное оформление
+            systemLoginContainer.style.backgroundColor = '#e6f7ff';
+            systemLoginContainer.style.border = '3px solid #1890ff';
+            systemLoginContainer.style.padding = '10px';
+            systemLoginContainer.style.borderRadius = '8px';
+            systemLoginContainer.style.boxShadow = '0 0 10px rgba(24, 144, 255, 0.3)';
+            
+            const systemLoginField = document.getElementById('editLogin');
+            if (systemLoginField) {
+                systemLoginField.style.display = 'block';
+                systemLoginField.style.visibility = 'visible';
+            }
+        }
+        
+        // Прямой запрос логина для надежности
+        fetch(`/admin/api/get_employee_login?id=${employeeId}`)
+        .then(response => response.json())
+        .then(data => {
+                if (data.success && data.login) {
+                    console.log('Получен логин напрямую:', data.login);
+                    const loginField = document.getElementById('editLogin');
+                    if (loginField) {
+                        setLoginValue(loginField, data.login);
+                    }
+        }
+    })
+    .catch(error => {
+                console.error('Ошибка при запросе логина напрямую:', error);
+            });
+        
+        // Загружаем данные сотрудника
+        loadEmployeeDataForEdit(employeeId);
+        
+        // Загружаем историю изменений
+        try {
+            console.log('Пытаемся загрузить историю для ID:', employeeId);
+            loadEmployeeHistory(employeeId);
+        } catch (e) {
+            console.error('Ошибка при загрузке истории:', e);
+        }
+        
+        // Дополнительная проверка через небольшую задержку
+        setTimeout(() => {
+            const loginField = document.getElementById('editLogin');
+            if (loginField) {
+                console.log('Значение логина через 500мс:', loginField.value);
+                if (!loginField.value || loginField.value === '') {
+                    // Логин все еще не установлен, делаем еще один запрос
+                    console.warn('Логин не установлен, делаем финальный запрос');
+                    fetch(`/admin/api/get_employee_login?id=${employeeId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success && data.login) {
+                                console.log('Получен логин финальный:', data.login);
+                                setLoginValue(loginField, data.login);
+                            }
+                        });
+                }
+            }
+        }, 500);
+    });
+});
+
+// ... existing code ...
 </script>
 {% endblock %}

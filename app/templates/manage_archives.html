@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Архив базы данных</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/common.css') }}?v={{ range(1, 100000) | random }}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+      .container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      table {
+        width: 100%;
+        max-width: 800px;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+        background-color: white;
+      }
+
+      th, td {
+        text-align: left;
+        padding: 8px;
+        border-bottom: 1px solid #ddd;
+      }
+
+      th {
+        background-color: #ccc;
+        color: black;
+      }
+
+      td {
+        font-size: 14px;
+      }
+
+      .content {
+        margin: 20px;
+        padding: 20px;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .search-input {
+        width: 100%;
+        max-width: 800px;
+        padding: 10px;
+        margin-bottom: 20px;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+        font-size: 14px;
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 5px;
+      }
+
+      .restore-btn {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 4px 8px;
+        cursor: pointer;
+      }
+
+      .delete-btn {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 4px 8px;
+        cursor: pointer;
+      }
+
+      .no-items {
+        text-align: center;
+        font-style: italic;
+        color: #6c757d;
+        margin: 20px 0;
+      }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+  </head>
+  <body>
+    <div class="sidebar">
+      <div class="logo">Л</div>
+      <div class="menu">
+        <a href="{{ url_for('callcenter.manage_objects_sources') }}">
+          <i class="fas fa-arrow-left icon"></i><span class="text">Назад</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="topbar">
+      <div class="title">Архив базы данных</div>
+      <div class="right-icons">
+        <div class="profile-icon" tabindex="0">
+          <i class="fas fa-user"></i>
+          <div class="profile-menu">
+            <div class="profile-info">
+              <p>Администратор</p>
+            </div>
+            <a href="{{ url_for('userlist.logout') }}">Выход</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content">
+      <h1>Архив базы данных</h1>
+      <input
+        type="text"
+        id="search-input"
+        class="search-input"
+        placeholder="Поиск в архиве..."
+      />
+
+      <!-- Архивированные объекты -->
+      <h2>Архивированные объекты</h2>
+      {% if archived_objects %}
+      <table>
+        <thead>
+          <tr>
+            <th>Название объекта</th>
+            <th>Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for object in archived_objects %}
+          <tr data-name="{{ object.object_name }}">
+            <td>{{ object.object_name }}</td>
+            <td class="action-buttons">
+              <button 
+                class="restore-btn restore-icon" 
+                data-type="object"
+                data-id="{{ object.id }}"
+                title="Восстановить"
+              >
+                <i class="fas fa-undo"></i>
+              </button>
+              <button 
+                class="delete-btn delete-icon" 
+                data-type="object"
+                data-id="{{ object.id }}"
+                title="Удалить навсегда"
+              >
+                <i class="fas fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="no-items">Нет архивированных объектов</p>
+      {% endif %}
+
+      <!-- Архивированные источники -->
+      <h2>Архивированные источники</h2>
+      {% if archived_sources %}
+      <table>
+        <thead>
+          <tr>
+            <th>Название источника</th>
+            <th>Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for source in archived_sources %}
+          <tr data-name="{{ source.source_name }}">
+            <td>{{ source.source_name }}</td>
+            <td class="action-buttons">
+              <button 
+                class="restore-btn restore-icon" 
+                data-type="source"
+                data-id="{{ source.id }}"
+                title="Восстановить"
+              >
+                <i class="fas fa-undo"></i>
+              </button>
+              <button 
+                class="delete-btn delete-icon" 
+                data-type="source"
+                data-id="{{ source.id }}"
+                title="Удалить навсегда"
+              >
+                <i class="fas fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="no-items">Нет архивированных источников</p>
+      {% endif %}
+
+      <!-- Архивированные категории -->
+      <h2>Архивированные группы</h2>
+      {% if archived_categories %}
+      <table>
+        <thead>
+          <tr>
+            <th>Название группы</th>
+            <th>Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for category in archived_categories %}
+          <tr data-name="{{ category.category_name }}">
+            <td>{{ category.category_name }}</td>
+            <td class="action-buttons">
+              <button 
+                class="restore-btn restore-icon" 
+                data-type="category"
+                data-id="{{ category.id }}"
+                title="Восстановить"
+              >
+                <i class="fas fa-undo"></i>
+              </button>
+              <button 
+                class="delete-btn delete-icon" 
+                data-type="category"
+                data-id="{{ category.id }}"
+                title="Удалить навсегда"
+              >
+                <i class="fas fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="no-items">Нет архивированных групп</p>
+      {% endif %}
+    </div>
+
+    <div class="modal fade" id="editEmployeeModal" tabindex="-1" role="dialog" aria-labelledby="editEmployeeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editEmployeeModalLabel">Редактирование сотрудника</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="editEmployeeForm">
+                        <input type="hidden" id="editEmployeeId" name="id">
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="editFullName">ФИО</label>
+                                <input type="text" class="form-control" id="editFullName" name="full_name" required>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="editPosition">Должность</label>
+                                <input type="text" class="form-control" id="editPosition" name="position" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="editDepartment">Отдел</label>
+                                <select class="form-control" id="editDepartment" name="department_id" required>
+                                    <option value="">Выберите отдел</option>
+                                </select>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="editRole">Роль</label>
+                                <select class="form-control" id="editRole" name="role" required>
+                                    <option value="user">Пользователь</option>
+                                    <option value="admin">Администратор</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="editPersonalNumber">Личный номер</label>
+                                <input type="text" class="form-control" id="editPersonalNumber" name="personal_number">
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="editCorporateNumber">Корпоративный номер</label>
+                                <input type="text" class="form-control" id="editCorporateNumber" name="corporate_number">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="editHireDate">Дата приема</label>
+                                <input type="date" class="form-control" id="editHireDate" name="hire_date" required>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="editFireDate">Дата увольнения</label>
+                                <input type="date" class="form-control" id="editFireDate" name="fire_date">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="editPersonalEmail">Личная почта</label>
+                                <input type="email" class="form-control" id="editPersonalEmail" name="personal_email">
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="editLogin">Логин</label>
+                                <input type="text" class="form-control" id="editLogin" name="login" required>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" id="saveEmployeeChanges">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+      $(document).ready(function() {
+        // Обработка поиска
+        $("#search-input").on("input", function() {
+          const filter = $(this).val().toLowerCase();
+          $("table tbody tr").each(function() {
+            const text = $(this).text().toLowerCase();
+            $(this).toggle(text.includes(filter));
+          });
+        });
+
+        // Привязываем обработчики событий для кнопок
+        $(".restore-icon").on("click", function() {
+          const type = $(this).data("type");
+          const id = $(this).data("id");
+          const name = $(this).closest("tr").data("name");
+          
+          if (confirm(`Вы уверены, что хотите восстановить "${name}"?`)) {
+            $.ajax({
+              url: "{{ url_for('callcenter.restore_item') }}",
+              method: "POST",
+              data: {
+                item_type: type,
+                item_id: id
+              },
+              success: function(response) {
+                if (response.success) {
+                  alert("Элемент успешно восстановлен");
+                  location.reload();
+                } else {
+                  alert('Ошибка при восстановлении: ' + response.message);
+                }
+              },
+              error: function() {
+                alert('Произошла ошибка при выполнении запроса');
+              }
+            });
+          }
+        });
+
+        $(".delete-icon").on("click", function() {
+          const type = $(this).data("type");
+          const id = $(this).data("id");
+          const name = $(this).closest("tr").data("name");
+          
+          if (confirm(`Вы действительно хотите удалить "${name}" навсегда? Это действие нельзя отменить!`)) {
+            $.ajax({
+              url: "{{ url_for('callcenter.delete_item_permanently') }}",
+              method: "POST",
+              data: {
+                item_type: type,
+                item_id: id
+              },
+              success: function(response) {
+                if (response.success) {
+                  alert("Элемент успешно удален");
+                  location.reload();
+                } else {
+                  alert('Ошибка при удалении: ' + response.message);
+                }
+              },
+              error: function() {
+                alert('Произошла ошибка при выполнении запроса');
+              }
+            });
+          }
+        });
+
+        function loadEmployeeData(employeeId) {
+            fetch(`/api/admin/employees/${employeeId}`)
+                .then(response => response.json())
+                .then(data => {
+                    $('#editEmployeeId').val(data.id);
+                    $('#editFullName').val(data.full_name);
+                    $('#editPosition').val(data.position);
+                    $('#editDepartment').val(data.department_id);
+                    $('#editRole').val(data.role);
+                    $('#editPersonalNumber').val(data.personal_number);
+                    $('#editCorporateNumber').val(data.corporate_number);
+                    $('#editHireDate').val(data.hire_date);
+                    $('#editFireDate').val(data.fire_date || '');
+                    $('#editPersonalEmail').val(data.personal_email);
+                    $('#editLogin').val(data.login);
+                    
+                    $('#editEmployeeModal').modal('show');
+                })
+                .catch(error => {
+                    console.error('Ошибка при загрузке данных сотрудника:', error);
+                    alert('Ошибка при загрузке данных сотрудника');
+                });
+        }
+
+        $('#saveEmployeeChanges').click(function() {
+            const formData = {
+                id: $('#editEmployeeId').val(),
+                full_name: $('#editFullName').val(),
+                position: $('#editPosition').val(),
+                department_id: $('#editDepartment').val(),
+                role: $('#editRole').val(),
+                personal_number: $('#editPersonalNumber').val(),
+                corporate_number: $('#editCorporateNumber').val(),
+                hire_date: $('#editHireDate').val(),
+                fire_date: $('#editFireDate').val() || null,
+                personal_email: $('#editPersonalEmail').val(),
+                login: $('#editLogin').val()
+            };
+
+            fetch(`/api/admin/employees/${formData.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    $('#editEmployeeModal').modal('hide');
+                    location.reload();
+                } else {
+                    alert('Ошибка при обновлении данных: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при сохранении изменений:', error);
+                alert('Ошибка при сохранении изменений');
+            });
+        });
+      });
+    </script>
+  </body>
+</html> 

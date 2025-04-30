@@ -1006,11 +1006,11 @@ def operator_dashboard():
         
         # Получаем список брокеров для селекта
         cursor.execute("""
-            SELECT id, full_name
-            FROM User
+            SELECT id, full_name 
+            FROM User 
             WHERE role = 'broker' AND active = 1
             ORDER BY full_name
-            """)
+        """)
         brokers = cursor.fetchall()
         
         # Получаем список отделов
@@ -1422,108 +1422,154 @@ def report_dashboard():
         connection = create_db_connection()
         cursor = connection.cursor(dictionary=True)
         
-        # Проверяем наличие данных за текущий день
-        today = datetime.now().strftime('%Y-%m-%d')
-        check_today_query = "SELECT COUNT(*) as count FROM ScoringKC WHERE date = %s"
-        cursor.execute(check_today_query, (today,))
-        today_result = cursor.fetchone()
-        has_today_data = today_result['count'] > 0
-        
-        # Если данных за сегодня нет, найдем последнюю дату с данными
-        if not has_today_data:
-            last_date_query = "SELECT MAX(date) as last_date FROM ScoringKC"
-            cursor.execute(last_date_query)
-            last_date_result = cursor.fetchone()
-            last_date = last_date_result['last_date']
-        else:
-            last_date = today
-        
-        # Определяем параметры запроса и заголовок отчета на основе типа отчета
+        # Получаем данные согласно типу отчета
         if report_type == 'daily':
-            if has_today_data:
-                report_title = 'Отчет за сегодня'
-                where_clause = "s.date = %s"
-                params = (today,)
-            else:
-                report_title = f'Отчет за последнюю доступную дату ({last_date})' if last_date else 'Отчет (нет данных)'
-                where_clause = "s.date = %s" if last_date else "1=0"
-                params = (last_date,) if last_date else ()
-                
+            report_title = 'Отчет за сегодня'
+            query = """
+                SELECT 
+                    s.id, 
+                    s.date, 
+                    s.time, 
+                    u.full_name AS broker_name,
+                    s.department_id, 
+                    c.category_name AS floor_name,
+                    o.object_name, 
+                    src.source_name, 
+                    s.client_id, 
+                    s.operator
+                FROM ScoringKC s
+                JOIN User u ON s.broker_id = u.id
+                JOIN CallCategories c ON s.floor_id = c.id
+                JOIN ObjectKC o ON s.object_id = o.id
+                JOIN SourceKC src ON s.source_id = src.id
+                WHERE s.date = CURDATE()
+                ORDER BY s.time DESC
+            """
+            params = ()
+        
         elif report_type == 'monthly':
-            current_month_start = datetime.now().replace(day=1).strftime('%Y-%m-%d')
             report_title = 'Отчет за текущий месяц'
-            where_clause = "s.date BETWEEN %s AND %s"
-            params = (current_month_start, today)
-            
+            query = """
+                SELECT 
+                    s.id, 
+                    s.date, 
+                    s.time, 
+                    u.full_name AS broker_name,
+                    s.department_id, 
+                    c.category_name AS floor_name,
+                    o.object_name, 
+                    src.source_name, 
+                    s.client_id, 
+                    s.operator
+                FROM ScoringKC s
+                JOIN User u ON s.broker_id = u.id
+                JOIN CallCategories c ON s.floor_id = c.id
+                JOIN ObjectKC o ON s.object_id = o.id
+                JOIN SourceKC src ON s.source_id = src.id
+                WHERE MONTH(s.date) = MONTH(CURDATE()) 
+                  AND YEAR(s.date) = YEAR(CURDATE())
+                ORDER BY s.date DESC, s.time DESC
+            """
+            params = ()
+        
         elif report_type == 'yearly':
-            current_year_start = datetime.now().replace(month=1, day=1).strftime('%Y-%m-%d')
             report_title = 'Отчет за текущий год'
-            where_clause = "s.date BETWEEN %s AND %s"
-            params = (current_year_start, today)
-            
+            query = """
+                SELECT 
+                    s.id, 
+                    s.date, 
+                    s.time, 
+                    u.full_name AS broker_name,
+                    s.department_id, 
+                    c.category_name AS floor_name,
+                    o.object_name, 
+                    src.source_name, 
+                    s.client_id, 
+                    s.operator
+                FROM ScoringKC s
+                JOIN User u ON s.broker_id = u.id
+                JOIN CallCategories c ON s.floor_id = c.id
+                JOIN ObjectKC o ON s.object_id = o.id
+                JOIN SourceKC src ON s.source_id = src.id
+                WHERE YEAR(s.date) = YEAR(CURDATE())
+                ORDER BY s.date DESC, s.time DESC
+            """
+            params = ()
+        
         elif report_type == 'custom' and start_date and end_date:
             start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
             end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
             report_title = f'Отчет с {start_date} по {end_date}'
-            where_clause = "s.date BETWEEN %s AND %s"
+            query = """
+                SELECT 
+                    s.id, 
+                    s.date, 
+                    s.time, 
+                    u.full_name AS broker_name,
+                    s.department_id, 
+                    c.category_name AS floor_name,
+                    o.object_name, 
+                    src.source_name, 
+                    s.client_id, 
+                    s.operator
+                FROM ScoringKC s
+                JOIN User u ON s.broker_id = u.id
+                JOIN CallCategories c ON s.floor_id = c.id
+                JOIN ObjectKC o ON s.object_id = o.id
+                JOIN SourceKC src ON s.source_id = src.id
+                WHERE s.date BETWEEN %s AND %s
+                ORDER BY s.date DESC, s.time DESC
+            """
             params = (start_date_obj, end_date_obj)
-            
-        else:
-            if last_date:
-                report_title = f'Отчет за последнюю доступную дату ({last_date})'
-                where_clause = "s.date = %s"
-                params = (last_date,)
-            else:
-                report_title = 'Отчет (нет данных)'
-                where_clause = "1=0"
-                params = ()
         
-        # Формируем и выполняем запрос
-        query = f"""
+        else:
+            report_title = 'Отчет за сегодня'
+            query = """
             SELECT 
-                s.id, 
-                s.date, 
-                s.time, 
-                u.full_name AS broker_name,
-                s.department_id, 
-                c.category_name AS floor_name,
-                o.object_name, 
-                src.source_name, 
-                s.client_id, 
-                s.operator
-            FROM ScoringKC s
-            JOIN User u ON s.broker_id = u.id
-            JOIN CallCategories c ON s.floor_id = c.id
-            JOIN ObjectKC o ON s.object_id = o.id
-            JOIN SourceKC src ON s.source_id = src.id
-            WHERE {where_clause}
-            ORDER BY s.date DESC, s.time DESC
-        """
+                    s.id, 
+                    s.date, 
+                    s.time, 
+                    u.full_name AS broker_name,
+                    s.department_id, 
+                    c.category_name AS floor_name,
+                    o.object_name, 
+                    src.source_name, 
+                    s.client_id, 
+                    s.operator
+                FROM ScoringKC s
+                JOIN User u ON s.broker_id = u.id
+                JOIN CallCategories c ON s.floor_id = c.id
+                JOIN ObjectKC o ON s.object_id = o.id
+                JOIN SourceKC src ON s.source_id = src.id
+                WHERE s.date = CURDATE()
+                ORDER BY s.time DESC
+            """
+            params = ()
         
         cursor.execute(query, params)
         entries = cursor.fetchall()
         
         # Получаем общие данные (категории, объекты, источники)
-        common_data = get_common_data()
-        
-        if report_type == "custom":
-            return render_template(
-                'report_dashboard.html',
-                entries=entries,
-                report_title=report_title,
-                report_type=report_type,
-                start_date=start_date,
-                end_date=end_date,
-                **common_data
-            )
-        else:
-            return render_template(
-                'report_dashboard.html',
-                entries=entries,
-                report_title=report_title,
-                report_type=report_type,
-                **common_data
-            )
+    common_data = get_common_data()
+    
+    if report_type == "custom":
+        return render_template(
+            'report_dashboard.html',
+            entries=entries,
+            report_title=report_title,
+            report_type=report_type,
+            start_date=start_date,
+            end_date=end_date,
+            **common_data
+        )
+    else:
+        return render_template(
+            'report_dashboard.html',
+            entries=entries,
+            report_title=report_title,
+            report_type=report_type,
+            **common_data
+        )
         
     except Exception as e:
         logger.error(f"Ошибка при формировании отчета: {str(e)}")
@@ -1539,7 +1585,7 @@ def report_dashboard():
     finally:
         if 'cursor' in locals():
             cursor.close()
-        if 'connection' in locals() and connection.is_connected():
+        if 'connection' in locals():
             connection.close()
 
 @callcenter_bp.route('/api/leads/yearly', methods=['GET'])
@@ -1630,7 +1676,7 @@ def get_common_data():
             WHERE u.role = 'operator' AND u.active = 1
             ORDER BY u.full_name
         """)
-        operators = cursor.fetchall()
+    operators = cursor.fetchall()
         
         # Получаем брокеров
         cursor.execute("""
@@ -1639,18 +1685,18 @@ def get_common_data():
             WHERE role = 'broker' AND active = 1
             ORDER BY full_name
         """)
-        brokers = cursor.fetchall()
+    brokers = cursor.fetchall()
         
         # Получаем отделы
         cursor.execute("SELECT id, name FROM Department ORDER BY name")
-        departments = cursor.fetchall()
+    departments = cursor.fetchall()
         
-        return {
+    return {
             'categories': categories,
             'objects': objects,
             'sources': sources,
-            'operators': operators,
-            'brokers': brokers,
+        'operators': operators,
+        'brokers': brokers,
             'departments': departments
         }
         
@@ -2755,9 +2801,9 @@ def edit_call(call_id):
 @login_required
 def add_category():
     try:
-        category_name = request.form['category_name']
-        connection = create_db_connection()
-        cursor = connection.cursor()
+    category_name = request.form['category_name']
+    connection = create_db_connection()
+    cursor = connection.cursor()
         
         # Получаем максимальный порядок
         cursor.execute("SELECT MAX(`order`) as max_order FROM CallCategories")
@@ -2779,15 +2825,15 @@ def add_category():
         logger.error(f"Ошибка при добавлении категории: {str(e)}")
         flash(f"Ошибка при добавлении категории: {str(e)}", 'error')
     
-    return redirect(url_for('callcenter.manage_objects_sources'))
+        return redirect(url_for('callcenter.manage_objects_sources'))
 
 @callcenter_bp.route('/add_object', methods=['POST'])
 @login_required
 def add_object():
     try:
-        object_name = request.form['object_name']
-        connection = create_db_connection()
-        cursor = connection.cursor()
+    object_name = request.form['object_name']
+    connection = create_db_connection()
+    cursor = connection.cursor()
         
         # Получаем максимальный порядок
         cursor.execute("SELECT MAX(`order`) as max_order FROM ObjectKC")
@@ -2800,11 +2846,11 @@ def add_object():
             VALUES (%s, %s, 0)
         """, (object_name, next_order))
         
-        connection.commit()
-        cursor.close()
-        connection.close()
+    connection.commit()
+    cursor.close()
+    connection.close()
         
-        flash('Объект успешно добавлен!', 'success')
+    flash('Объект успешно добавлен!', 'success')
     except Exception as e:
         logger.error(f"Ошибка при добавлении объекта: {str(e)}")
         flash(f"Ошибка при добавлении объекта: {str(e)}", 'error')
@@ -2831,7 +2877,7 @@ def archive_object(object_id):
             WHERE id = %s
         """, (object_id,))
         
-        connection.commit()
+            connection.commit()
         cursor.close()
         connection.close()
         
@@ -2840,7 +2886,40 @@ def archive_object(object_id):
         logger.error(f"Ошибка при архивировании объекта: {str(e)}")
         flash(f"Ошибка: {str(e)}", 'error')
     
-    return redirect(url_for('callcenter.manage_objects_sources'))
+        return redirect(url_for('callcenter.manage_objects_sources'))
+
+@callcenter_bp.route('/archive_category/<int:category_id>', methods=['POST'])
+@login_required
+def archive_category(category_id):
+    try:
+        connection = create_db_connection()
+        cursor = connection.cursor()
+
+        # Проверяем, существует ли категория
+        cursor.execute("SELECT id FROM CallCategories WHERE id = %s", (category_id,))
+        if not cursor.fetchone():
+            flash('Категория не найдена', 'error')
+            return redirect(url_for('callcenter.manage_objects_sources'))
+        
+        # Архивируем категорию
+        cursor.execute("""
+            UPDATE CallCategories
+            SET archived = 1
+            WHERE id = %s
+        """, (category_id,))
+        
+        connection.commit()
+        cursor.close()
+        connection.close()
+        
+        flash('Категория успешно архивирована!', 'success')
+    except Exception as e:
+        logger.error(f"Ошибка при архивировании категории: {str(e)}")
+        flash(f"Ошибка: {str(e)}", 'error')
+    
+        return redirect(url_for('callcenter.manage_objects_sources'))
+
+
 
 @callcenter_bp.route('/archive_source/<int:source_id>', methods=['POST'])
 @login_required
@@ -2862,7 +2941,7 @@ def archive_source(source_id):
             WHERE id = %s
         """, (source_id,))
         
-        connection.commit()
+            connection.commit()
         cursor.close()
         connection.close()
         
@@ -2871,15 +2950,15 @@ def archive_source(source_id):
         logger.error(f"Ошибка при архивировании источника: {str(e)}")
         flash(f"Ошибка: {str(e)}", 'error')
     
-    return redirect(url_for('callcenter.manage_objects_sources'))
+        return redirect(url_for('callcenter.manage_objects_sources'))
 
 @callcenter_bp.route('/add_source', methods=['POST'])
 @login_required
 def add_source():
     try:
-        source_name = request.form['source_name']
-        connection = create_db_connection()
-        cursor = connection.cursor()
+    source_name = request.form['source_name']
+    connection = create_db_connection()
+    cursor = connection.cursor()
         
         # Получаем максимальный порядок
         cursor.execute("SELECT MAX(`order`) as max_order FROM SourceKC")
@@ -2892,16 +2971,334 @@ def add_source():
             VALUES (%s, %s, 0)
         """, (source_name, next_order))
         
-        connection.commit()
-        cursor.close()
-        connection.close()
+    connection.commit()
+    cursor.close()
+    connection.close()
         
-        flash('Источник успешно добавлен!', 'success')
+    flash('Источник успешно добавлен!', 'success')
     except Exception as e:
         logger.error(f"Ошибка при добавлении источника: {str(e)}")
         flash(f"Ошибка при добавлении источника: {str(e)}", 'error')
     
     return redirect(url_for('callcenter.manage_objects_sources'))
+
+@callcenter_bp.route('/edit_object', methods=['POST'])
+@login_required
+def edit_object():
+    try:
+        object_id = request.form['object_id']
+        new_object_name = request.form['object_name']
+        connection = create_db_connection()
+        cursor = connection.cursor()
+        cursor.execute("""
+            UPDATE ObjectKC
+            SET object_name = %s
+            WHERE id = %s
+        """, (new_object_name, object_id))
+        connection.commit()
+        cursor.close()
+        connection.close()
+        flash('Название объекта успешно обновлено!', 'success')
+    except Exception as e:
+        logger.error(f"Ошибка при редактировании объекта: {str(e)}")
+        flash(f"Ошибка: {str(e)}", 'error')
+    return redirect(url_for('callcenter.manage_objects_sources'))
+
+@callcenter_bp.route('/edit_source', methods=['POST'])
+@login_required
+def edit_source():
+    try:
+        source_id = request.form['source_id']
+        new_source_name = request.form['source_name']
+        connection = create_db_connection()
+        cursor = connection.cursor()
+        cursor.execute("""
+            UPDATE SourceKC
+            SET source_name = %s
+            WHERE id = %s
+        """, (new_source_name, source_id))
+        connection.commit()
+        cursor.close()
+        connection.close()
+        flash('Название источника успешно обновлено!', 'success')
+    except Exception as e:
+        logger.error(f"Ошибка при редактировании источника: {str(e)}")
+        flash(f"Ошибка: {str(e)}", 'error')
+    return redirect(url_for('callcenter.manage_objects_sources'))
+
+@callcenter_bp.route('/manage_categories', methods=['GET', 'POST'])
+@login_required
+def manage_categories():
+    if current_user.role != 'admin':
+        flash('Требуются права администратора', 'danger')
+        return redirect(url_for('auth.login'))
+    connection = create_db_connection()
+    if connection:
+        cursor = connection.cursor(dictionary=True) 
+        print("Успешно подключено к базе данных")
+        cursor.execute("SELECT * FROM CallCategories")
+        categories = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        return render_template('manage_categories.html', categories=categories)
+    else:
+        flash('Ошибка подключения к базе данных', 'danger')
+        return redirect(url_for('auth.login'))
+
+@callcenter_bp.route('/manage_objects_sources')
+@login_required
+def manage_objects_sources():
+    connection = create_db_connection()
+    cursor = connection.cursor(dictionary=True)
+
+    try:
+        # Фильтрация только активных объектов
+        cursor.execute("SELECT id, object_name FROM ObjectKC WHERE archived = 0 ORDER BY `order`")
+        objects = cursor.fetchall()
+
+        # Фильтрация только активных источников
+        cursor.execute("SELECT id, source_name FROM SourceKC WHERE archived = 0 ORDER BY `order`")
+        sources = cursor.fetchall()
+
+        # Фильтрация только активных категорий
+        cursor.execute("SELECT id, category_name FROM CallCategories WHERE archived = 0 ORDER BY `order`")
+        categories = cursor.fetchall()
+
+        # Получение черного списка
+        cursor.execute("""
+            SELECT b.id, u.full_name, b.added_at
+            FROM Blacklist b
+            JOIN User u ON b.user_id = u.id
+            ORDER BY b.added_at DESC
+        """)
+        blacklist = cursor.fetchall()
+        
+        # Получение уведомлений для админов
+        cursor.execute("""
+            SELECT id, message, created_at, 
+                   CASE WHEN EXISTS (SELECT 1 FROM UserNotifications WHERE notification_id = id AND is_read = 1) 
+                   THEN 1 ELSE 0 END as is_read
+            FROM Notifications
+            ORDER BY created_at DESC
+            LIMIT 10
+        """)
+        notifications = cursor.fetchall()
+        
+        cursor.close()
+        connection.close()
+
+        return render_template(
+            'manage_objects_sources.html',
+            objects=objects,
+            sources=sources,
+            categories=categories,
+            blacklist=blacklist,
+            notifications=notifications
+        )
+        
+    except Exception as e:
+        logger.error(f"Ошибка при загрузке данных для редактирования базы: {str(e)}")
+        flash('Произошла ошибка при загрузке данных', 'error')
+        return redirect(url_for('callcenter.call_center_dashboard'))
+
+@callcenter_bp.route('/update_order', methods=['POST'])
+@login_required
+def update_order():
+    if current_user.role not in ['admin', 'operator']:
+        return jsonify({'status': 'error', 'message': 'Нет доступа'}), 403
+    
+    data = request.get_json()
+    logger.info(f'Получены данные для изменения порядка: {data}')  # Логируем полученные данные
+    
+    table = data.get('table')
+    order = data.get('order')
+    
+    if not table or not order:
+        return jsonify({'status': 'error', 'message': 'Некорректные данные'}), 400
+    
+    table_mapping = {
+        'object-table': ('ObjectKC', 'id'),
+        'source-table': ('SourceKC', 'id'),
+        'category-table': ('CallCategories', 'id')
+    }
+    
+    if table not in table_mapping:
+        return jsonify({'status': 'error', 'message': 'Неизвестная таблица'}), 400
+    
+    table_name, id_field = table_mapping[table]
+    
+    try:
+        connection = create_db_connection()
+        cursor = connection.cursor()
+        
+        for item in order:
+            item_id = item.get('id')
+            position = item.get('position')
+            
+            if item_id is None or position is None:
+                continue
+            
+            query = f"UPDATE {table_name} SET `order` = %s WHERE {id_field} = %s"
+            cursor.execute(query, (position, item_id))
+        
+        connection.commit()
+        cursor.close()
+        connection.close()
+        
+        return jsonify({'status': 'success'})
+    
+    except Exception as e:
+        logger.error(f"Ошибка при обновлении порядка: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@callcenter_bp.route('/edit_item', methods=['POST'])
+@login_required
+def edit_item():
+    item_id = request.form['id']
+    item_type = request.form['type']
+    new_name = request.form['name']
+    connection = create_db_connection()
+    cursor = connection.cursor()
+    if item_type == 'object':
+        cursor.execute("UPDATE ObjectKC SET name = %s WHERE id = %s", (new_name, item_id))
+    elif item_type == 'source':
+        cursor.execute("UPDATE SourceKC SET name = %s WHERE id = %s", (new_name, item_id))
+    connection.commit()
+    cursor.close()
+    connection.close()
+    return jsonify(success=True)
+
+@callcenter_bp.route('/archive_item', methods=['POST'])
+@login_required
+def archive_item():
+    item_id = request.form['id']
+    item_type = request.form['type']
+    action = request.form['action']
+    connection = create_db_connection()
+    cursor = connection.cursor()
+    archived = 1 if action == 'archive' else 0
+    if item_type == 'object':
+        cursor.execute("UPDATE ObjectKC SET archived = %s WHERE id = %s", (archived, item_id))
+    elif item_type == 'source':
+        cursor.execute("UPDATE SourceKC SET archived = %s WHERE id = %s", (archived, item_id))
+    connection.commit()
+    cursor.close()
+    connection.close()
+    return jsonify(success=True)
+
+@callcenter_bp.route('/add_call', methods=['POST'])
+@login_required
+def add_call():
+    if current_user.role != 'admin':
+        flash('Требуются права администратора', 'danger')
+        return redirect(url_for('auth.login'))
+    number = request.form['number']
+    category_id = request.form['category_id']  # Теперь используем ID категории
+    timeline = request.form.get('timeline', 'daily')
+    connection = create_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("INSERT INTO Calls (number, category_id, timeline) VALUES (%s, %s, %s)", (number, category_id, timeline))
+    connection.commit()
+    cursor.close()
+    connection.close()
+    flash('Номер успешно добавлен', 'success')
+    return redirect(url_for('manage_calls'))
+
+@callcenter_bp.route('/edit_categories', methods=['POST'])
+@login_required
+def edit_categories():
+    if current_user.role != 'admin':
+        flash('Требуются права администратора', 'danger')
+        return redirect(url_for('auth.login'))
+    category_name = request.form['category_name']
+    print(f"Adding category: {category_name}")
+    connection = create_db_connection()
+    cursor = connection.cursor()
+    try:
+        cursor.execute("INSERT INTO Calls (category, number, timeline, hide) VALUES (%s, '', 'daily', 'no')", (category_name,))
+        connection.commit()
+        print("Category added successfully.")
+    except mysql.connector.Error as e:
+        print(f"Error while adding category: {e}")
+    finally:
+        cursor.close()
+        connection.close()
+    flash('Категория успешно добавлена', 'success')
+    return redirect(url_for('callcenter.manage_objects_sources'))
+
+@callcenter_bp.route('/edit_category', methods=['POST'])
+@login_required
+def edit_category():
+    try:
+        category_id = request.form['category_id']
+        new_category_name = request.form['category_name']
+    connection = create_db_connection()
+    cursor = connection.cursor()
+        cursor.execute("""
+            UPDATE CallCategories
+            SET category_name = %s
+            WHERE id = %s
+        """, (new_category_name, category_id))
+        connection.commit()
+        cursor.close()
+        connection.close()
+        flash('Название категории успешно обновлено!', 'success')
+    except Exception as e:
+        logger.error(f"Ошибка при редактировании категории: {str(e)}")
+        flash(f"Ошибка: {str(e)}", 'error')
+    return redirect(url_for('callcenter.manage_objects_sources'))
+
+@callcenter_bp.route('/delete_call/<int:call_id>', methods=['POST'])
+@login_required
+def delete_call(call_id):
+    if current_user.role != 'admin':
+        flash('Требуются права администратора', 'danger')
+        return redirect(url_for('auth.login'))
+    connection = create_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("DELETE FROM Calls WHERE id = %s", (call_id,))
+    connection.commit()
+    cursor.close()
+    connection.close()
+    flash('Вызов удалён', 'success')
+    return redirect(url_for('manage_calls'))
+
+@callcenter_bp.route('/delete_category/<int:category_id>', methods=['POST'])
+@login_required
+def delete_category(category_id):
+    if current_user.role != 'admin':
+        flash('Требуются права администратора', 'danger')
+        return redirect(url_for('callcenter.manage_objects_sources'))
+    connection = create_db_connection()
+    cursor = connection.cursor()
+    try:
+        cursor.execute("DELETE FROM CallCategories WHERE id = %s", (category_id,))
+        connection.commit()
+        cursor.close()
+        connection.close()
+        flash('Категория успешно удалена!', 'success')
+        return redirect(url_for('callcenter.manage_objects_sources'))
+    except mysql.connector.Error as e:
+        flash(f'Ошибка: {str(e)}', 'danger')
+        return redirect(url_for('callcenter.manage_objects_sources'))
+
+@callcenter_bp.route('/rename_category', methods=['POST'])
+@login_required
+def rename_category():
+    if current_user.role != 'admin':
+        return jsonify({'success': False, 'message': 'Требуются права администратора'}), 403
+    category_id = request.form['category_id']
+    new_category_name = request.form['new_category_name']
+    connection = create_db_connection()
+    cursor = connection.cursor()
+    try:
+        cursor.execute("UPDATE CallCategories SET category_name = %s WHERE id = %s", (new_category_name, category_id))
+        connection.commit()
+        cursor.close()
+        connection.close()
+        return jsonify({'success': True, 'category': {'id': category_id, 'category_name': new_category_name}})
+    except mysql.connector.Error as e:
+        return jsonify({'success': False, 'message': str(e)})
 
 @callcenter_bp.route('/archives')
 @login_required
@@ -3031,21 +3428,3 @@ def delete_item_permanently():
             'success': False,
             'message': str(e)
         })
-
-
-def sanitize_sheet_name(name):
-    """
-    Очищает имя листа Excel от недопустимых символов и ограничивает длину
-    """
-    # Недопустимые символы в имени листа Excel
-    invalid_chars = [':', '\\', '/', '?', '*', '[', ']']
-    
-    # Удаляем недопустимые символы
-    for char in invalid_chars:
-        name = name.replace(char, '')
-    
-    # Ограничиваем длину до 31 символа (ограничение Excel)
-    if len(name) > 31:
-        name = name[:31]
-    
-    return name
