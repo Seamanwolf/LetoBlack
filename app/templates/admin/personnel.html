@@ -32,7 +32,6 @@
   
   /* Боковая панель */
   .sidebar {
-    display: none !important; /* Скрываем боковую панель на этой странице */
     position: fixed;
     width: 240px;
     height: 100%;
@@ -70,8 +69,8 @@
     margin-bottom: 2rem;
     border-bottom: 2px solid #dee2e6;
     align-items: center;
-    width: 100% !important; /* Растягиваем на всю ширину */
-    justify-content: center !important; /* Центрируем элементы */
+    width: 100% !important; /* На всю ширину доступного пространства */
+    justify-content: flex-start !important; /* Выравниваем по левому краю */
   }
 
   .nav-menu a {
@@ -103,12 +102,11 @@
   
   /* Основной контент */
   .main-content {
-    margin-left: 0 !important; 
+    margin-left: 240px !important; /* Возвращаем отступ для боковой панели */
     margin-top: 60px !important;
-    padding-top: 20px !important;
-    width: 100% !important;
-    max-width: 1800px !important; /* Ограничиваем максимальную ширину */
-    margin: 60px auto 0 !important; /* Центрируем по горизонтали с отступом сверху */
+    padding: 20px !important;
+    width: calc(100% - 240px) !important; /* Учитываем ширину боковой панели */
+    max-width: 1800px !important;
   }
   
   /* Стили для карточек статистики */
@@ -632,7 +630,7 @@
   .topbar {
     position: fixed;
     top: 0;
-    left: 0 !important; /* Начинаем от левого края */
+    left: 240px !important; /* Отступ для боковой панели */
     right: 0;
     height: 60px;
     background-color: white;
@@ -642,15 +640,16 @@
     padding: 0 20px;
     box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.05);
     z-index: 900;
-    width: 100% !important; /* Растягиваем на всю ширину */
+    width: calc(100% - 240px) !important; /* Учитываем ширину боковой панели */
   }
 
   .title {
     font-size: 20px !important; /* Увеличиваем размер шрифта */
     font-weight: 600 !important; /* Делаем шрифт жирнее */
     color: #2c3e50;
-    margin-left: auto !important;
-    margin-right: auto !important; /* Центрируем заголовок */
+    margin-left: 0 !important; /* Выравниваем по левому краю */
+    margin-right: auto !important; /* Смещаем влево */
+    text-align: left !important;
   }
 
   .container-fluid {
@@ -658,16 +657,16 @@
     padding: 0 !important;
   }
 
-  /* Стиль для таблицы, чтобы она была по центру */
+  /* Стиль для таблицы, чтобы она была размещена правильно */
   .table-responsive {
-    margin: 0 auto !important;
+    margin: 0 !important;
+    width: 100% !important;
   }
 
   /* Центрирование элементов с блоками сотрудников */
   #departments-container {
-    margin: 0 auto !important;
+    margin: 0 !important;
     width: 100% !important;
-    max-width: 1800px !important;
   }
 </style>
 {% endblock %}
