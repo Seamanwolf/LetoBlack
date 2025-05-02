@@ -5,11 +5,41 @@
 
 {% block extra_css %}
 <style>
+  /* Базовые стили */
   body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f8f9fa;
-    font-size: 0.85rem;
-    padding-left: 250px; /* Добавляем отступ слева для боковой панели */
+    background-color: #f5f7f9;
+    color: #333;
+  }
+  
+  /* Иконки должны быть поверх всего на странице */
+  .move-up, .move-down {
+    cursor: pointer !important;
+    color: #6c757d !important;
+    transition: all 0.3s ease !important;
+    z-index: 1000 !important;
+    font-size: 1rem !important;
+    display: inline-block !important;
+    margin: 0 5px !important;
+    padding: 5px !important;
+  }
+  
+  .move-up:hover, .move-down:hover {
+    color: #007bff !important;
+    transform: scale(1.2) !important;
+  }
+  
+  /* Боковая панель */
+  .sidebar {
+    position: fixed;
+    width: 240px;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background-color: white;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+    padding: 20px;
+    z-index: 1000;
   }
   
   /* Стили для кнопок в модальных окнах */
@@ -26,39 +56,6 @@
     font-size: 0.875rem !important;
     height: auto !important;
     min-height: auto !important;
-  }
-  
-  /* Стили для боковой панели */
-  .sidebar {
-    position: fixed;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 250px;
-    background: white;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-    padding: 20px;
-    z-index: 1000;
-  }
-
-  .sidebar .nav-link {
-    display: flex;
-    align-items: center;
-    padding: 15px;
-    color: #6c757d;
-    text-decoration: none;
-    transition: all 0.3s;
-  }
-
-  .sidebar .nav-link i {
-    font-size: 1.2rem;
-    margin-right: 10px;
-  }
-
-  .sidebar .nav-link.active {
-    color: #3498db;
-    background: rgba(52, 152, 219, 0.1);
-    border-radius: 8px;
   }
   
   /* Стили для верхнего меню */
@@ -166,21 +163,67 @@
     padding: 5px 10px;
     border-radius: 50px;
     font-size: 0.8rem;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 24px !important;
+    height: 24px !important;
+    line-height: 1 !important;
+    vertical-align: middle !important;
   }
   
   .department-header .department-controls {
-    display: flex;
-    gap: 10px;
+    display: flex !important;
+    gap: 10px !important;
   }
   
   .department-header .department-controls i {
-    cursor: pointer;
-    color: #6c757d;
-    transition: color 0.3s;
+    cursor: pointer !important;
+    color: #6c757d !important;
+    transition: color 0.3s !important;
+    font-size: 1rem !important;
+    margin: 0 3px !important;
+    z-index: 10 !important;
   }
   
   .department-header .department-controls i:hover {
-    color: #3498db;
+    color: #3498db !important;
+    transform: scale(1.2) !important;
+  }
+  
+  /* Стили для маркера перетаскивания */
+  .drag-handle {
+    cursor: move !important;
+    color: #6c757d !important;
+    transition: color 0.3s ease !important;
+    font-size: 1.2rem !important;
+    margin: 0 5px !important;
+    display: inline-block !important;
+    z-index: 20 !important;
+    /* Убираем всю обводку и фон */
+    background: transparent !important;
+    padding: 2px !important;
+    border-radius: 0 !important;
+    border: none !important;
+  }
+  
+  .drag-handle:hover {
+    color: #3498db !important;
+    transform: scale(1.2) !important;
+  }
+  
+  .drag-handle:active {
+    cursor: grabbing !important;
+  }
+  
+  /* Стили для перетаскивания */
+  .department-section.dragging {
+    opacity: 0.7 !important;
+    transform: scale(0.98) !important;
+  }
+  
+  .department-section.drop-target {
+    border: 2px dashed #3498db !important;
   }
   
   /* Таблица сотрудников */
@@ -701,6 +744,9 @@ $(document).ready(function() {
                 <button class="btn btn-success btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#addEmployeeModal" id="addEmployeeBtn">
                     <i class="fas fa-user-plus"></i> Добавить сотрудника
                 </button>
+                <button class="btn btn-info btn-sm" type="button" id="toggleAllDepartments">
+                    <i class="fas fa-chevron-up"></i> <span>Свернуть все</span>
+                </button>
             </div>
         </div>
     </div>
@@ -754,15 +800,14 @@ $(document).ready(function() {
 
     <!-- Список сотрудников по отделам -->
     <div id="departments-container">
-        {% for department in departments|sort(attribute='order') %}
+        {% for department in departments|sort(attribute='display_order') %}
         <div class="department-section" data-department-id="{{ department.id }}">
             <div class="department-header">
-                <span>{{ department.name }}</span>
+                <span class="department-name">{{ department.name }}</span>
                 <div class="department-controls">
                     <span class="badge">{{ employees_by_department[department.name]|default([])|length }}</span>
                     <i class="fas fa-chevron-up toggle-department" title="Свернуть/развернуть"></i>
-                    <i class="fas fa-arrow-up move-up" title="Переместить вверх" data-id="{{ department.id }}"></i>
-                    <i class="fas fa-arrow-down move-down" title="Переместить вниз" data-id="{{ department.id }}"></i>
+                    <span class="drag-handle" draggable="true" title="Перетащить для изменения порядка">=</span>
                 </div>
             </div>
             <div class="department-content">
@@ -1660,24 +1705,12 @@ $(document).ready(function() {
             searchEmployees(searchTerm);
         });
         
-        // Обработчики для кнопок перемещения отделов
-        document.querySelectorAll('.move-up').forEach(button => {
-            button.addEventListener('click', function() {
-                const departmentId = this.getAttribute('data-id');
-                moveDepartment(departmentId, 'up');
-            });
-        });
-        
-        document.querySelectorAll('.move-down').forEach(button => {
-            button.addEventListener('click', function() {
-                const departmentId = this.getAttribute('data-id');
-                moveDepartment(departmentId, 'down');
-            });
-        });
-        
         // Обработчик для кнопок сворачивания/разворачивания отделов
         document.querySelectorAll('.toggle-department').forEach(button => {
-            button.addEventListener('click', function() {
+            button.addEventListener('click', function(e) {
+                // Предотвращаем всплытие события
+                e.stopPropagation();
+                
                 const content = this.closest('.department-section').querySelector('.department-content');
                 if (content.style.display === 'none') {
                     content.style.display = 'block';
@@ -1687,6 +1720,26 @@ $(document).ready(function() {
                     content.style.display = 'none';
                     this.classList.remove('fa-chevron-up');
                     this.classList.add('fa-chevron-down');
+                }
+                
+                // Сохраняем состояние
+                const departmentId = this.closest('.department-section').getAttribute('data-department-id');
+                saveDepartmentState(departmentId, content.style.display === 'none');
+            });
+        });
+        
+        // Добавляем обработчик для клика на заголовок отдела
+        document.querySelectorAll('.department-header').forEach(header => {
+            header.addEventListener('click', function(e) {
+                // Пропускаем, если клик был на drag-handle или toggle-department
+                if (e.target.closest('.drag-handle') || e.target.closest('.toggle-department')) {
+                    return;
+                }
+                
+                // Находим кнопку сворачивания и программно кликаем по ней
+                const toggleBtn = this.querySelector('.toggle-department');
+                if (toggleBtn) {
+                    toggleBtn.click();
                 }
             });
         });
@@ -2583,5 +2636,315 @@ document.querySelectorAll('.edit-icon').forEach(icon => {
 });
 
 // ... existing code ...
+
+// Функции для реализации Drag and Drop
+document.addEventListener('DOMContentLoaded', function() {
+    // Находим все элементы для перетаскивания
+    const dragHandles = document.querySelectorAll('.drag-handle');
+    const departmentSections = document.querySelectorAll('.department-section');
+    
+    let draggedElement = null;
+    
+    // Добавляем обработчики событий для каждого маркера перетаскивания
+    dragHandles.forEach(handle => {
+        handle.addEventListener('dragstart', function(e) {
+            // Находим родительский элемент отдела
+            draggedElement = this.closest('.department-section');
+            draggedElement.classList.add('dragging');
+            
+            // Устанавливаем данные для перетаскивания
+            e.dataTransfer.setData('text/plain', draggedElement.getAttribute('data-department-id'));
+            e.dataTransfer.effectAllowed = 'move';
+            
+            // Устанавливаем прозрачное изображение для перетаскивания
+            const dragImage = document.createElement('div');
+            dragImage.textContent = draggedElement.querySelector('.department-name').textContent;
+            dragImage.style.padding = '10px';
+            dragImage.style.background = '#3498db';
+            dragImage.style.color = 'white';
+            dragImage.style.borderRadius = '5px';
+            dragImage.style.position = 'absolute';
+            dragImage.style.top = '-1000px';
+            document.body.appendChild(dragImage);
+            
+            e.dataTransfer.setDragImage(dragImage, 0, 0);
+            
+            // Добавляем обработчик для удаления временного элемента
+            setTimeout(() => {
+                document.body.removeChild(dragImage);
+            }, 0);
+        });
+        
+        handle.addEventListener('dragend', function() {
+            if (draggedElement) {
+                draggedElement.classList.remove('dragging');
+                draggedElement = null;
+            }
+            
+            // Удаляем все индикаторы drop target
+            departmentSections.forEach(section => {
+                section.classList.remove('drop-target');
+            });
+        });
+    });
+    
+    // Добавляем обработчики событий для секций отделов (drop targets)
+    departmentSections.forEach(section => {
+        section.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            
+            // Не добавляем класс, если это тот же самый элемент
+            if (draggedElement !== this) {
+                this.classList.add('drop-target');
+            }
+        });
+        
+        section.addEventListener('dragleave', function() {
+            this.classList.remove('drop-target');
+        });
+        
+        section.addEventListener('drop', function(e) {
+            e.preventDefault();
+            
+            // Удаляем класс подсветки
+            this.classList.remove('drop-target');
+            
+            // Получаем ID перетаскиваемого отдела
+            const draggedId = e.dataTransfer.getData('text/plain');
+            const targetId = this.getAttribute('data-department-id');
+            
+            // Не делаем ничего, если перетаскиваем на тот же самый элемент
+            if (draggedId === targetId) {
+                return;
+            }
+            
+            // Определяем направление перемещения
+            const departments = Array.from(document.querySelectorAll('.department-section'));
+            const draggedIndex = departments.findIndex(dept => dept.getAttribute('data-department-id') === draggedId);
+            const targetIndex = departments.findIndex(dept => dept.getAttribute('data-department-id') === targetId);
+            
+            // Вызываем API для обновления порядка
+            updateDepartmentPositions(draggedId, targetId, draggedIndex > targetIndex ? 'before' : 'after');
+        });
+    });
+});
+
+// Функция для обновления позиций отделов через API
+function updateDepartmentPositions(draggedId, targetId, position) {
+    fetch('/admin/api/update_department_positions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            dragged_id: draggedId,
+            target_id: targetId,
+            position: position
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Перезагружаем страницу для отображения нового порядка
+            location.reload();
+        } else {
+            showNotification(data.message || 'Ошибка при обновлении порядка отделов', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка при обновлении порядка отделов:', error);
+        showNotification('Ошибка при обновлении порядка отделов', 'error');
+    });
+}
+
+// ... existing code ...
+
+// Функция для сохранения состояния отделов
+function saveDepartmentState(departmentId, isCollapsed) {
+    const states = JSON.parse(localStorage.getItem('departmentStates') || '{}');
+    states[departmentId] = isCollapsed;
+    localStorage.setItem('departmentStates', JSON.stringify(states));
+}
+
+// Функция для загрузки состояния отделов
+function loadDepartmentStates() {
+    const states = JSON.parse(localStorage.getItem('departmentStates') || '{}');
+    return states;
+}
+
+// Функция для сворачивания/разворачивания всех отделов
+function toggleAllDepartments() {
+    const button = document.getElementById('toggleAllDepartments');
+    const icon = button.querySelector('i');
+    const text = button.querySelector('span');
+    const isCollapsed = icon.classList.contains('fa-chevron-down');
+    
+    document.querySelectorAll('.department-section').forEach(section => {
+        const content = section.querySelector('.department-content');
+        const toggleIcon = section.querySelector('.toggle-department');
+        const departmentId = section.getAttribute('data-department-id');
+        
+        if (isCollapsed) {
+            content.style.display = 'block';
+            toggleIcon.classList.remove('fa-chevron-down');
+            toggleIcon.classList.add('fa-chevron-up');
+        } else {
+            content.style.display = 'none';
+            toggleIcon.classList.remove('fa-chevron-up');
+            toggleIcon.classList.add('fa-chevron-down');
+        }
+        
+        saveDepartmentState(departmentId, !isCollapsed);
+    });
+    
+    // Обновляем состояние кнопки
+    if (isCollapsed) {
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
+        text.textContent = 'Свернуть все';
+    } else {
+        icon.classList.remove('fa-chevron-up');
+        icon.classList.add('fa-chevron-down');
+        text.textContent = 'Развернуть все';
+    }
+}
+
+// Функция для восстановления состояния отделов при загрузке страницы
+function restoreDepartmentStates() {
+    const states = loadDepartmentStates();
+    let allCollapsed = true;
+    let allExpanded = true;
+    
+    document.querySelectorAll('.department-section').forEach(section => {
+        const departmentId = section.getAttribute('data-department-id');
+        const content = section.querySelector('.department-content');
+        const toggleIcon = section.querySelector('.toggle-department');
+        
+        if (states[departmentId]) {
+            content.style.display = 'none';
+            toggleIcon.classList.remove('fa-chevron-up');
+            toggleIcon.classList.add('fa-chevron-down');
+            allExpanded = false;
+        } else {
+            content.style.display = 'block';
+            toggleIcon.classList.remove('fa-chevron-down');
+            toggleIcon.classList.add('fa-chevron-up');
+            allCollapsed = false;
+        }
+    });
+    
+    // Обновляем состояние кнопки
+    const button = document.getElementById('toggleAllDepartments');
+    const icon = button.querySelector('i');
+    const text = button.querySelector('span');
+    
+    if (allCollapsed) {
+        icon.classList.remove('fa-chevron-up');
+        icon.classList.add('fa-chevron-down');
+        text.textContent = 'Развернуть все';
+    } else if (allExpanded) {
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
+        text.textContent = 'Свернуть все';
+    } else {
+        // Если состояния смешанные, показываем "Свернуть все"
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
+        text.textContent = 'Свернуть все';
+    }
+}
+
+// Функции для реализации Drag and Drop с улучшенной поддержкой захвата
+document.addEventListener('DOMContentLoaded', function() {
+    // Находим все элементы для перетаскивания
+    const departmentSections = document.querySelectorAll('.department-section');
+    
+    // Делаем весь заголовок отдела перетаскиваемым для улучшения UX
+    departmentSections.forEach(section => {
+        const header = section.querySelector('.department-header');
+        const dragHandle = section.querySelector('.drag-handle');
+        const departmentId = section.getAttribute('data-department-id');
+        
+        if (dragHandle && header) {
+            // Упрощаем захват, делая маркер более заметным
+            dragHandle.innerHTML = '<i class="fas fa-grip-lines"></i>';
+            
+            // Обработчик для начала перетаскивания
+            dragHandle.addEventListener('mousedown', function(e) {
+                // Предотвращаем распространение события, чтобы не затронуть другие элементы
+                e.stopPropagation();
+                
+                // Добавляем класс для визуальной индикации
+                section.classList.add('dragging');
+                
+                // Делаем секцию draggable при нажатии на маркер
+                section.setAttribute('draggable', 'true');
+                
+                // Запускаем перетаскивание программно
+                section.ondragstart = function(event) {
+                    event.dataTransfer.setData('text/plain', departmentId);
+                    event.dataTransfer.effectAllowed = 'move';
+                };
+                
+                // После начала перетаскивания убираем атрибут draggable
+                section.ondragend = function() {
+                    section.removeAttribute('draggable');
+                    section.classList.remove('dragging');
+                };
+            });
+            
+            // Запрещаем перетаскивание при клике на другие элементы заголовка
+            header.addEventListener('mousedown', function(e) {
+                if (e.target !== dragHandle && !dragHandle.contains(e.target)) {
+                    section.setAttribute('draggable', 'false');
+                }
+            });
+        }
+    });
+    
+    // Обработчики событий для секций отделов (drop targets)
+    departmentSections.forEach(section => {
+        section.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            if (section !== document.querySelector('.dragging')) {
+                this.classList.add('drop-target');
+            }
+        });
+        
+        section.addEventListener('dragleave', function() {
+            this.classList.remove('drop-target');
+        });
+        
+        section.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('drop-target');
+            
+            // Получаем ID перетаскиваемого отдела
+            const draggedId = e.dataTransfer.getData('text/plain');
+            const targetId = this.getAttribute('data-department-id');
+            
+            // Не делаем ничего, если перетаскиваем на тот же самый элемент
+            if (draggedId === targetId) {
+                return;
+            }
+            
+            // Определяем направление перемещения
+            const departments = Array.from(document.querySelectorAll('.department-section'));
+            const draggedIndex = departments.findIndex(dept => dept.getAttribute('data-department-id') === draggedId);
+            const targetIndex = departments.findIndex(dept => dept.getAttribute('data-department-id') === targetId);
+            
+            // Вызываем API для обновления порядка
+            updateDepartmentPositions(draggedId, targetId, draggedIndex > targetIndex ? 'before' : 'after');
+        });
+    });
+    
+    // Восстанавливаем состояние отделов при загрузке страницы
+    restoreDepartmentStates();
+    
+    // Добавляем обработчик для кнопки сворачивания/разворачивания всех отделов
+    document.getElementById('toggleAllDepartments').addEventListener('click', toggleAllDepartments);
+    
+});
 </script>
 {% endblock %}
