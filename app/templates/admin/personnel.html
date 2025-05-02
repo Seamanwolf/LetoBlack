@@ -33,7 +33,8 @@
   /* Боковая панель */
   .sidebar {
     position: fixed;
-    width: 240px;
+    width: 180px !important;
+    min-width: 180px !important;
     height: 100%;
     top: 0;
     left: 0;
@@ -62,7 +63,7 @@
   /* Стили для верхнего меню */
   .nav-menu {
     background-color: white;
-    padding: 0 1.2rem;
+    padding: 0 15px !important;
     border-radius: 12px;
     display: flex;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
@@ -102,10 +103,9 @@
   
   /* Основной контент */
   .main-content {
-    margin-left: 240px !important; /* Возвращаем отступ для боковой панели */
-    margin-top: 60px !important;
-    padding: 20px !important;
-    width: calc(100% - 240px) !important; /* Учитываем ширину боковой панели */
+    margin-left: 180px !important;
+    width: calc(100% - 180px) !important;
+    padding: 15px !important;
     max-width: 1800px !important;
   }
   
@@ -630,7 +630,7 @@
   .topbar {
     position: fixed;
     top: 0;
-    left: 240px !important; /* Отступ для боковой панели */
+    left: 180px !important; /* Отступ для боковой панели */
     right: 0;
     height: 60px;
     background-color: white;
@@ -640,7 +640,7 @@
     padding: 0 20px;
     box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.05);
     z-index: 900;
-    width: calc(100% - 240px) !important; /* Учитываем ширину боковой панели */
+    width: calc(100% - 180px) !important; /* Учитываем ширину боковой панели */
   }
 
   .title {
@@ -668,6 +668,51 @@
     margin: 0 !important;
     width: 100% !important;
   }
+
+  /* Переопределяем глобальные стили с более высоким приоритетом для страницы персонала */
+  body.personnel-page {
+    overflow-x: hidden !important;
+  }
+
+  /* Делаем боковую панель более компактной для этой страницы */
+  .personnel-page .sidebar {
+    width: 200px !important;
+    min-width: 200px !important;
+    z-index: 1001 !important;
+  }
+
+  /* Основной контент с учетом компактной боковой панели */
+  .personnel-page .main-content {
+    margin-left: 200px !important;
+    width: calc(100% - 200px) !important;
+    padding: 15px !important;
+  }
+
+  /* Верхняя панель с учетом компактной боковой панели */
+  .personnel-page .topbar {
+    left: 200px !important;
+    width: calc(100% - 200px) !important;
+  }
+
+  /* Корректируем навигационное меню */
+  .personnel-page .nav-menu {
+    justify-content: flex-start !important;
+    width: 100% !important;
+  }
+
+  /* Дополнительные стили для корректного отображения */
+  .table {
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  /* Устанавливаем обратно правильные стили для элементов верхней панели */
+  .personnel-page .title {
+    margin-left: 0 !important;
+    text-align: left !important;
+  }
+
+  /* Добавление класса к body через JavaScript */
 </style>
 {% endblock %}
 
@@ -675,6 +720,11 @@
 <!-- Подключаем jQuery первым -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
+// Добавление класса к body для специфичных стилей персонала
+document.addEventListener('DOMContentLoaded', function() {
+  document.body.classList.add('personnel-page');
+});
+
 // Проверяем загрузку jQuery
 if (typeof jQuery === 'undefined') {
     console.error('jQuery не загружен!');
