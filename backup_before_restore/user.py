@@ -19,6 +19,15 @@ class User(UserMixin):
         # Кешированный список ролей пользователя
         self._roles = None
     
+    @property
+    def is_admin(self):
+        """
+        Проверяет, является ли пользователь администратором
+        """
+        if hasattr(self, 'role') and self.role == 'admin':
+            return True
+        return any(role.name == 'admin' for role in self.roles)
+    
     def get_id(self):
         return str(self.id)
         
@@ -153,13 +162,6 @@ class User(UserMixin):
             bool: True, если у пользователя есть указанная роль, иначе False
         """
         return any(role.name == role_name for role in self.roles)
-
-    @property
-    def is_admin(self):
-        """
-        Проверяет, является ли пользователь администратором
-        """
-        return self.has_role('admin')
 
     @staticmethod
     def get_by_id(user_id):

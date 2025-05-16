@@ -121,4 +121,136 @@ $(document).ready(function() {
     });
     
     // ... existing code ...
-}); 
+});
+
+function filterEmployees() {
+    console.log('Начало фильтрации сотрудников');
+    const searchText = $('#searchInput').val().toLowerCase();
+    const departmentSelect = $('#departmentFilter');
+    const selectedDepartment = departmentSelect.val();
+    
+    // Сначала скрываем все строки
+    $('.department-section tbody tr').each(function() {
+        const row = $(this);
+        const fullName = row.find('td:nth-child(3)').text().toLowerCase();
+        const position = row.find('td:nth-child(4)').text().toLowerCase();
+        const phone = row.find('td:nth-child(5)').text().toLowerCase();
+        const email = row.find('td:nth-child(6)').text().toLowerCase();
+        
+        const matchesSearch = fullName.includes(searchText) || 
+                            position.includes(searchText) || 
+                            phone.includes(searchText) || 
+                            email.includes(searchText);
+        
+        const departmentSection = row.closest('.department-section');
+        const departmentName = departmentSection.find('.department-header span').first().text().toLowerCase();
+        
+        const matchesDepartment = selectedDepartment === 'all' || 
+                                departmentName === selectedDepartment.toLowerCase();
+        
+        if (matchesSearch && matchesDepartment) {
+            row.removeClass('d-none');
+        } else {
+            row.addClass('d-none');
+        }
+    });
+    
+    // Затем обновляем видимость отделов
+    $('.department-section').each(function() {
+        const section = $(this);
+        const visibleRows = section.find('tbody tr:not(.d-none)').length;
+        
+        console.log(`Отдел: ${section.find('.department-header span').first().text()}, видимых строк: ${visibleRows}`);
+        
+        if (visibleRows > 0) {
+            section.removeClass('d-none');
+        } else {
+            section.addClass('d-none');
+        }
+    });
+    
+    console.log('Фильтрация завершена');
+}
+
+// Обработчик изменения поискового запроса
+$('#searchInput').on('input', function() {
+    filterEmployees();
+});
+
+// Обработчик изменения выбора отдела
+$('#departmentFilter').on('change', function() {
+    filterEmployees();
+});
+
+function fireEmployee(employeeId, employeeName) {
+    const fireDate = $('#fireDate').val();
+    
+    if (!fireDate) {
+        showNotification('Пожалуйста, выберите дату увольнения', 'danger');
+        return;
+    }
+    
+    $.ajax({
+        url: '/admin/api/fire_employee',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            id: employeeId,
+            fire_date: fireDate
+        }),
+        success: function(response) {
+            if (response.success) {
+                showNotification(`Сотрудник ${employeeName} успешно уволен`, 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            } else {
+                showNotification(response.message, 'danger');
+            }
+        },
+        error: function(xhr, status, error) {
+            showNotification('Ошибка при увольнении сотрудника', 'danger');
+        }
+    });
+}
+
+// Функция для отображения уведомлений
+function showNotification(message, type = 'success') {
+    const container = document.getElementById('toastContainer');
+    if (!container) {
+        console.error('Контейнер для уведомлений не найден');
+        alert(message);
+        return;
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    const icon = document.createElement('i');
+    icon.className = `toast-icon ${type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'}`;
+    
+    const content = document.createElement('div');
+    content.className = 'toast-content';
+    
+    const title = document.createElement('div');
+    title.className = 'toast-title';
+    title.textContent = type === 'success' ? 'Успешно' : 'Ошибка';
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'toast-message';
+    messageDiv.textContent = message;
+    
+    content.appendChild(title);
+    content.appendChild(messageDiv);
+    
+    toast.appendChild(icon);
+    toast.appendChild(content);
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.classList.add('hide');
+        setTimeout(() => {
+            container.removeChild(toast);
+        }, 300);
+    }, 3000);
+} 

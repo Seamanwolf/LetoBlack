@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, abort
 from flask_login import login_required, current_user
 from app.routes.auth import redirect_based_on_role
-from app.models.user import User
+from app.models import User
 from app.models.action import Action
 from app import db
 

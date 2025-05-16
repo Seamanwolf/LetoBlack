@@ -820,14 +820,21 @@ def add_number():
 @admin_bp.route('/move_number', methods=['POST'])
 @login_required
 def move_number():
+    current_app.logger.info("Начало выполнения функции move_number")
+    current_app.logger.debug(f"Данные запроса: {request.get_json()}")
+    
     if not (current_user.role == 'backoffice' and current_user.department == "Ресепшн"):
+        current_app.logger.warning(f"Отказано в доступе пользователю {current_user.login} с ролью {current_user.role}")
         return jsonify({'success': False, 'message': 'Доступ запрещен'}), 403
     
     data = request.get_json()
     number_id = data.get('number_id')
     new_department = data.get('new_department')
     
+    current_app.logger.debug(f"ID номера: {number_id}, Новый отдел: {new_department}")
+    
     if not number_id or not new_department:
+        current_app.logger.error("Не указан ID номера или новый отдел")
         return jsonify({'success': False, 'message': 'Не указан ID номера или новый отдел'}), 400
     
     connection = create_db_connection()
@@ -837,12 +844,16 @@ def move_number():
         cursor.execute("SELECT * FROM user_phone_numbers WHERE id = %s", (number_id,))
         old_data = cursor.fetchone()
         if not old_data:
+            current_app.logger.error(f"Номер с ID {number_id} не найден")
             return jsonify({'success': False, 'message': 'Номер не найден'}), 404
+        
+        current_app.logger.info(f"Текущие данные номера: {old_data}")
         
         # Обновляем отдел
         query = "UPDATE user_phone_numbers SET department = %s WHERE id = %s"
         cursor.execute(query, (new_department, number_id))
         connection.commit()
+        current_app.logger.info(f"Номер успешно перемещен в отдел {new_department}")
         
         # Логируем изменение в phone_numbers_history
         try:
@@ -857,18 +868,19 @@ def move_number():
                 f"Номер перемещен из отдела {old_data['department']} в отдел {new_department}"
             ))
             connection.commit()
+            current_app.logger.info("Запись о перемещении добавлена в историю")
         except mysql.connector.Error as log_err:
-            # Если ошибка при записи в историю, просто логируем её, но не прерываем работу
-            current_app.logger.error("Ошибка при добавлении записи в историю номеров: %s", log_err)
+            current_app.logger.error(f"Ошибка при добавлении записи в историю номеров: {log_err}")
         
         return jsonify({'success': True})
     except mysql.connector.Error as err:
         connection.rollback()
-        current_app.logger.error("Ошибка при перемещении номера: %s", err)
+        current_app.logger.error(f"Ошибка при перемещении номера: {err}")
         return jsonify({'success': False, 'message': str(err)}), 500
     finally:
         cursor.close()
         connection.close()
+        current_app.logger.info("Завершение функции move_number")
 
 @admin_bp.route('/update_number', methods=['POST'])
 @login_required
@@ -978,13 +990,20 @@ def update_prohibit():
 @admin_bp.route('/delete_number', methods=['POST'])
 @login_required
 def delete_number():
+    current_app.logger.info("Начало выполнения функции delete_number")
+    current_app.logger.debug(f"Данные запроса: {request.get_json()}")
+    
     if not (current_user.role == 'backoffice' and current_user.department == "Ресепшн"):
+        current_app.logger.warning(f"Отказано в доступе пользователю {current_user.login} с ролью {current_user.role}")
         return jsonify({'success': False, 'message': 'Доступ запрещен'}), 403
     
     data = request.get_json()
     number_id = data.get('number_id')
     
+    current_app.logger.debug(f"ID номера для удаления: {number_id}")
+    
     if not number_id:
+        current_app.logger.error("Не указан ID номера")
         return jsonify({'success': False, 'message': 'Не указан ID номера'}), 400
     
     connection = create_db_connection()
@@ -994,12 +1013,16 @@ def delete_number():
         cursor.execute("SELECT * FROM user_phone_numbers WHERE id = %s", (number_id,))
         number_data = cursor.fetchone()
         if not number_data:
+            current_app.logger.error(f"Номер с ID {number_id} не найден")
             return jsonify({'success': False, 'message': 'Номер не найден'}), 404
+        
+        current_app.logger.info(f"Найден номер для удаления: {number_data}")
         
         # Удаляем номер
         query = "DELETE FROM user_phone_numbers WHERE id = %s"
         cursor.execute(query, (number_id,))
         connection.commit()
+        current_app.logger.info(f"Номер успешно удален из базы данных")
         
         # Логируем удаление в phone_numbers_history
         try:
@@ -1013,18 +1036,19 @@ def delete_number():
                 f"Номер удален из системы"
             ))
             connection.commit()
+            current_app.logger.info("Запись об удалении добавлена в историю")
         except mysql.connector.Error as log_err:
-            # Если ошибка при записи в историю, просто логируем её
-            current_app.logger.error("Ошибка при добавлении записи в историю номеров: %s", log_err)
+            current_app.logger.error(f"Ошибка при добавлении записи в историю номеров: {log_err}")
         
         return jsonify({'success': True})
     except mysql.connector.Error as err:
         connection.rollback()
-        current_app.logger.error("Ошибка при удалении номера: %s", err)
+        current_app.logger.error(f"Ошибка при удалении номера: {err}")
         return jsonify({'success': False, 'message': str(err)}), 500
     finally:
         cursor.close()
         connection.close()
+        current_app.logger.info("Завершение функции delete_number")
 
 @admin_bp.route('/fire_employee', methods=['POST'])
 @login_required

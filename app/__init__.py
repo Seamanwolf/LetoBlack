@@ -26,6 +26,19 @@ def create_app(config_class=Config):
                 static_url_path=config_class.STATIC_URL_PATH)
     app.config.from_object(config_class)
     
+    # Настройка логирования
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler('app.log'),
+            logging.StreamHandler()
+        ]
+    )
+    
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+    
     # Создаем директорию для статических файлов, если она не существует
     static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), config_class.STATIC_FOLDER)
     images_dir = os.path.join(static_dir, 'images')
@@ -39,7 +52,7 @@ def create_app(config_class=Config):
     context_processors.init_app(app)
     
     # Импорт моделей
-    from app.models.user import User
+    from app.models import User
     from app.models.role import Role
     from app.models.permission import Permission
     from app.models.system_module import SystemModule
@@ -82,6 +95,8 @@ def create_app(config_class=Config):
     from app.news import news_bp
     from app.routes.api import api_bp
     
+    logger.debug("Регистрация маршрутов...")
+    
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(roles_bp)
@@ -96,9 +111,20 @@ def create_app(config_class=Config):
     app.register_blueprint(itinvent_bp)
     app.register_blueprint(userlist_bp)
     app.register_blueprint(news_bp, url_prefix='/news')
+    
+    # Регистрируем admin_routes_bp с префиксом /admin
+    logger.debug("Регистрация admin_routes_bp с префиксом /admin")
     app.register_blueprint(admin_routes_bp, url_prefix='/admin', name='admin_routes_unique')
+    
+    # Регистрируем api_bp с префиксом /api
+    logger.debug("Регистрация api_bp с префиксом /api")
     app.register_blueprint(api_bp, url_prefix='/api')
+    
+    # Регистрируем admin_bp с префиксом /admin_old
+    logger.debug("Регистрация admin_bp с префиксом /admin_old")
     app.register_blueprint(admin_bp, url_prefix='/admin_old', name='admin_old_unique')
+    
+    logger.debug("Все маршруты зарегистрированы")
     
     # Импорт и регистрация CLI команд
     from app import commands
@@ -114,7 +140,7 @@ def create_app(config_class=Config):
         return render_template('errors/500.html'), 500
     
     # Планировщик задач
-    scheduler = BackgroundScheduler()
+    scheduler = BackgroundScheduler(timezone='Europe/Moscow')
     
     # Задача для очистки подключений к базе данных
     def clean_db_connections():
@@ -142,7 +168,7 @@ def create_app(config_class=Config):
             from flask_login import current_user
             
             if current_user.is_authenticated:
-                return get_user_accessible_modules(current_user.id)
+                return get_user_accessible_modules(current_user)
             return []
             
         return {'get_accessible_modules': get_accessible_modules}

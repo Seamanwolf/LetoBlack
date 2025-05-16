@@ -4,13 +4,53 @@
 {% block page_title %}Управление персоналом{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="/static/css/layout.css?v={{ range(1, 100000) | random }}">
 <style>
+  /* Принудительный сброс стилей */
+  :root {
+    --flush-cache: {{ range(1, 100000) | random }};
+    --sidebar-width: 240px;
+    --topbar-height: 60px;
+  }
+  
   /* Базовые стили */
   body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f5f7f9;
     color: #333;
     overflow-x: hidden !important; /* Предотвращаем горизонтальный скролл */
+  }
+  
+  /* Сильно специфичные стили для верхней панели с повышенным приоритетом */
+  html body .topbar,
+  body .topbar,
+  .topbar {
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    left: calc(var(--sidebar-width) - 200px) !important; /* Увеличиваем смещение влево */
+    height: var(--topbar-height) !important;
+    background-color: white !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05) !important;
+    padding: 0 20px 0 15px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    z-index: 999 !important; /* Уменьшаем z-index, чтобы быть ниже sidebar (z-index: 1000), но выше nav-menu */
+    width: calc(100% - var(--sidebar-width) + 200px) !important; /* Увеличиваем ширину */
+    margin-left: 0 !important; /* Сбрасываем все возможные margin-left */
+  }
+
+  /* Стиль для заголовка в верхней панели */
+  html body .topbar .title,
+  body .topbar .title,
+  .topbar .title {
+    font-size: 20px !important;
+    font-weight: 600 !important;
+    color: #2c3e50;
+    margin-left: 50px !important; /* Добавляем отступ слева для смещения текста вправо */
+    padding-left: 30px !important; /* Дополнительный отступ */
+    text-align: left !important;
   }
   
   /* Иконки должны быть поверх всего на странице */
@@ -30,20 +70,6 @@
     transform: scale(1.2) !important;
   }
   
-  /* Боковая панель */
-  .sidebar {
-    position: fixed;
-    width: 180px !important;
-    min-width: 180px !important;
-    height: 100%;
-    top: 0;
-    left: 0;
-    background-color: white;
-    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
-    padding: 20px;
-    z-index: 1000;
-  }
-  
   /* Стили для кнопок в модальных окнах */
   .modal .btn {
     padding: 0.25rem 0.5rem !important;
@@ -60,53 +86,98 @@
     min-height: auto !important;
   }
   
-  /* Стили для верхнего меню */
+  /* Стили для верхнего меню - максимальная специфичность и самый высокий приоритет */
+  html body .content-wrapper .nav-menu,
   .nav-menu {
-    background-color: white;
-    padding: 0 15px !important;
-    border-radius: 12px;
-    display: flex;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-    margin-bottom: 2rem;
-    border-bottom: 2px solid #dee2e6;
-    align-items: center;
-    width: 100% !important; /* На всю ширину доступного пространства */
-    justify-content: flex-start !important; /* Выравниваем по левому краю */
+    background-color: white !important;
+    padding: 0 1.2rem !important;
+    border-radius: 12px !important;
+    display: flex !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+    margin-bottom: 2rem !important;
+    border-bottom: 2px solid #dee2e6 !important;
+    align-items: center !important;
+    width: 100% !important; /* Устанавливаем среднее значение для ширины */
+    justify-content: flex-start !important;
+    margin-left: -50px !important; /* Устанавливаем среднее значение для отступа */
+    margin-right: 10px !important;
+    position: relative !important;
+    z-index: 990 !important; /* Снижаем z-index, чтобы быть ниже topbar */
+    padding-left: 15px !important; /* Среднее значение для внутреннего отступа */
   }
-
-  .nav-menu a {
-    color: #6c757d;
-    font-weight: 500;
-    padding: 1rem 1.2rem;
-    margin-right: 1.2rem;
-    display: flex;
-    align-items: center;
-    text-decoration: none;
-    transition: all 0.2s ease;
-  }
-
-  .nav-menu a:hover {
-    color: #3498db;
-    background-color: rgba(52, 152, 219, 0.05);
-  }
-
-  .nav-menu a.active {
-    color: #3498db;
-    border-bottom: 3px solid #3498db;
-    font-weight: 600;
-  }
-
-  .nav-menu a i {
-    margin-right: 0.7rem;
-    font-size: 1.1rem;
+   
+  /* Выравнивание элементов внутри nav-menu - усиливаем смещение */
+  body .content-wrapper .nav-menu a {
+    margin-left: -10px !important; /* Увеличиваем отступ для пунктов меню */
+    position: relative !important;
+    padding-left: 0 !important; /* Уменьшаем внутренний отступ слева */
   }
   
-  /* Основной контент */
-  .main-content {
-    margin-left: 180px !important;
-    width: calc(100% - 180px) !important;
-    padding: 15px !important;
-    max-width: 1800px !important;
+  /* Для активного элемента */
+  body .content-wrapper .nav-menu a.active {
+    margin-left: -10px !important;
+    padding-left: 0 !important;
+  }
+    
+  /* Контент-враппер вместо main-content для этой страницы */
+  body .content-wrapper {
+    padding: 0 10px 0 0 !important;
+    width: calc(100% - 12px) !important;
+    margin-left: -15px !important; /* Усиливаем отрицательный отступ */
+    position: relative !important;
+    z-index: 5 !important;
+  }
+
+  /* Исправление для верхней панели */
+  body .topbar .title {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    text-align: left !important;
+  }
+
+  /* Контейнер */
+  body .container-fluid {
+    padding: 0 10px 0 0 !important;
+    margin-left: -15px !important; /* Усиливаем отрицательный отступ */
+    width: calc(100% + 15px) !important;
+    position: relative !important;
+  }
+
+  /* Не трогаем таблицу */
+
+  /* Статистические блоки - повышаем специфичность */
+  body .content-wrapper .row.mb-4 {
+    margin-left: -15px !important; /* Усиливаем отрицательный отступ */
+    width: calc(100% + 15px) !important;
+    position: relative !important;
+  }
+
+  /* Строка поиска специфично */
+  body .content-wrapper .row.mb-4 .col-md-6 .search-box {
+    margin-left: -15px !important; /* Усиливаем отрицательный отступ */
+    width: calc(100% + 15px) !important;
+    position: relative !important;
+  }
+  
+  /* Статистические карточки */
+  body .content-wrapper .stat-card {
+    margin-left: -15px !important; /* Усиливаем отрицательный отступ */
+    width: calc(100% + 15px) !important;
+    position: relative !important;
+  }
+  
+  /* Контейнер отделов - важный блок */
+  body #departments-container {
+    margin-left: -15px !important; /* Усиливаем отрицательный отступ */
+    width: calc(100% + 15px) !important;
+    position: relative !important;
+  }
+  
+  /* Каждая секция отдела */
+  body #departments-container .department-section {
+    margin-left: -15px !important; /* Усиливаем отрицательный отступ */
+    width: calc(100% + 15px) !important;
+    position: relative !important;
   }
   
   /* Стили для карточек статистики */
@@ -117,6 +188,8 @@
     margin-bottom: 20px;
     background: white;
     transition: transform 0.3s;
+    margin-left: -10px !important;
+    width: calc(100% + 10px) !important;
   }
   
   .stat-card:hover {
@@ -149,6 +222,8 @@
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
     margin-bottom: 20px;
     overflow: hidden;
+    margin-left: -10px !important;
+    width: calc(100% + 10px) !important;
   }
   
   .department-header {
@@ -160,6 +235,8 @@
     align-items: center;
     font-weight: 600;
     cursor: pointer;
+    margin-left: 0 !important;
+    width: 100% !important;
   }
   
   .department-header .badge {
@@ -322,6 +399,8 @@
   .search-box {
     position: relative;
     margin-bottom: 20px;
+    margin-left: -10px !important;
+    width: calc(100% + 10px) !important;
   }
   
   .search-box i {
@@ -626,93 +705,102 @@
     animation: slideOut 0.3s ease-in forwards;
   }
 
-  /* Стили для верхней панели */
-  .topbar {
-    position: fixed;
-    top: 0;
-    left: 180px !important; /* Отступ для боковой панели */
-    right: 0;
-    height: 60px;
-    background-color: white;
+  /* Выравнивание статистических блоков */
+  .row.mb-4 {
+    margin-left: -10px !important;
+    width: calc(100% + 10px) !important;
+  }
+  
+  /* Выравнивание строки поиска и кнопок */
+  .search-box {
+    margin-left: -10px !important;
+    width: calc(100% + 10px) !important;
+  }
+  
+  /* Выравнивание блока фильтров */
+  .collapse.mb-4 {
+    margin-left: -10px !important;
+    width: calc(100% + 10px) !important;
+  }
+  
+  /* Выравнивание статистических карточек */
+  .stat-card {
+    margin-left: -10px !important;
+    width: calc(100% + 10px) !important;
+  }
+  
+  /* Выравнивание кнопок в правом верхнем углу */
+  .btn-group-sm {
+    margin-right: 10px !important;
+  }
+  
+  /* Выравнивание всего содержимого */
+  .content-wrapper > * {
+    margin-left: -10px !important;
+    width: calc(100% + 10px) !important;
+  }
+  
+  /* Выравнивание блоков отделов */
+  .department-section {
+    margin-left: -10px !important;
+    width: calc(100% + 10px) !important;
+  }
+  
+  /* Выравнивание заголовков отделов */
+  .department-header {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+  
+  /* Выравнивание содержимого отделов */
+  .department-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+  
+  /* Дополнительное выравнивание для блоков фильтров */
+  #filtersCollapse.card {
+    margin-left: -10px !important;
+    width: calc(100% + 10px) !important;
+  }
+  
+  /* Выравнивание строки с кнопками */
+  .row.mb-4 .col-md-6.text-end {
+    padding-right: 15px !important;
+  }
+
+  /* Базовые стили для навигационного меню */
+  .nav-menu a {
+    color: #6c757d;
+    font-weight: 500;
+    padding: 1rem 1.2rem;
+    margin-right: 1.2rem;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 0 20px;
-    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.05);
-    z-index: 900;
-    width: calc(100% - 180px) !important; /* Учитываем ширину боковой панели */
+    text-decoration: none;
+    transition: all 0.2s ease;
   }
 
-  .title {
-    font-size: 20px !important; /* Увеличиваем размер шрифта */
-    font-weight: 600 !important; /* Делаем шрифт жирнее */
-    color: #2c3e50;
-    margin-left: 0 !important; /* Выравниваем по левому краю */
-    margin-right: auto !important; /* Смещаем влево */
-    text-align: left !important;
+  .nav-menu a:hover {
+    color: #3498db;
+    background-color: rgba(52, 152, 219, 0.05);
   }
 
-  .container-fluid {
-    max-width: 100% !important;
-    padding: 0 !important;
+  .nav-menu a.active {
+    color: #3498db;
+    border-bottom: 3px solid #3498db;
+    font-weight: 600;
   }
 
-  /* Стиль для таблицы, чтобы она была размещена правильно */
-  .table-responsive {
-    margin: 0 !important;
-    width: 100% !important;
+  .nav-menu a i {
+    margin-right: 0.7rem;
+    font-size: 1.1rem;
   }
 
-  /* Центрирование элементов с блоками сотрудников */
-  #departments-container {
-    margin: 0 !important;
-    width: 100% !important;
+  /* Выделяем меню дополнительным стилем */
+  body .content-wrapper .nav-menu {
+    padding-left: 0 !important; /* Убираем внутренний отступ слева */
   }
-
-  /* Переопределяем глобальные стили с более высоким приоритетом для страницы персонала */
-  body.personnel-page {
-    overflow-x: hidden !important;
-  }
-
-  /* Делаем боковую панель более компактной для этой страницы */
-  .personnel-page .sidebar {
-    width: 200px !important;
-    min-width: 200px !important;
-    z-index: 1001 !important;
-  }
-
-  /* Основной контент с учетом компактной боковой панели */
-  .personnel-page .main-content {
-    margin-left: 200px !important;
-    width: calc(100% - 200px) !important;
-    padding: 15px !important;
-  }
-
-  /* Верхняя панель с учетом компактной боковой панели */
-  .personnel-page .topbar {
-    left: 200px !important;
-    width: calc(100% - 200px) !important;
-  }
-
-  /* Корректируем навигационное меню */
-  .personnel-page .nav-menu {
-    justify-content: flex-start !important;
-    width: 100% !important;
-  }
-
-  /* Дополнительные стили для корректного отображения */
-  .table {
-    width: 100% !important;
-    max-width: none !important;
-  }
-
-  /* Устанавливаем обратно правильные стили для элементов верхней панели */
-  .personnel-page .title {
-    margin-left: 0 !important;
-    text-align: left !important;
-  }
-
-  /* Добавление класса к body через JavaScript */
 </style>
 {% endblock %}
 
@@ -720,17 +808,49 @@
 <!-- Подключаем jQuery первым -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-// Добавление класса к body для специфичных стилей персонала
-document.addEventListener('DOMContentLoaded', function() {
-  document.body.classList.add('personnel-page');
-});
-
 // Проверяем загрузку jQuery
 if (typeof jQuery === 'undefined') {
     console.error('jQuery не загружен!');
 } else {
     console.log('jQuery успешно загружен, версия:', jQuery.fn.jquery);
 }
+
+// Функция для принудительной загрузки CSS файла с обходом кеша
+function loadCSSWithoutCache(url) {
+    const timestamp = new Date().getTime();
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = url + '?v=' + timestamp;
+    document.head.appendChild(link);
+    console.log('Загружен CSS файл:', url);
+}
+
+// Загружаем CSS-файлы принудительно
+document.addEventListener('DOMContentLoaded', function() {
+    loadCSSWithoutCache('/static/css/layout.css');
+    
+    // Принудительно применяем стили для nav-menu и topbar
+    setTimeout(function() {
+        const styleElement = document.createElement('style');
+        styleElement.textContent = `
+            .nav-menu {
+                margin-left: -50px !important;
+                width: 100% !important;
+                position: relative !important;
+                z-index: 999 !important;
+                padding-left: 15px !important;
+            }
+            .topbar {
+                left: calc(var(--sidebar-width) - 200px) !important;
+                width: calc(100% - var(--sidebar-width) + 200px) !important;
+                padding-left: 15px !important;
+                z-index: 999 !important; /* Ниже sidebar (z-index: 1000), но выше nav-menu */
+                margin-left: 0 !important;
+            }
+        `;
+        document.head.appendChild(styleElement);
+    }, 100);
+});
 </script>
 
 <!-- Подключаем Select2 и его зависимости -->
@@ -761,12 +881,117 @@ function initializeSelect2() {
     }
 }
 
-// Вызываем инициализацию при загрузке документа
+// Функция для применения смещения ко всем элементам
+function applyLeftShift() {
+    console.log('Применяем смещение влево для блока навигации и верхней панели...');
+    
+    // Получаем контейнер .nav-menu
+    const navMenu = document.querySelector('.nav-menu');
+    if (navMenu) {
+        // Применяем стили напрямую к контейнеру
+        navMenu.style.marginLeft = '-50px';
+        navMenu.style.width = '100%';
+        navMenu.style.position = 'relative';
+        navMenu.style.zIndex = '10';
+        
+        // Проверяем родительский элемент и убираем отступы на нем
+        if (navMenu.parentElement) {
+            navMenu.parentElement.style.paddingLeft = '0';
+            navMenu.parentElement.style.marginLeft = '0';
+        }
+        
+        // Сбрасываем внутренние отступы
+        navMenu.style.paddingLeft = '15px';
+    }
+    
+    // Обрабатываем верхнюю панель с гораздо большим смещением
+    const topbar = document.querySelector('.topbar');
+    if (topbar) {
+        topbar.style.left = 'calc(var(--sidebar-width) - 200px)'; // Существенно увеличиваем смещение влево
+        topbar.style.width = 'calc(100% - var(--sidebar-width) + 200px)'; // Соответствующе увеличиваем ширину
+        topbar.style.paddingLeft = '15px';
+        topbar.style.zIndex = '999'; // Ниже sidebar (z-index: 1000), но выше nav-menu
+        topbar.style.marginLeft = '0'; // Устанавливаем нулевой отступ слева
+    }
+    
+    // Создаем и добавляем встроенные стили для контейнеров, чтобы обойти все другие стили
+    const styleElem = document.createElement('style');
+    styleElem.textContent = `
+        .nav-menu {
+            margin-left: -50px !important;
+            width: 100% !important;
+            padding-left: 15px !important;
+            z-index: 990 !important; /* Снижаем z-index, чтобы быть ниже topbar */
+        }
+        .topbar {
+            left: calc(var(--sidebar-width) - 200px) !important;
+            width: calc(100% - var(--sidebar-width) + 200px) !important;
+            padding-left: 15px !important;
+            z-index: 1050 !important; /* Увеличиваем z-index */
+            margin-left: 0 !important;
+        }
+    `;
+    document.head.appendChild(styleElem);
+    
+    console.log('Смещение влево применено успешно!');
+    
+    // Повторим через небольшой промежуток времени для большей надежности
+    setTimeout(() => {
+        if (navMenu) {
+            navMenu.style.marginLeft = '-50px';
+            navMenu.style.width = '100%';
+            navMenu.style.paddingLeft = '15px';
+        }
+        if (topbar) {
+            topbar.style.left = 'calc(var(--sidebar-width) - 200px)';
+            topbar.style.width = 'calc(100% - var(--sidebar-width) + 200px)';
+            topbar.style.paddingLeft = '15px';
+            topbar.style.marginLeft = '0';
+        }
+    }, 300);
+    
+    // Добавим еще одну попытку с задержкой для обработки возможных переопределений стилей
+    setTimeout(() => {
+        if (topbar) {
+            // Применяем стили напрямую с !important через setAttribute
+            topbar.setAttribute('style', 
+                'position: fixed !important;' +
+                'top: 0 !important;' +
+                'right: 0 !important;' +
+                'left: calc(var(--sidebar-width) - 200px) !important;' +
+                'height: var(--topbar-height) !important;' +
+                'width: calc(100% - var(--sidebar-width) + 200px) !important;' +
+                'margin-left: 0 !important;' +
+                'padding-left: 15px !important;' +
+                'z-index: 999 !important;' + /* Ниже sidebar (z-index: 1000), но выше nav-menu */
+                'background-color: white !important;' +
+                'box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05) !important;');
+        }
+    }, 1000);
+}
+
+// Функция для обновления стилей при изменении размера окна
+function updateMenuStyles() {
+    applyLeftShift();
+}
+
+// Вызываем функцию при загрузке документа и при изменении размера окна
 $(document).ready(function() {
     console.log('Document ready event fired');
     
     // Инициализируем Select2
     initializeSelect2();
+    
+    // Применяем смещение влево через небольшую задержку
+    setTimeout(applyLeftShift, 100);
+    
+    // Обновляем при изменении размера окна
+    $(window).on('resize', function() {
+        updateMenuStyles();
+    });
+    
+    // Повторно применяем через 500мс для большей надежности
+    setTimeout(applyLeftShift, 500);
     
     // ... остальной код ...
 });
@@ -775,9 +1000,8 @@ $(document).ready(function() {
 
 {% block content %}
 <div class="toast-container" id="toastContainer"></div>
-<div class="container-fluid p-0">
-  <!-- Навигационное меню -->
-  <div class="nav-menu">
+<!-- Навигационное меню -->
+<div class="nav-menu">
     <a href="{{ url_for('admin_routes_unique.personnel') }}" class="active">
         <i class="fas fa-users"></i>
         Активные
@@ -790,40 +1014,45 @@ $(document).ready(function() {
         <i class="fas fa-chart-line"></i>
         Дашборд
     </a>
-  </div>
+    <a href="{{ url_for('admin_routes_unique.phone_numbers') }}">
+        <i class="fas fa-phone"></i>
+        Номера
+    </a>
+</div>
 
-  <!-- Основной контент -->
-  <div class="main-content">
+<div class="container-fluid p-0">
+<!-- Основной контент -->
+  <div class="content-wrapper">
     <!-- Статистика -->
     <div class="row mb-4">
-      <div class="col-md-3">
-        <div class="stat-card">
-          <i class="fas fa-users stat-icon"></i>
-          <div class="stat-title">Всего сотрудников</div>
-          <div class="stat-value">{{ total_employees }}</div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <i class="fas fa-users stat-icon"></i>
+                <div class="stat-title">Всего сотрудников</div>
+                <div class="stat-value">{{ total_employees }}</div>
+            </div>
         </div>
-      </div>
-      <div class="col-md-3">
-        <div class="stat-card">
-          <i class="fas fa-user-check stat-icon"></i>
-          <div class="stat-title">Активные сотрудники</div>
-          <div class="stat-value">{{ active_employees }}</div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <i class="fas fa-user-check stat-icon"></i>
+                <div class="stat-title">Активные сотрудники</div>
+                <div class="stat-value">{{ active_employees }}</div>
+            </div>
         </div>
-      </div>
-      <div class="col-md-3">
-        <div class="stat-card">
-          <i class="fas fa-user-times stat-icon"></i>
-          <div class="stat-title">Уволенные сотрудники</div>
-          <div class="stat-value">{{ fired_employees }}</div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <i class="fas fa-user-times stat-icon"></i>
+                <div class="stat-title">Уволенные сотрудники</div>
+                <div class="stat-value">{{ fired_employees }}</div>
+            </div>
         </div>
-      </div>
-      <div class="col-md-3">
-        <div class="stat-card">
-          <i class="fas fa-building stat-icon"></i>
-          <div class="stat-title">Отделов</div>
-          <div class="stat-value">{{ departments|length }}</div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <i class="fas fa-building stat-icon"></i>
+                <div class="stat-title">Отделов</div>
+                <div class="stat-value">{{ departments|length }}</div>
+            </div>
         </div>
-      </div>
     </div>
 
     <!-- Поиск и фильтры -->
@@ -925,12 +1154,12 @@ $(document).ready(function() {
                         <tbody>
                             {% if department.name in employees_by_department %}
                                 {% set employees = employees_by_department[department.name] %}
-                                {% set managers = employees|selectattr('role', 'equalto', 'leader')|list %}
+                                {% set managers = employees|selectattr('position', 'equalto', 'Руководитель отдела')|list %}
                                 {% set deputies = employees|selectattr('role', 'equalto', 'deputy')|list %}
-                                {% set regular_employees = employees|rejectattr('role', 'equalto', 'leader')|rejectattr('role', 'equalto', 'deputy')|list %}
+                                {% set regular_employees = employees|rejectattr('position', 'equalto', 'Руководитель отдела')|rejectattr('role', 'equalto', 'deputy')|list %}
                                 
                                 {% for employee in managers + deputies + regular_employees %}
-                                <tr class="employee-row {% if employee.role == 'leader' %}manager-row{% elif employee.role == 'deputy' %}deputy-row{% endif %}">
+                                <tr class="employee-row {% if employee.position == 'Руководитель отдела' %}manager-row{% elif employee.role == 'deputy' %}deputy-row{% endif %}">
                                     <td>{{ employee.id }}</td>
                                     <td>
                                         <span class="employee-status {% if employee.status == 'online' %}status-online{% else %}status-offline{% endif %}"></span>
@@ -2830,29 +3059,41 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Функция для обновления позиций отделов через API
 function updateDepartmentPositions(draggedId, targetId, position) {
+    console.log('Отправка запроса на обновление порядка отделов:', {
+        dragged_id: draggedId,
+        target_id: targetId,
+        position: position
+    });
+
     fetch('/admin/api/update_department_positions', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
         },
+        credentials: 'same-origin', // Важно! Включаем отправку куки сессии
         body: JSON.stringify({
             dragged_id: draggedId,
             target_id: targetId,
             position: position
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Получен ответ от сервера:', response.status, response.statusText);
+        return response.json();
+    })
     .then(data => {
+        console.log('Данные ответа:', data);
         if (data.success) {
             // Перезагружаем страницу для отображения нового порядка
             location.reload();
         } else {
-            showNotification(data.message || 'Ошибка при обновлении порядка отделов', 'error');
+            alert(data.message || 'Ошибка при обновлении порядка отделов');
         }
     })
     .catch(error => {
         console.error('Ошибка при обновлении порядка отделов:', error);
-        showNotification('Ошибка при обновлении порядка отделов', 'error');
+        alert('Ошибка при обновлении порядка отделов');
     });
 }
 
@@ -3044,5 +3285,455 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('toggleAllDepartments').addEventListener('click', toggleAllDepartments);
     
 });
+
+// Функция для обработки изменений в DOM
+function observeDOMChanges() {
+    // Создаем MutationObserver для отслеживания изменений в DOM
+    const observer = new MutationObserver((mutations) => {
+        // При любых изменениях вызываем функцию смещения
+        applyLeftShift();
+    });
+    
+    // Начинаем наблюдение за body и всеми его дочерними элементами
+    observer.observe(document.body, { 
+        childList: true, 
+        subtree: true 
+    });
+}
+
+// Вызываем функцию при загрузке документа
+document.addEventListener('DOMContentLoaded', function() {
+    // Существующий код
+    formatPhoneNumbersForDisplay();
+    
+    // Принудительно вызываем applyLeftShift несколько раз
+    applyLeftShift();
+    setTimeout(applyLeftShift, 100);
+    setTimeout(applyLeftShift, 500);
+    setTimeout(applyLeftShift, 1000);
+    
+    // Запускаем наблюдение за DOM
+    observeDOMChanges();
+});
+
+// Дополнительно вызываем смещение при любом изменении размеров окна
+window.addEventListener('resize', applyLeftShift);
+window.addEventListener('load', applyLeftShift);
+
+// ... остальной существующий код ...
+
+// Функции для работы с корпоративными номерами
+function loadFreeNumbersByDepartment(departmentId, targetSelect, currentValue = null) {
+    if (!departmentId) {
+        console.log('Не указан ID отдела для загрузки номеров');
+        $(targetSelect).html('<option value="">Выберите номер</option>');
+        return;
+    }
+
+    // Показываем индикатор загрузки
+    $(targetSelect).html('<option value="">Загрузка номеров...</option>');
+    
+    // Запрашиваем свободные номера для выбранного отдела
+    fetch(`/admin/api/get_free_numbers_by_department?department_id=${departmentId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Обновляем выпадающий список
+                let options = '<option value="">Выберите номер</option>';
+                
+                // Добавляем номера из отдела
+                if (data.numbers && data.numbers.length > 0) {
+                    options += '<optgroup label="Номера отдела ' + data.department_name + '">';
+                    data.numbers.forEach(number => {
+                        const selected = currentValue && number.phone_number === currentValue ? 'selected' : '';
+                        options += `<option value="${number.phone_number}" ${selected}>+7${number.phone_number}</option>`;
+                    });
+                    options += '</optgroup>';
+                }
+                
+                // Если нет номеров в отделе, добавляем все свободные номера
+                if (data.all_free_numbers && data.all_free_numbers.length > 0) {
+                    options += '<optgroup label="Все свободные номера">';
+                    data.all_free_numbers.forEach(number => {
+                        const selected = currentValue && number.phone_number === currentValue ? 'selected' : '';
+                        options += `<option value="${number.phone_number}" ${selected}>+7${number.phone_number} (${number.department || 'Без отдела'})</option>`;
+                    });
+                    options += '</optgroup>';
+                }
+                
+                $(targetSelect).html(options);
+                
+                // Если есть текущее значение, но его нет в списке
+                if (currentValue && $(targetSelect).val() !== currentValue) {
+                    // Добавляем текущее значение как отдельный пункт
+                    const currentOption = $('<option>', {
+                        value: currentValue,
+                        text: '+7' + currentValue + ' (текущий)',
+                        selected: true
+                    });
+                    $(targetSelect).prepend(currentOption);
+                }
+                
+                // Инициализируем Select2, если он доступен
+                if ($.fn.select2) {
+                    $(targetSelect).select2({
+                        theme: 'bootstrap-5',
+                        dropdownParent: $(targetSelect).closest('.modal')
+                    });
+                }
+            } else {
+                console.error('Ошибка загрузки номеров:', data.message);
+                $(targetSelect).html('<option value="">Ошибка загрузки номеров</option>');
+                
+                // Если есть текущее значение, добавляем его
+                if (currentValue) {
+                    const currentOption = $('<option>', {
+                        value: currentValue,
+                        text: '+7' + currentValue + ' (текущий)',
+                        selected: true
+                    });
+                    $(targetSelect).append(currentOption);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка загрузки номеров:', error);
+            $(targetSelect).html('<option value="">Ошибка загрузки номеров</option>');
+            
+            // Если есть текущее значение, добавляем его
+            if (currentValue) {
+                const currentOption = $('<option>', {
+                    value: currentValue,
+                    text: '+7' + currentValue + ' (текущий)',
+                    selected: true
+                });
+                $(targetSelect).append(currentOption);
+            }
+        });
+}
+
+// Изменяем существующие модальные окна при загрузке DOM
+document.addEventListener('DOMContentLoaded', function() {
+    // Преобразуем поле ввода корпоративного номера в выпадающий список в окне редактирования
+    const editCorporateNumberInput = document.getElementById('editCorporateNumber');
+    if (editCorporateNumberInput) {
+        // Сохраняем родительский контейнер
+        const parentContainer = editCorporateNumberInput.parentNode;
+        
+        // Создаем выпадающий список
+        const selectElement = document.createElement('select');
+        selectElement.className = 'form-select';
+        selectElement.id = 'editCorporateNumber';
+        selectElement.name = 'corp_phone';
+        selectElement.innerHTML = '<option value="">Выберите номер</option>';
+        
+        // Заменяем поле ввода на выпадающий список
+        parentContainer.replaceChild(selectElement, editCorporateNumberInput);
+        
+        // Добавляем кнопку для ручного ввода
+        const manualButton = document.createElement('button');
+        manualButton.className = 'btn btn-outline-secondary';
+        manualButton.type = 'button';
+        manualButton.id = 'manualEditCorporateNumberBtn';
+        manualButton.title = 'Ручной ввод';
+        manualButton.innerHTML = '<i class="fas fa-keyboard"></i>';
+        parentContainer.appendChild(manualButton);
+        
+        // Добавляем контейнер для ручного ввода
+        const manualContainer = document.createElement('div');
+        manualContainer.className = 'mt-1 d-none';
+        manualContainer.id = 'manualEditCorporateNumberContainer';
+        manualContainer.innerHTML = `
+            <div class="input-group">
+                <span class="input-group-text">+7</span>
+                <input type="text" class="form-control" id="manualEditCorporateNumber" placeholder="Ручной ввод номера">
+                <button class="btn btn-outline-success" type="button" id="confirmManualEditCorporateNumberBtn" title="Применить">
+                    <i class="fas fa-check"></i>
+                </button>
+            </div>
+        `;
+        parentContainer.parentNode.insertBefore(manualContainer, parentContainer.nextSibling);
+        
+        // Добавляем подсказку
+        const helpText = document.createElement('small');
+        helpText.className = 'form-text text-muted';
+        helpText.textContent = 'Список свободных номеров из выбранного отдела';
+        parentContainer.parentNode.insertBefore(helpText, manualContainer.nextSibling);
+        
+        // Добавляем обработчик для кнопки ручного ввода
+        manualButton.addEventListener('click', function() {
+            const manualContainer = document.getElementById('manualEditCorporateNumberContainer');
+            manualContainer.classList.toggle('d-none');
+            if (!manualContainer.classList.contains('d-none')) {
+                document.getElementById('manualEditCorporateNumber').focus();
+            }
+        });
+        
+        // Добавляем обработчик для подтверждения ручного ввода
+        document.getElementById('confirmManualEditCorporateNumberBtn').addEventListener('click', function() {
+            const manualValue = document.getElementById('manualEditCorporateNumber').value.trim();
+            if (manualValue) {
+                // Создаем новую опцию
+                const option = document.createElement('option');
+                option.value = manualValue;
+                option.textContent = '+7' + manualValue + ' (ручной ввод)';
+                option.selected = true;
+                
+                // Добавляем в селект
+                const selectElement = document.getElementById('editCorporateNumber');
+                
+                // Удаляем все ранее выбранные опции
+                Array.from(selectElement.options).forEach(opt => opt.selected = false);
+                
+                // Проверяем, есть ли уже такая опция
+                let optionExists = false;
+                Array.from(selectElement.options).forEach(opt => {
+                    if (opt.value === manualValue) {
+                        opt.selected = true;
+                        optionExists = true;
+                    }
+                });
+                
+                // Если опции нет, добавляем новую
+                if (!optionExists) {
+                    selectElement.appendChild(option);
+                }
+                
+                // Скрываем контейнер ручного ввода
+                document.getElementById('manualEditCorporateNumberContainer').classList.add('d-none');
+                
+                // Обновляем Select2, если он используется
+                if ($.fn.select2) {
+                    $(selectElement).trigger('change');
+                }
+            }
+        });
+    }
+    
+    // Преобразуем поле ввода корпоративного номера в выпадающий список в окне добавления нового сотрудника
+    const addCorporateNumberInput = document.getElementById('addCorporateNumber');
+    if (addCorporateNumberInput) {
+        // Сохраняем родительский контейнер
+        const parentContainer = addCorporateNumberInput.parentNode;
+        
+        // Создаем выпадающий список
+        const selectElement = document.createElement('select');
+        selectElement.className = 'form-select';
+        selectElement.id = 'addCorporateNumber';
+        selectElement.name = 'corporate_number';
+        selectElement.innerHTML = '<option value="">Выберите номер</option>';
+        
+        // Заменяем поле ввода на выпадающий список
+        parentContainer.replaceChild(selectElement, addCorporateNumberInput);
+        
+        // Добавляем кнопку для ручного ввода
+        const manualButton = document.createElement('button');
+        manualButton.className = 'btn btn-outline-secondary';
+        manualButton.type = 'button';
+        manualButton.id = 'manualAddCorporateNumberBtn';
+        manualButton.title = 'Ручной ввод';
+        manualButton.innerHTML = '<i class="fas fa-keyboard"></i>';
+        parentContainer.appendChild(manualButton);
+        
+        // Добавляем контейнер для ручного ввода
+        const manualContainer = document.createElement('div');
+        manualContainer.className = 'mt-1 d-none';
+        manualContainer.id = 'manualAddCorporateNumberContainer';
+        manualContainer.innerHTML = `
+            <div class="input-group">
+                <span class="input-group-text">+7</span>
+                <input type="text" class="form-control" id="manualAddCorporateNumber" placeholder="Ручной ввод номера">
+                <button class="btn btn-outline-success" type="button" id="confirmManualAddCorporateNumberBtn" title="Применить">
+                    <i class="fas fa-check"></i>
+                </button>
+            </div>
+        `;
+        parentContainer.parentNode.insertBefore(manualContainer, parentContainer.nextSibling);
+        
+        // Добавляем подсказку
+        const helpText = document.createElement('small');
+        helpText.className = 'form-text text-muted';
+        helpText.textContent = 'Список свободных номеров из выбранного отдела';
+        parentContainer.parentNode.insertBefore(helpText, manualContainer.nextSibling);
+        
+        // Добавляем обработчик для кнопки ручного ввода
+        manualButton.addEventListener('click', function() {
+            const manualContainer = document.getElementById('manualAddCorporateNumberContainer');
+            manualContainer.classList.toggle('d-none');
+            if (!manualContainer.classList.contains('d-none')) {
+                document.getElementById('manualAddCorporateNumber').focus();
+            }
+        });
+        
+        // Добавляем обработчик для подтверждения ручного ввода
+        document.getElementById('confirmManualAddCorporateNumberBtn').addEventListener('click', function() {
+            const manualValue = document.getElementById('manualAddCorporateNumber').value.trim();
+            if (manualValue) {
+                // Создаем новую опцию
+                const option = document.createElement('option');
+                option.value = manualValue;
+                option.textContent = '+7' + manualValue + ' (ручной ввод)';
+                option.selected = true;
+                
+                // Добавляем в селект
+                const selectElement = document.getElementById('addCorporateNumber');
+                
+                // Удаляем все ранее выбранные опции
+                Array.from(selectElement.options).forEach(opt => opt.selected = false);
+                
+                // Проверяем, есть ли уже такая опция
+                let optionExists = false;
+                Array.from(selectElement.options).forEach(opt => {
+                    if (opt.value === manualValue) {
+                        opt.selected = true;
+                        optionExists = true;
+                    }
+                });
+                
+                // Если опции нет, добавляем новую
+                if (!optionExists) {
+                    selectElement.appendChild(option);
+                }
+                
+                // Скрываем контейнер ручного ввода
+                document.getElementById('manualAddCorporateNumberContainer').classList.add('d-none');
+                
+                // Обновляем Select2, если он используется
+                if ($.fn.select2) {
+                    $(selectElement).trigger('change');
+                }
+            }
+        });
+    }
+    
+    // Добавляем обработчики изменения отдела
+    $('#editDepartment').on('change', function() {
+        const departmentId = $(this).val();
+        if (departmentId) {
+            // Запоминаем текущее значение поля
+            const currentValue = $('#editCorporateNumber').val();
+            
+            // Загружаем свободные номера для выбранного отдела
+            loadFreeNumbersByDepartment(departmentId, '#editCorporateNumber', currentValue);
+        }
+    });
+    
+    $('#addDepartment').on('change', function() {
+        const departmentId = $(this).val();
+        if (departmentId) {
+            // Загружаем свободные номера для выбранного отдела
+            loadFreeNumbersByDepartment(departmentId, '#addCorporateNumber');
+        }
+    });
+    
+    // Модифицируем обработчики загрузки модальных окон
+    const editEmployeeModal = document.getElementById('editEmployeeModal');
+    if (editEmployeeModal) {
+        // Дополняем существующий обработчик для модального окна редактирования
+        const originalShowHandler = editEmployeeModal._bsShow;
+        editEmployeeModal._bsShow = function(event) {
+            if (originalShowHandler) originalShowHandler.call(this, event);
+            
+            // Добавляем свою логику для загрузки номеров
+            const button = event.relatedTarget;
+            const employeeId = button.getAttribute('data-id');
+            const departmentId = $('#editDepartment').val();
+            const corporateNumber = $('#editCorporateNumber').val();
+            
+            if (departmentId) {
+                loadFreeNumbersByDepartment(departmentId, '#editCorporateNumber', corporateNumber);
+            }
+        };
+    }
+    
+    const addEmployeeModal = document.getElementById('addEmployeeModal');
+    if (addEmployeeModal) {
+        // Дополняем существующий обработчик для модального окна добавления
+        const originalShowHandler = addEmployeeModal._bsShow;
+        addEmployeeModal._bsShow = function(event) {
+            if (originalShowHandler) originalShowHandler.call(this, event);
+            
+            // Добавляем свою логику для загрузки номеров
+            const departmentId = $('#addDepartment').val();
+            
+            if (departmentId) {
+                loadFreeNumbersByDepartment(departmentId, '#addCorporateNumber');
+            }
+        };
+    }
+});
+
+// ... остальной существующий код ...
+
+// Функция ручной инициализации событий для модальных окон
+function initializeModalEvents() {
+    // Модальное окно редактирования сотрудника
+    const editEmployeeModal = document.getElementById('editEmployeeModal');
+    if (editEmployeeModal) {
+        editEmployeeModal.addEventListener('shown.bs.modal', function(event) {
+            const departmentId = $('#editDepartment').val();
+            const corporateNumber = $('#editCorporateNumber').val();
+            
+            if (departmentId) {
+                loadFreeNumbersByDepartment(departmentId, '#editCorporateNumber', corporateNumber);
+            }
+        });
+    }
+    
+    // Модальное окно добавления сотрудника
+    const addEmployeeModal = document.getElementById('addEmployeeModal');
+    if (addEmployeeModal) {
+        addEmployeeModal.addEventListener('shown.bs.modal', function(event) {
+            const departmentId = $('#addDepartment').val();
+            
+            if (departmentId) {
+                loadFreeNumbersByDepartment(departmentId, '#addCorporateNumber');
+            }
+        });
+    }
+}
+
+// Вызываем функцию после загрузки DOM
+document.addEventListener('DOMContentLoaded', function() {
+    initializeModalEvents();
+});
+
+// === Логика подтверждения изменения логина ===
+(function() {
+    let oldLoginValue = '';
+    let pendingLoginValue = '';
+    const loginInput = document.getElementById('editLogin');
+    if (!loginInput) return;
+
+    // При фокусе запоминаем старое значение
+    loginInput.addEventListener('focus', function() {
+        oldLoginValue = this.value;
+    });
+
+    // При изменении — если новое значение не совпадает со старым, показываем модалку
+    loginInput.addEventListener('change', function(e) {
+        if (this.value !== oldLoginValue) {
+            pendingLoginValue = this.value;
+            this.value = oldLoginValue; // временно возвращаем старое
+            const modal = new bootstrap.Modal(document.getElementById('confirmLoginChangeModal'));
+            modal.show();
+        }
+    });
+
+    // Кнопка "ОК" — применяем новое значение
+    document.getElementById('confirmLoginChangeBtn').addEventListener('click', function() {
+        loginInput.value = pendingLoginValue;
+        oldLoginValue = pendingLoginValue;
+        const modal = bootstrap.Modal.getInstance(document.getElementById('confirmLoginChangeModal'));
+        modal.hide();
+    });
+
+    // Кнопка "Отмена" — оставляем старое значение
+    document.getElementById('cancelLoginChangeBtn').addEventListener('click', function() {
+        loginInput.value = oldLoginValue;
+        const modal = bootstrap.Modal.getInstance(document.getElementById('confirmLoginChangeModal'));
+        modal.hide();
+    });
+})();
 </script>
 {% endblock %}

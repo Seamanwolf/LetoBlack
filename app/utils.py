@@ -1,5 +1,4 @@
-import mysql.connector
-from flask import current_app, session, flash, redirect, url_for, request, jsonify, Blueprint, send_from_directory
+from flask import current_app, session, flash, redirect, url_for, request, jsonify, Blueprint
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from flask_login import login_required as flask_login_required, current_user
@@ -7,16 +6,12 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import json
 import traceback
-from mysql.connector import pooling
-import configparser
 import os
 import logging
 from dotenv import load_dotenv
 import pymysql
 from pymysql.cursors import Cursor
 from werkzeug.utils import secure_filename
-from PIL import Image
-from mysql.connector import connect, Error
 
 utils_bp = Blueprint('utils', __name__)
 
@@ -45,6 +40,7 @@ class DictCursorWrapper:
         return getattr(self.cursor, attr)
 
 # Конфигурация для подключения к БД
+import configparser
 config = configparser.ConfigParser()
 config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'config.ini')
 
@@ -115,29 +111,27 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-def admin_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or current_user.role != 'admin':
-            flash('У вас нет прав для доступа к этой странице', 'error')
-            return redirect(url_for('auth.login'))
-        return f(*args, **kwargs)
-    return decorated_function
-
 def get_user_department():
     return session.get('department')
 
 def create_db_connection():
+    """
+    Создает соединение с базой данных используя PyMySQL
+    """
     try:
-        connection = connect(
-            host='192.168.2.225',
-            user='root',
-            password='Podego53055',
-            database='Brokers'
+        # Подключаемся напрямую через PyMySQL
+        connection = pymysql.connect(
+            host=db_config['host'],
+            user=db_config['user'],
+            password=db_config['password'],
+            database=db_config['database'],
+            port=db_config['port'],
+            charset='utf8mb4',
+            cursorclass=pymysql.cursors.Cursor
         )
         return connection
-    except Error as e:
-        print(f"Error connecting to MySQL Database: {e}")
+    except Exception as err:
+        logger.error(f"Ошибка при подключении к базе данных: {err}")
         return None
 
 # Переопределяем метод cursor для автоматического оборачивания в DictCursorWrapper
@@ -154,91 +148,88 @@ def patched_cursor(self, *args, **kwargs):
 # Применяем патч
 pymysql.connections.Connection.cursor = patched_cursor
 
-def update_operator_status(user_id, status):
-    try:
-        connection = create_db_connection()
-        cursor = connection.cursor(dictionary=True)
-        cursor.execute("UPDATE User SET status = %s, last_active = NOW() WHERE id = %s", (status, user_id))
-        connection.commit()
-        
-        # Получаем ukc_kc из новой таблицы user_ukc
-        cursor.execute("""
-        SELECT uk.ukc_kc 
-        FROM user_ukc uk 
-        WHERE uk.user_id = %s
-        """, (user_id,))
-        user = cursor.fetchone()
-        
-        if user:
-            room = user['ukc_kc']
-            # Дополнительная логика
-            print(f"User {user_id} status updated to {status} in room {room}")
-        else:
-            print(f"User with ID {user_id} not found.")
-    except Exception as e:
-        print(f"Error updating operator status: {e}")
-    finally:
-        cursor.close()
-        connection.close()
-
-
-def authenticate_user(username, password):
+def update_user_activity(user_id, status):
+    """
+    Обновляет статус активности пользователя
+    """
     connection = create_db_connection()
     if connection is None:
-        current_app.logger.error("Нет подключения к базе данных для аутентификации.")
+        logger.error("Нет подключения к базе данных для обновления статуса активности.")
+        return False
+
+    cursor = None
+    try:
+        cursor = connection.cursor()
+        
+        # Проверяем, есть ли уже запись для пользователя
+        cursor.execute("SELECT id FROM UserActivity WHERE user_id = %s", (user_id,))
+        activity = cursor.fetchone()
+        
+        if activity:
+            # Обновляем существующую запись
+            cursor.execute(
+                "UPDATE UserActivity SET status = %s, last_activity = NOW(), updated_at = NOW() WHERE user_id = %s", 
+                (status, user_id)
+            )
+        else:
+            # Создаем новую запись
+            cursor.execute(
+                "INSERT INTO UserActivity (user_id, status, last_activity) VALUES (%s, %s, NOW())", 
+                (user_id, status)
+            )
+        
+        connection.commit()
+        logger.info(f"Статус пользователя с ID {user_id} обновлён на {status}.")
+        return True
+    except Exception as err:
+        if connection:
+            connection.rollback()
+        logger.error(f"Ошибка при обновлении статуса активности пользователя: {err}")
+        return False
+    finally:
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
+
+def get_user_status(user_id):
+    """
+    Получает текущий статус активности пользователя
+    """
+    connection = create_db_connection()
+    if connection is None:
+        logger.error("Нет подключения к базе данных для получения статуса активности.")
         return None
 
+    cursor = None
     try:
         cursor = connection.cursor(dictionary=True)
-        cursor.execute("SELECT id, login, full_name, role, password FROM User WHERE login = %s AND fired = FALSE", (username,))
-        user = cursor.fetchone()
-        if user and check_password_hash(user['password'], password):
-            return user
-        else:
-            return None
-    except mysql.connector.Error as err:
-        current_app.logger.error(f"Ошибка при аутентификации пользователя: {err}")
+        cursor.execute(
+            "SELECT status, last_activity FROM UserActivity WHERE user_id = %s", 
+            (user_id,)
+        )
+        result = cursor.fetchone()
+        return result
+    except Exception as err:
+        logger.error(f"Ошибка при получении статуса активности пользователя: {err}")
         return None
     finally:
-        cursor.close()
-        connection.close()
-
-def get_notifications_count(user_id=None):
-    role = session.get('role')  # Роль текущего пользователя
-
-    if not role:
-        print("Роль пользователя не установлена в сессии")  # Отладка отсутствия роли
-        return 0  # Или другое значение по умолчанию, например, None
-    
-    # Пользовательский ID игнорируется в текущей реализации, но может использоваться в будущем
-    # для фильтрации по конкретному пользователю
-
-    # Подключение к базе данных
-    connection = create_db_connection()
-    cursor = connection.cursor(dictionary=True)
-
-    # Составление запроса с фильтрацией по роли
-    query = """
-    SELECT COUNT(*) as count
-    FROM Notifications
-    WHERE is_for_{role} = TRUE
-    """.format(role=role)
-
-    cursor.execute(query)
-    result = cursor.fetchone()
-    cursor.close()
-    connection.close()
-    return result['count'] if result else 0
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
 
 def get_department_weekly_stats(department):
-    current_user_id = session.get('id')
+    """
+    Получает статистику по отделу за последнюю неделю
+    """
     connection = create_db_connection()
     cursor = connection.cursor(dictionary=True)
     
     end_date = datetime.now().date()
     start_date = end_date - timedelta(days=6)
     
-    # Формируем список полей для выборки, исключая поля, которые будут взяты за конкретный день
+    # Формируем список полей для выборки
     sum_fields = [
         'deals', 'reservations', 'online_showings', 'offline_showings', 'repeat_showings',
         'new_clients', 'cold_calls', 'adscian', 'adsavito', 'mailouts', 'resales',
@@ -248,460 +239,281 @@ def get_department_weekly_stats(department):
     # Создаем часть SQL-запроса для выборки суммируемых полей
     sum_fields_sql = ",\n".join([f"SUM(Scores.{field}) as {field}" for field in sum_fields])
     
-    # Добавляем поля для конкретного дня с условием
-    # Предполагается, что за каждый день для пользователя может быть только одна запись
-    total_ads_cian_sql = f"MAX(CASE WHEN Scores.date = '{end_date}' THEN Scores.total_ads_cian ELSE 0 END) as total_ads_cian"
-    total_ads_avito_sql = f"MAX(CASE WHEN Scores.date = '{end_date}' THEN Scores.total_ads_avito ELSE 0 END) as total_ads_avito"
-    
     query = f"""
     SELECT 
-        User.id,
-        User.full_name,
-        {sum_fields_sql},
-        {total_ads_cian_sql},
-        {total_ads_avito_sql}
+        {sum_fields_sql}
     FROM Scores
     JOIN User ON Scores.user_id = User.id
-    WHERE User.department = %s 
-      AND Scores.date >= %s 
-      AND Scores.date <= %s
-    GROUP BY User.id, User.full_name
+    WHERE 
+        User.department = %s AND 
+        Scores.date BETWEEN %s AND %s
     """
     
-    cursor.execute(query, (department, start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
-    stats = cursor.fetchall()
+    cursor.execute(query, (department, start_date, end_date))
+    result = cursor.fetchone()
+    
     cursor.close()
     connection.close()
     
-    return stats
+    return result
 
-@utils_bp.route('/department_statistics/daily', methods=['POST'])
-@login_required
-def department_daily_statistics():
-    if current_user.role != 'leader':
-        return jsonify({'error': 'Доступ запрещен'}), 403
+def get_notifications_count(user_id=None):
+    """
+    Получает количество уведомлений для текущего пользователя по роли
+    Параметр user_id в текущей реализации не используется, но может понадобиться в будущем
+    """
+    role = session.get('role')
+    
+    if not role:
+        logger.warning("Роль пользователя не установлена в сессии")
+        return 0
+    
+    connection = create_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    
+    # Теперь запрос фильтрует по роли из Roles
+    query = f"""
+    SELECT COUNT(*) as count
+    FROM Notifications n
+    JOIN Roles r ON n.role_id = r.id
+    WHERE r.name = %s
+    """
+    
+    cursor.execute(query, (role,))
+    result = cursor.fetchone()
+    
+    cursor.close()
+    connection.close()
+    
+    return result['count'] if result else 0
 
-    selected_date = request.form.get('selected_date')
-    department_id = session.get('department')
+def get_user_info(user_id):
+    """
+    Получает полную информацию о пользователе, включая роль, статус активности и настройки колл-центра
+    """
+    connection = create_db_connection()
+    if connection is None:
+        logger.error("Нет подключения к базе данных для получения информации о пользователе.")
+        return None
 
-    start_date = datetime.strptime(selected_date, '%Y-%m-%d')
-    end_date = start_date
-
-    return get_department_statistics(department_id, start_date, end_date)
-
-@utils_bp.route('/department_statistics/weekly', methods=['POST'])
-@login_required
-def department_weekly_statistics():
-    if current_user.role != 'leader':
-        return jsonify({'error': 'Доступ запрещен'}), 403
-
-    department_id = session.get('department')
-
-    # Получаем текущую дату и вычисляем диапазон прошлой недели
-    today = datetime.today()
-    start_of_week = today - timedelta(days=today.weekday() + 7)  # Начало прошлой недели (понедельник)
-    end_of_week = start_of_week + timedelta(days=6)  # Конец прошлой недели (воскресенье)
-
-    start_date = start_of_week
-    end_date = end_of_week
-
-    return get_department_statistics(department_id, start_date, end_date)
-
-
-@utils_bp.route('/department_statistics/monthly', methods=['POST'])
-@login_required
-def department_monthly_statistics():
-    if current_user.role != 'leader':
-        return jsonify({'error': 'Доступ запрещен'}), 403
-
-    department_id = session.get('department')
-    selected_month = request.form.get('selected_month')  # Format 'YYYY-MM'
-
+    cursor = None
     try:
-        year, month = map(int, selected_month.split('-'))
-    except ValueError:
-        return jsonify({'error': 'Некорректный формат месяца.'}), 400
+        cursor = connection.cursor(dictionary=True)
+        
+        query = """
+        SELECT 
+            u.id, 
+            u.login, 
+            u.full_name, 
+            u.department,
+            u.department_id,
+            r.name as role,
+            r.display_name as role_display_name,
+            c.ukc_kc,
+            a.status,
+            a.last_activity,
+            u.hired_date,
+            u.fire_date,
+            u.fired,
+            u.position,
+            u.personal_email,
+            u.pc_login,
+            u.Phone,
+            u.office,
+            u.corp_phone
+        FROM User u
+        LEFT JOIN Roles r ON u.role_id = r.id
+        LEFT JOIN CallCenterSettings c ON u.id = c.user_id
+        LEFT JOIN UserActivity a ON u.id = a.user_id
+        WHERE u.id = %s
+        """
+        
+        cursor.execute(query, (user_id,))
+        result = cursor.fetchone()
+        
+        return result
+    except Exception as err:
+        logger.error(f"Ошибка при получении информации о пользователе: {err}")
+        return None
+    finally:
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
 
-    start_date = datetime(year, month, 1)
-    end_date = (start_date + relativedelta(months=1)) - timedelta(days=1)
-
-    return get_department_statistics(department_id, start_date, end_date)
-
-
-@utils_bp.route('/department_statistics/yearly', methods=['POST'])
-@login_required
-def department_yearly_statistics():
-    if current_user.role != 'leader':
-        return jsonify({'error': 'Доступ запрещен'}), 403
-
-    department_id = session.get('department')
-    selected_year = request.form.get('selected_year')
-
+def execute_sql_file(file_path):
+    """
+    Выполняет SQL-скрипт из указанного файла через подключение к базе данных.
+    Возвращает True при успехе, иначе False.
+    """
+    import pymysql
     try:
-        year = int(selected_year)
-    except ValueError:
-        return jsonify({'error': 'Некорректный формат года.'}), 400
-
-    start_date = datetime(year, 1, 1)
-    end_date = datetime(year, 12, 31)
-
-    return get_department_statistics(department_id, start_date, end_date)
-
-
-@utils_bp.route('/department_statistics/custom', methods=['POST'])
-@login_required
-def department_custom_statistics():
-    if current_user.role != 'leader':
-        return jsonify({'error': 'Доступ запрещен'}), 403
-
-    department_id = session.get('department')
-    start_date_str = request.form.get('start_date')
-    end_date_str = request.form.get('end_date')
-
-    try:
-        start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
-        end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
-    except ValueError:
-        return jsonify({'error': 'Некорректный формат дат.'}), 400
-
-    return get_department_statistics(department_id, start_date, end_date)
-
-def sync_with_google_sheets(data):
-    from oauth2client.service_account import ServiceAccountCredentials
-    import gspread
-
-    # Настройка авторизации
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/spreadsheets"]
-    credentials = ServiceAccountCredentials.from_json_keyfile_name(CREDENTIALS_FILE, scope)
-    client = gspread.authorize(credentials)
-
-    # Открытие Google Таблицы
-    sheet = client.open_by_url('URL ВАШЕЙ GOOGLE ТАБЛИЦЫ')  # Подставьте URL таблицы
-    worksheet = sheet.get_worksheet(0)  # Первый лист
-
-    # Добавление данных
-    worksheet.append_row(data)
-
-def close_all_connections():
-    """Закрывает все активные соединения с базой данных и пересоздает пул"""
-    logger.info("Запрос на закрытие всех соединений с базой данных")
-    try:
-        # Закрытие всех соединений на стороне сервера
-        config = get_db_config()
-        conn = connect(
-            host=config['host'],
-            user=config['user'],
-            password=config['password'],
-            database=config['database'],
-            port=config['port']
-        )
-        cursor = conn.cursor()
-        
-        # Сначала получаем список всех соединений для нашего пользователя
-        cursor.execute("SHOW PROCESSLIST")
-        processes = cursor.fetchall()
-        
-        # Подсчитываем и закрываем соединения
-        count = 0
-        for process in processes:
-            process_id = process[0]
-            user = process[1]
-            host = process[2]
-            
-            # Закрываем только соединения нашего пользователя
-            if user == config['user']:
-                try:
-                    cursor.execute(f"KILL {process_id}")
-                    count += 1
-                    logger.debug(f"Закрыто соединение ID: {process_id}, User: {user}, Host: {host}")
-                except Exception as e:
-                    logger.warning(f"Не удалось закрыть соединение {process_id}: {str(e)}")
-        
-        logger.info(f"Закрыто {count} соединений с базой данных")
-        
-        # Закрываем текущее соединение
-        cursor.close()
-        conn.close()
-        
-        # Пересоздаем пул соединений, если он существует
-        global pool
-        if 'pool' in globals() and pool is not None:
-            try:
-                pool = mysql.connector.pooling.MySQLConnectionPool(
-                    pool_name="mypool",
-                    pool_size=30,
-                    pool_reset_session=True,
-                    **config,
-                    use_pure=True,
-                    autocommit=True,
-                    connection_timeout=5,
-                    time_zone='+03:00'
-                )
-                logger.info("Пул подключений к базе данных успешно пересоздан.")
-            except Exception as e:
-                logger.error(f"Ошибка при пересоздании пула подключений: {str(e)}")
-        
+        connection = create_db_connection()
+        with open(file_path, 'r', encoding='utf-8') as f:
+            sql = f.read()
+        with connection.cursor() as cursor:
+            for statement in sql.split(';'):
+                stmt = statement.strip()
+                if stmt:
+                    cursor.execute(stmt)
+        connection.commit()
         return True
     except Exception as e:
-        logger.error(f"Ошибка при закрытии соединений: {str(e)}")
+        print(f"Ошибка при выполнении SQL-файла: {e}")
+        if 'connection' in locals():
+            connection.rollback()
+        return False
+    finally:
+        if 'connection' in locals():
+            connection.close()
+
+def update_operator_status(operator_id, status):
+    """
+    Обновляет статус оператора (онлайн/оффлайн)
+    """
+    connection = create_db_connection()
+    if connection is None:
+        logger.error("Нет подключения к базе данных для обновления статуса оператора.")
         return False
 
-def get_db_config():
-    """Получает конфигурацию подключения к базе данных"""
-    config = {
-        'host': '192.168.2.225',
-        'port': 3306,
-        'user': 'test_user',
-        'password': 'password',
-        'database': 'Brokers'
-    }
-    
-    # Пытаемся загрузить конфигурацию из файла
-    config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'config.ini')
-    if os.path.exists(config_path):
-        try:
-            cfg = configparser.ConfigParser()
-            cfg.read(config_path)
-            if 'database' in cfg:
-                for key in config.keys():
-                    if key in cfg['database']:
-                        config[key] = cfg['database'][key]
-            else:
-                logger.warning(f"В файле {config_path} отсутствует секция 'database'. Используем параметры из config.env.")
-        except Exception as e:
-            logger.error(f"Ошибка при чтении файла конфигурации {config_path}: {str(e)}")
-    
-    # Пытаемся загрузить из переменных окружения через config.env
-    env_vars = {
-        'DB_HOST': 'host',
-        'DB_PORT': 'port',
-        'DB_USER': 'user',
-        'DB_PASSWORD': 'password',
-        'DB_NAME': 'database'
-    }
-    
-    for env_var, config_key in env_vars.items():
-        env_value = os.getenv(env_var)
-        if env_value:
-            config[config_key] = env_value
-    
-    return config
-
-class DBConnectionManager:
-    """
-    Контекстный менеджер для автоматического закрытия соединений с БД
-    Использование:
-    with DBConnectionManager() as conn:
-        cursor = conn.cursor()
-        # выполняем операции с БД
-    # соединение автоматически закрывается при выходе из блока with
-    """
-    def __init__(self):
-        self.connection = None
-        
-    def __enter__(self):
-        self.connection = create_db_connection()
-        return self.connection
-        
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.connection:
-            try:
-                self.connection.close()
-            except Exception as e:
-                logger.error(f"Ошибка при закрытии соединения: {e}")
-
-def save_uploaded_file(file, target_dir, filename):
-    """
-    Сохраняет загруженный файл с заданным именем в указанную директорию.
-    
-    Args:
-        file: FileStorage объект из Flask
-        target_dir: директория для сохранения
-        filename: желаемое имя файла
-    
-    Returns:
-        str: путь к сохраненному файлу
-    """
-    # Создаем директорию, если она не существует
-    if not os.path.exists(target_dir):
-        os.makedirs(target_dir, exist_ok=True)
-        
-    file_path = os.path.join(target_dir, filename)
-    
+    cursor = None
     try:
-        # Открываем изображение с помощью PIL
-        img = Image.open(file)
-        
-        # Конвертируем в нужный формат
-        if filename.endswith('.bmp'):
-            img.save(file_path, 'BMP')
-        elif filename.endswith('.jpg') or filename.endswith('.jpeg'):
-            img.save(file_path, 'JPEG')
-        elif filename.endswith('.png'):
-            img.save(file_path, 'PNG')
-        else:
-            # Если формат не поддерживается, сохраняем как есть
-            file.save(file_path)
-            
-        return file_path
-    except Exception as e:
-        current_app.logger.error(f"Ошибка при сохранении файла: {str(e)}")
-        raise
+        cursor = connection.cursor()
+        cursor.execute(
+            "UPDATE UserActivity SET status = %s, last_activity = NOW(), updated_at = NOW() WHERE user_id = %s",
+            (status, operator_id)
+        )
+        connection.commit()
+        logger.info(f"Статус оператора с ID {operator_id} обновлён на {status}.")
+        return True
+    except Exception as err:
+        if connection:
+            connection.rollback()
+        logger.error(f"Ошибка при обновлении статуса оператора: {err}")
+        return False
+    finally:
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or not current_user.is_admin:
+            flash("У вас нет прав для доступа к этой странице.", "danger")
+            return redirect(url_for('main.index'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 def save_logo(file):
     """
-    Сохраняет логотип компании.
-    
-    Args:
-        file: FileStorage объект из Flask
-    
-    Returns:
-        str: путь к сохраненному файлу
+    Сохраняет загруженный логотип в директорию static/images.
+    Возвращает путь к сохранённому файлу или None в случае ошибки.
     """
-    static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'images')
-    return save_uploaded_file(file, static_dir, 'logo.bmp')
+    if file and file.filename:
+        filename = secure_filename(file.filename)
+        logo_path = os.path.join(current_app.static_folder, 'images', filename)
+        file.save(logo_path)
+        return os.path.join('images', filename)
+    return None
 
 def save_background(file):
     """
-    Сохраняет фоновое изображение.
-    
-    Args:
-        file: FileStorage объект из Flask
-    
-    Returns:
-        str: путь к сохраненному файлу
+    Сохраняет загруженный фоновый файл в директорию static/images.
+    Возвращает путь к сохранённому файлу или None в случае ошибки.
     """
-    images_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'images')
-    return save_uploaded_file(file, images_dir, 'real_estate_bg.jpg')
+    if file and file.filename:
+        filename = secure_filename(file.filename)
+        background_path = os.path.join(current_app.static_folder, 'images', filename)
+        file.save(background_path)
+        return os.path.join('images', filename)
+    return None
 
-def check_module_access(user_id, module_name):
-    """
-    Проверяет, имеет ли пользователь доступ к указанному модулю
-    
-    Args:
-        user_id: ID пользователя
-        module_name: Название модуля ('Дашборд', 'ВАТС', 'Колл-центр', etc.)
-        
-    Returns:
-        bool: True если пользователь имеет доступ, False в противном случае
-    """
-    if not user_id:
-        return False
-        
+def authenticate_user(login, password):
+    """Аутентификация пользователя"""
     try:
-        connection = create_db_connection()
-        if not connection:
-            return False
+        conn = create_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        # Получаем пользователя
+        cursor.execute("""
+            SELECT u.*, r.name as role_name, r.type as role_type
+            FROM users u
+            LEFT JOIN user_roles ur ON u.id = ur.user_id
+            LEFT JOIN roles r ON ur.role_id = r.id
+            WHERE u.login = %s
+        """, (login,))
+        user_data = cursor.fetchone()
+        
+        if not user_data:
+            return None
             
-        with connection.cursor(dictionary=True) as cursor:
-            # Проверяем доступ через таблицу RolePermission
-            cursor.execute("""
-                SELECT COUNT(*) as has_access 
-                FROM Module m
-                JOIN RolePermission rp ON m.id = rp.module_id
-                JOIN UserRole ur ON rp.role_id = ur.role_id
-                WHERE ur.user_id = %s 
-                AND m.name = %s 
-                AND rp.can_view = 1
-            """, (user_id, module_name))
+        # Проверяем пароль
+        if not check_password_hash(user_data['password'], password):
+            return None
             
-            result = cursor.fetchone()
-            
-            # Если пользователь администратор, у него есть доступ ко всем модулям
-            cursor.execute("SELECT role FROM User WHERE id = %s", (user_id,))
-            user = cursor.fetchone()
-            
-            if user and user['role'] == 'admin':
-                return True
-                
-            return result and result['has_access'] > 0
+        # Создаем объект пользователя
+        user = User(
+            id=user_data['id'],
+            login=user_data['login'],
+            full_name=user_data['full_name'],
+            role=user_data['role_name'],
+            department=user_data['department']
+        )
+        
+        # Добавляем дополнительные атрибуты
+        user.role_type = user_data['role_type']
+        user.is_active = user_data['is_active']
+        user.last_login = user_data['last_login']
+        
+        return user
+        
     except Exception as e:
-        print(f"Ошибка при проверке доступа к модулю: {e}")
-        return False
+        print(f"Ошибка аутентификации: {str(e)}")
+        return None
     finally:
-        if connection:
-            connection.close()
-            
-def get_user_accessible_modules(user_id):
-    """
-    Получает список модулей, к которым у пользователя есть доступ
-    
-    Args:
-        user_id: ID пользователя
-        
-    Returns:
-        list: Список названий модулей, к которым есть доступ
-    """
-    if not user_id:
-        return []
-        
-    try:
-        connection = create_db_connection()
-        if not connection:
-            print(f"Не удалось установить соединение с БД для пользователя {user_id}")
-            return []
-            
-        with connection.cursor(dictionary=True) as cursor:
-            # Проверяем, является ли пользователь администратором
-            cursor.execute("SELECT role FROM User WHERE id = %s", (user_id,))
-            user = cursor.fetchone()
-            
-            if user and user['role'] == 'admin':
-                # Администратору доступны все модули
-                cursor.execute("SELECT name FROM Module")
-                modules = cursor.fetchall()
-                module_names = [m['name'] for m in modules]
-                print(f"Пользователь {user_id} является администратором. Доступные модули: {module_names}")
-                return module_names
-            
-            # Для других ролей - только модули с разрешением can_view
-            cursor.execute("""
-                SELECT DISTINCT m.name 
-                FROM Module m
-                JOIN RolePermission rp ON m.id = rp.module_id
-                JOIN UserRole ur ON rp.role_id = ur.role_id
-                WHERE ur.user_id = %s 
-                AND rp.can_view = 1
-            """, (user_id,))
-            
-            modules = cursor.fetchall()
-            module_names = [m['name'] for m in modules]
-            print(f"Пользователь {user_id} с ролью {user.get('role')}. Доступные модули: {module_names}")
-            return module_names
-    except Exception as e:
-        print(f"Ошибка при получении доступных модулей для пользователя {user_id}: {e}")
-        return []
-    finally:
-        if connection:
-            connection.close()
-
-def execute_sql_file(filename):
-    connection = create_db_connection()
-    if connection is None:
-        return False
-    
-    try:
-        cursor = connection.cursor()
-        
-        # Читаем SQL-файл
-        with open(filename, 'r') as file:
-            sql_commands = file.read()
-        
-        # Разделяем команды по точке с запятой
-        commands = sql_commands.split(';')
-        
-        # Выполняем каждую команду
-        for command in commands:
-            if command.strip():
-                cursor.execute(command)
-        
-        connection.commit()
-        return True
-    except Error as e:
-        print(f"Error executing SQL file: {e}")
-        return False
-    finally:
-        if connection.is_connected():
+        if 'cursor' in locals():
             cursor.close()
-            connection.close()
+        if 'conn' in locals():
+            conn.close()
 
+def get_user_accessible_modules(user):
+    """
+    Получает список доступных модулей для пользователя
+    
+    Args:
+        user: Объект пользователя
+        
+    Returns:
+        list: Список доступных модулей
+    """
+    if not user:
+        return []
+        
+    # Базовые модули, доступные всем пользователям
+    modules = ['profile', 'news']
+    
+    # Добавляем модули в зависимости от роли пользователя
+    if user.is_admin:
+        modules.extend(['admin', 'personnel', 'settings'])
+    elif user.is_hr():
+        modules.extend(['hr', 'personnel'])
+    elif user.is_leader():
+        modules.extend(['leader', 'rating'])
+    elif user.is_callcenter():
+        modules.extend(['callcenter'])
+    elif user.is_helpdesk():
+        modules.extend(['helpdesk'])
+    elif user.is_itinvent():
+        modules.extend(['itinvent'])
+    elif user.is_avito():
+        modules.extend(['avito'])
+    elif user.is_reception():
+        modules.extend(['reception'])
+    elif user.is_backoffice():
+        modules.extend(['backoffice'])
+    elif user.is_vats():
+        modules.extend(['vats'])
+        
+    return modules 

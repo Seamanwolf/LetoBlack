@@ -552,3 +552,36 @@ h3 {
 .border-success { border-color: var(--success-color) !important; }
 .border-warning { border-color: var(--warning-color) !important; }
 .border-danger { border-color: var(--danger-color) !important; } 
+
+/* Расширенный класс для очень больших модальных окон */
+.modal-xxl {
+    max-width: 95% !important;
+    width: 95% !important;
+}
+
+@media (min-width: 1400px) {
+    .modal-xxl {
+        max-width: 1320px !important;
+        width: 90% !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .modal-xxl {
+        max-width: 98% !important;
+        width: 98% !important;
+        margin: 10px auto;
+    }
+}
+
+/* Выделение руководителя отдела */
+.manager-row {
+    background-color: #fffbe6 !important;
+    font-weight: bold;
+}
+.leader-icon {
+    color: #ffb300;
+    font-size: 1.3em;
+    margin-right: 4px;
+    vertical-align: middle;
+} 

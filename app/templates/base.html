@@ -44,21 +44,22 @@
         
         .sidebar a {
             display: flex !important;
-            align-items: flex-start !important;
-            justify-content: flex-start !important;
-            padding: 12px 15px !important;
+            flex-direction: column !important; /* Вертикальное направление */
+            align-items: center !important; /* Центрирование по горизонтали */
+            justify-content: center !important; /* Центрирование по вертикали */
+            padding: 15px 5px !important; 
             color: #ecf0f1 !important;
             text-decoration: none !important;
             transition: all 0.3s !important;
-            flex-direction: column !important; /* Вертикальное направление */
-            text-align: left !important;
+            text-align: center !important;
+            height: 70px !important; /* Фиксированная высота */
         }
         
         .sidebar a i {
             display: block !important;
-            width: 100% !important;
-            text-align: left !important;
-            font-size: 20px !important;
+            width: auto !important;
+            text-align: center !important;
+            font-size: 22px !important; /* Увеличиваем размер иконки */
             margin-bottom: 8px !important;
             margin-right: 0 !important;
         }
@@ -66,7 +67,7 @@
         .sidebar a span {
             display: block !important;
             width: 100% !important;
-            text-align: left !important;
+            text-align: center !important; /* Центрирование текста */
             font-size: 12px !important;
             white-space: nowrap !important;
             margin: 0 !important;
@@ -283,7 +284,7 @@
         {% endif %}
         
         {% if 'Персонал' in accessible_modules or current_user.role == 'admin' %}
-        <a href="{{ url_for('admin_routes_unique.personnel') }}" {% if request.endpoint == 'admin_routes_unique.personnel' %}class="active"{% endif %}>
+        <a href="{{ url_for('admin_routes_unique.personnel') }}" {% if request.endpoint == 'admin_routes_unique.personnel' or request.endpoint == 'admin_routes_unique.fired_employees' or request.endpoint == 'admin_routes_unique.personnel_dashboard' %}class="active"{% endif %}>
             <i class="fas fa-users"></i>
             <span>Персонал</span>
         </a>

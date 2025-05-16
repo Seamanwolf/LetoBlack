@@ -1,11 +1,12 @@
 from flask import Blueprint, render_template
-from app.models.user import User
+from app.models import User
 from app.models.role import Role
 from app.models.department import Department
 from app.models.location import Location
 from app.utils import create_db_connection
 
-admin_routes_bp = Blueprint('admin_routes_unique', __name__, url_prefix='/admin')
+# Убрал url_prefix, так как он добавляется при регистрации
+admin_routes_bp = Blueprint('admin_routes_unique', __name__)
 
 @admin_routes_bp.route('/')
 def index():

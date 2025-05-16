@@ -4,7 +4,7 @@ from app import db
 from app.models.role import Role
 from app.models.permission import Permission
 from app.models.system_module import SystemModule
-from app.models.user import User
+from app.models import User
 import os
 from app.utils import execute_sql_file
 import logging

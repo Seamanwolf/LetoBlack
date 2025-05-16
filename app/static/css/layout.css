@@ -1,0 +1,317 @@
+/* 
+ * Основные стили макета для всего сайта
+ * Этот файл содержит стили для основных элементов интерфейса,
+ * которые должны быть одинаковыми на всех страницах
+ */
+
+:root {
+  /* Основные переменные для всего макета */
+  --sidebar-width: 240px;
+  --topbar-height: 60px;
+  --primary-color: #3498db;
+  --secondary-color: #2c3e50;
+  --background-color: #f5f7f9;
+  --light-gray: #f8f9fa;
+  --border-color: #dee2e6;
+  --text-color: #333;
+  --text-light: #6c757d;
+  --success-color: #2ecc71;
+  --danger-color: #e74c3c;
+  --warning-color: #f39c12;
+}
+
+/* Общие стили */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  overflow-x: hidden;
+}
+
+/* Боковая панель */
+.sidebar {
+  position: fixed !important;
+  left: 0 !important;
+  top: 0 !important;
+  height: 100vh !important;
+  width: var(--sidebar-width) !important;
+  background-color: var(--secondary-color) !important;
+  padding: 20px 0 !important;
+  color: white !important;
+  z-index: 1000 !important;
+  overflow-y: auto !important;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05) !important;
+  transition: all 0.3s ease !important;
+}
+
+.sidebar a {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 15px 5px !important;
+  color: white !important;
+  text-decoration: none !important;
+  transition: all 0.3s ease !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  text-align: center !important;
+  height: 70px !important;
+}
+
+.sidebar a i {
+  margin-right: 0 !important;
+  margin-bottom: 8px !important;
+  width: auto !important;
+  text-align: center !important;
+  font-size: 22px !important;
+}
+
+.sidebar a span {
+  display: block !important;
+  width: 100% !important;
+  text-align: center !important;
+  font-size: 12px !important;
+  white-space: nowrap !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.sidebar a:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.sidebar a.active {
+  background-color: var(--primary-color) !important;
+  color: white !important;
+}
+
+/* Верхняя панель */
+.topbar {
+  position: fixed !important;
+  top: 0 !important;
+  right: 0 !important;
+  left: calc(var(--sidebar-width) - 150px) !important;
+  height: var(--topbar-height) !important;
+  background-color: white !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05) !important;
+  padding: 0 20px 0 15px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  z-index: 998 !important;
+  width: calc(100% - var(--sidebar-width) + 150px) !important;
+}
+
+.topbar .title {
+  font-size: 18px !important;
+  font-weight: 500 !important;
+  color: var(--secondary-color) !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+  text-align: left !important;
+}
+
+.profile-icon {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.profile-icon i {
+  margin-right: 10px;
+  color: var(--primary-color);
+}
+
+/* Основной контент */
+.main-content {
+  margin-left: calc(var(--sidebar-width) - 15px) !important;
+  margin-top: var(--topbar-height) !important;
+  padding: 20px 15px 20px 0 !important;
+  min-height: calc(100vh - var(--topbar-height)) !important;
+  width: calc(100% - var(--sidebar-width) - 10px) !important;
+  margin-right: 10px !important;
+  position: relative !important;
+}
+
+/* Навигационное меню страниц */
+.nav-menu {
+  background-color: white !important;
+  padding: 0 1.2rem !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+  margin-bottom: 2rem !important;
+  border-bottom: 2px solid var(--border-color) !important;
+  align-items: center !important;
+  width: 100% !important;
+  margin-left: -50px !important;
+  margin-right: 10px !important;
+  position: relative !important;
+  z-index: 10 !important;
+  padding-left: 15px !important;
+}
+
+.nav-menu a {
+  color: var(--text-light);
+  font-weight: 500;
+  padding: 1rem 1.2rem;
+  margin-right: 1.2rem;
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  margin-left: -10px !important;
+  position: relative !important;
+  padding-left: 0 !important;
+}
+
+.nav-menu a:hover {
+  color: var(--primary-color);
+  background-color: rgba(52, 152, 219, 0.05);
+}
+
+.nav-menu a.active {
+  color: var(--primary-color);
+  border-bottom: 3px solid var(--primary-color);
+  font-weight: 600;
+}
+
+.nav-menu a i {
+  margin-right: 0.7rem;
+  font-size: 1.1rem;
+}
+
+/* Таблицы */
+.table {
+  width: 100%;
+  margin-bottom: 1rem;
+  color: var(--text-color);
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 0.75rem;
+  vertical-align: middle;
+  border-top: 1px solid var(--border-color);
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  padding-right: 10px !important;
+}
+
+/* Карточки */
+.card {
+  background-color: white !important;
+  border-radius: 10px !important;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05) !important;
+  margin-bottom: 20px !important;
+  overflow: hidden !important;
+  margin-left: -15px !important;
+  width: calc(100% + 15px) !important;
+}
+
+.card-header {
+  background-color: var(--light-gray);
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 600;
+}
+
+.card-body {
+  padding: 20px;
+}
+
+/* Кнопки */
+.btn {
+  border-radius: 5px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #2980b9;
+  border-color: #2980b9;
+}
+
+.btn-danger {
+  background-color: var(--danger-color);
+  border-color: var(--danger-color);
+  color: white;
+}
+
+.btn-success {
+  background-color: var(--success-color);
+  border-color: var(--success-color);
+  color: white;
+}
+
+.btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+/* Модальные окна */
+.modal-content {
+  border-radius: 10px;
+  border: none;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-footer {
+  padding: 15px 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+/* Адаптивность */
+@media (max-width: 992px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+  
+  .sidebar.show {
+    transform: translateX(0);
+  }
+  
+  .topbar, .main-content {
+    left: 0;
+    width: 100%;
+    margin-left: 0;
+  }
+  
+  .topbar.sidebar-open {
+    left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
+  }
+  
+  .main-content.sidebar-open {
+    margin-left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
+  }
+} 

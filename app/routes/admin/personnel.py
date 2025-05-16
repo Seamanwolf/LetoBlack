@@ -55,8 +55,8 @@ def personnel():
         ''')
         stats = cursor.fetchone()
         
-        # Получаем список отделов из таблицы Department
-        cursor.execute('SELECT id, name FROM Department ORDER BY name')
+        # Получаем список отделов из таблицы Department с учетом порядка отображения
+        cursor.execute('SELECT id, name, display_order FROM Department ORDER BY display_order ASC, name ASC')
         departments = cursor.fetchall()
         
         # Получаем сотрудников по отделам
@@ -434,8 +434,8 @@ def fired_employees():
         ''')
         stats = cursor.fetchone()
         
-        # Получаем список отделов из таблицы Department
-        cursor.execute('SELECT id, name FROM Department ORDER BY name')
+        # Получаем список отделов из таблицы Department с учетом порядка отображения
+        cursor.execute('SELECT id, name, display_order FROM Department ORDER BY display_order ASC, name ASC')
         departments = cursor.fetchall()
         
         # Получаем список уволенных сотрудников
@@ -1042,6 +1042,370 @@ def employee_history(employee_id):
     except Exception as e:
         logger.error(f"Ошибка при получении истории изменений: {str(e)}")
         return jsonify({'success': False, 'message': f'Ошибка при получении истории изменений: {str(e)}'}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close() 
+
+@admin_routes_bp.route('/phone_numbers')
+@login_required
+def phone_numbers():
+    """Страница управления корпоративными номерами"""
+    logger.debug("Начало выполнения функции phone_numbers")
+    if current_user.role != 'admin' and current_user.role != 'leader':
+        logger.warning(f"Отказано в доступе пользователю {current_user.login} с ролью {current_user.role}")
+        flash('У вас нет доступа к этой странице', 'error')
+        return redirect_based_on_role(current_user)
+    
+    try:
+        conn = create_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        # Получаем список отделов с id, name и display_order
+        cursor.execute('SELECT id, name, display_order FROM Department ORDER BY display_order ASC, name ASC')
+        departments = cursor.fetchall()
+        
+        # Создаем словарь соответствия id -> name для отделов
+        department_dict = {str(dept['id']): dept['name'] for dept in departments}
+        
+        # Создаем словарь соответствия name -> id для отделов
+        dept_id_map = {dept['name']: dept['id'] for dept in departments}
+        
+        # Получаем номера из таблицы corp_numbers с присоединением Department
+        query = """
+            SELECT 
+                cn.id, 
+                cn.phone_number, 
+                cn.department, 
+                cn.assigned_to, 
+                cn.prohibit_issuance,
+                cn.whatsapp, 
+                cn.telegram, 
+                cn.blocked,
+                d.name as department_name,
+                d.id as department_id,
+                d.display_order
+            FROM corp_numbers cn
+            LEFT JOIN Department d ON cn.department = CAST(d.id AS CHAR)
+            ORDER BY d.display_order ASC, cn.phone_number
+        """
+        cursor.execute(query)
+        numbers = cursor.fetchall()
+        
+        # Группируем номера по отделам для отображения на странице
+        departments_dict = {}
+        
+        # Первый проход: создаем пустые списки для всех отделов, сохраняя порядок отображения
+        ordered_departments = []
+        
+        for dept in departments:
+            department_name = dept['name']
+            departments_dict[department_name] = []
+            ordered_departments.append(department_name)
+        
+        # Второй проход: добавляем номера в соответствующие отделы
+        for number in numbers:
+            dept_id = number['department']
+            
+            # Если у номера есть department_name из JOIN, используем его
+            if number.get('department_name'):
+                # Сохраняем название отдела для отображения
+                department_name = number['department_name']
+                
+                # Добавляем название отдела в номер для отображения в шаблоне
+                number['department_display'] = department_name
+            else:
+                # Если нет результата JOIN, пробуем найти название в словаре
+                department_name = department_dict.get(dept_id, f"Отдел {dept_id}")
+                
+                # Добавляем название отдела в номер для отображения в шаблоне
+                number['department_display'] = department_name
+            
+            # Добавляем номер в список соответствующего отдела, если отдел существует
+            if department_name in departments_dict:
+                departments_dict[department_name].append(number)
+        
+        # Создаем OrderedDict для сохранения порядка отделов
+        from collections import OrderedDict
+        ordered_departments_dict = OrderedDict()
+        for dept_name in ordered_departments:
+            if dept_name in departments_dict:
+                ordered_departments_dict[dept_name] = departments_dict[dept_name]
+        
+        # Подсчет статистики по номерам
+        total_numbers = len(numbers)
+        assigned_numbers = sum(1 for n in numbers if n.get('assigned_to'))
+        free_numbers = total_numbers - assigned_numbers
+        prohibited_numbers = sum(1 for n in numbers if n.get('prohibit_issuance'))
+        
+        logger.debug(f"Получено {len(ordered_departments_dict)} отделов и {total_numbers} номеров")
+        
+        return render_template('admin/phone_numbers.html',
+                               numbers=numbers,
+                               departments_dict=ordered_departments_dict,
+                               departments=departments,
+                               dept_id_map=dept_id_map,  # Передаем сопоставление имени->ID
+                               total_numbers=total_numbers,
+                               assigned_numbers=assigned_numbers,
+                               free_numbers=free_numbers,
+                               prohibited_numbers=prohibited_numbers)
+    except Exception as e:
+        logger.error(f"Ошибка при загрузке страницы корпоративных номеров: {str(e)}")
+        flash('Произошла ошибка при загрузке данных', 'error')
+        return redirect_based_on_role(current_user)
+    finally:
+        if 'conn' in locals():
+            conn.close() 
+
+@admin_routes_bp.route('/test_route')
+def test_blueprint_route():
+    """Тестовый маршрут для проверки работы blueprint"""
+    logger.critical("Тестовый маршрут сработал!")
+    return jsonify({
+        'success': True,
+        'message': 'Тестовый маршрут успешно вызван',
+        'blueprint': 'admin_routes_bp',
+        'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    })
+
+@admin_routes_bp.route('/api/update_department_positions', methods=['POST'])
+@admin_routes_bp.route('/admin/api/update_department_positions', methods=['POST'])
+@login_required
+def update_department_positions_api():
+    """Обновление порядка отделов через API с помощью drag-and-drop"""
+    # Расширенное логирование для отладки ошибки 405
+    logger.critical("=================== НАЧАЛО ОБРАБОТКИ ЗАПРОСА ===================")
+    logger.critical(f"ПУТЬ URL: {request.path}")
+    logger.critical(f"ПОЛНЫЙ URL: {request.url}")
+    logger.critical(f"МЕТОД ЗАПРОСА: {request.method}")
+    logger.critical(f"ЗАГОЛОВКИ: {dict(request.headers)}")
+    logger.critical(f"ДАННЫЕ JSON: {request.get_data(as_text=True)}")
+    logger.critical(f"BLUEPRINT: {request.blueprint}")
+    logger.critical(f"ENDPOINT: {request.endpoint}")
+    logger.critical("=================== КОНЕЦ ДАННЫХ ЗАПРОСА ===================")
+    
+    if current_user.role != 'admin' and current_user.role != 'leader':
+        logger.warning(f"Отказано в доступе пользователю {current_user.login} с ролью {current_user.role}")
+        return jsonify({'success': False, 'message': 'Недостаточно прав для выполнения операции'})
+
+    try:
+        data = request.json
+        if not data:
+            logger.warning("Данные не получены в запросе")
+            return jsonify({'success': False, 'message': 'Данные не получены'}), 400
+        
+        dragged_id = data.get('dragged_id')
+        target_id = data.get('target_id')
+        position = data.get('position')  # 'before' или 'after'
+        
+        logger.debug(f"Получены данные: dragged_id={dragged_id}, target_id={target_id}, position={position}")
+        
+        if not dragged_id or not target_id or not position:
+            logger.warning("Не указаны ID отделов или позиция")
+            return jsonify({'success': False, 'message': 'Не указаны ID отделов или позиция'}), 400
+        
+        conn = create_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        # Проверяем существование отделов
+        cursor.execute("SELECT id, name, display_order FROM Department WHERE id IN (%s, %s)", 
+                     (dragged_id, target_id))
+        departments = cursor.fetchall()
+        
+        logger.debug(f"Найдены отделы: {departments}")
+        
+        if len(departments) != 2:
+            logger.warning(f"Один или оба отдела не найдены: dragged_id={dragged_id}, target_id={target_id}")
+            return jsonify({'success': False, 'message': 'Один или оба отдела не найдены'}), 404
+        
+        # Находим отделы по ID
+        dragged_dept = next((d for d in departments if str(d['id']) == str(dragged_id)), None)
+        target_dept = next((d for d in departments if str(d['id']) == str(target_id)), None)
+        
+        if not dragged_dept or not target_dept:
+            logger.warning(f"Не удалось идентифицировать отделы: dragged_dept={dragged_dept}, target_dept={target_dept}")
+            return jsonify({'success': False, 'message': 'Не удалось идентифицировать отделы'}), 500
+        
+        # Убеждаемся, что у всех отделов установлен порядковый номер
+        cursor.execute("SELECT id, display_order FROM Department ORDER BY display_order")
+        all_departments = cursor.fetchall()
+        
+        # Проверяем наличие порядковых номеров и обновляем, если отсутствуют
+        for i, dept in enumerate(all_departments):
+            if dept['display_order'] is None:
+                cursor.execute("UPDATE Department SET display_order = %s WHERE id = %s", 
+                             (i + 1, dept['id']))
+        
+        # Если позиция 'before', перемещаем перед целевым отделом
+        if position == 'before':
+            target_order = target_dept['display_order']
+            
+            # Увеличиваем порядковый номер для всех отделов, которые идут после целевого
+            cursor.execute("""
+                UPDATE Department 
+                SET display_order = display_order + 1 
+                WHERE display_order >= %s AND id != %s
+            """, (target_order, dragged_id))
+            
+            # Устанавливаем новый порядковый номер для перетаскиваемого отдела
+            cursor.execute("UPDATE Department SET display_order = %s WHERE id = %s", 
+                         (target_order, dragged_id))
+            
+        # Если позиция 'after', перемещаем после целевого отдела
+        elif position == 'after':
+            target_order = target_dept['display_order']
+            
+            # Увеличиваем порядковый номер для всех отделов, которые идут после целевого + 1
+            cursor.execute("""
+                UPDATE Department 
+                SET display_order = display_order + 1 
+                WHERE display_order > %s AND id != %s
+            """, (target_order, dragged_id))
+            
+            # Устанавливаем новый порядковый номер для перетаскиваемого отдела
+            cursor.execute("UPDATE Department SET display_order = %s WHERE id = %s", 
+                         (target_order + 1, dragged_id))
+        
+        conn.commit()
+        
+        # Финальная перенумерация для предотвращения пробелов и дублирования
+        cursor.execute("SELECT id FROM Department ORDER BY display_order")
+        ordered_departments = cursor.fetchall()
+        
+        for i, dept in enumerate(ordered_departments):
+            cursor.execute("UPDATE Department SET display_order = %s WHERE id = %s", 
+                         (i + 1, dept['id']))
+        
+        conn.commit()
+        
+        logger.info(f"Порядок отделов успешно обновлен: отдел {dragged_id} перемещен {position} отдела {target_id}")
+        return jsonify({
+            'success': True, 
+            'message': f"Порядок отделов успешно обновлен"
+        })
+    
+    except Exception as e:
+        logger.error(f"Ошибка при обновлении порядка отделов: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'message': f'Ошибка при обновлении порядка отделов: {str(e)}'}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close() 
+
+@admin_routes_bp.route('/api/delete_number', methods=['POST'])
+@login_required
+def delete_number_api():
+    """Удаление номера"""
+    logger.debug("Начало выполнения функции delete_number_api")
+    if current_user.role != 'admin' and current_user.role != 'leader':
+        logger.warning(f"Отказано в доступе пользователю {current_user.login} с ролью {current_user.role}")
+        return jsonify({'success': False, 'message': 'Недостаточно прав для выполнения операции'})
+    data = request.get_json()
+    number_id = data.get('number_id')
+    if not number_id:
+        return jsonify({'success': False, 'message': 'Не указан ID номера'}), 400
+    try:
+        conn = create_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        # Получаем данные номера перед удалением для лога
+        cursor.execute("SELECT * FROM corp_numbers WHERE id = %s", (number_id,))
+        number_data = cursor.fetchone()
+        if not number_data:
+            return jsonify({'success': False, 'message': 'Номер не найден'}), 404
+        # Удаляем номер
+        cursor.execute("DELETE FROM corp_numbers WHERE id = %s", (number_id,))
+        conn.commit()
+        # Логируем удаление
+        try:
+            cursor.execute("""
+                INSERT INTO phone_numbers_history 
+                (operator_id, old_number)
+                VALUES (%s, %s)
+            """, (
+                current_user.id,
+                number_data['phone_number']
+            ))
+            conn.commit()
+        except Exception as log_err:
+            logger.error(f"Ошибка при добавлении записи в историю номеров: {log_err}")
+        return jsonify({'success': True, 'message': 'Номер успешно удален'})
+    except Exception as e:
+        logger.error(f"Ошибка при удалении номера: {str(e)}")
+        return jsonify({'success': False, 'message': f'Ошибка при удалении номера: {str(e)}'}), 500
+    finally:
+        if 'conn' in locals():
+            conn.close() 
+
+@admin_routes_bp.route('/api/move_number', methods=['POST'])
+@login_required
+def move_number_api():
+    """Перемещение номера между отделами"""
+    logger.debug("Начало выполнения функции move_number_api")
+    if current_user.role != 'admin' and current_user.role != 'leader':
+        logger.warning(f"Отказано в доступе пользователю {current_user.login} с ролью {current_user.role}")
+        return jsonify({'success': False, 'message': 'Недостаточно прав для выполнения операции'})
+    data = request.get_json()
+    number_id = data.get('number_id')
+    new_department = data.get('new_department')
+    if not number_id:
+        return jsonify({'success': False, 'message': 'Не указан ID номера'}), 400
+    try:
+        conn = create_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        # Получаем текущие данные для лога
+        cursor.execute("SELECT * FROM corp_numbers WHERE id = %s", (number_id,))
+        number_data = cursor.fetchone()
+        if not number_data:
+            return jsonify({'success': False, 'message': 'Номер не найден'}), 404
+        # Если перемещаем в свободные номера
+        if new_department is None or new_department == '' or new_department == 'free':
+            cursor.execute("UPDATE corp_numbers SET department = NULL, assigned_to = NULL WHERE id = %s", (number_id,))
+            note = "Номер перемещен в свободные номера"
+        else:
+            cursor.execute("UPDATE corp_numbers SET department = %s, assigned_to = NULL WHERE id = %s", (new_department, number_id))
+            note = f"Номер перемещен в отдел {new_department}"
+        conn.commit()
+        # Логируем перемещение
+        try:
+            cursor.execute("""
+                INSERT INTO phone_numbers_history 
+                (operator_id, old_number, new_number, note)
+                VALUES (%s, %s, %s, %s)
+            """, (
+                current_user.id,
+                number_data['phone_number'],
+                new_department if new_department else 'free',
+                note
+            ))
+            conn.commit()
+        except Exception as log_err:
+            logger.error(f"Ошибка при добавлении записи в историю номеров: {log_err}")
+        return jsonify({'success': True, 'message': note})
+    except Exception as e:
+        logger.error(f"Ошибка при перемещении номера: {str(e)}")
+        return jsonify({'success': False, 'message': f'Ошибка при перемещении номера: {str(e)}'}), 500
+    finally:
+        if 'conn' in locals():
+            conn.close() 
+
+@admin_routes_bp.route('/api/free_numbers', methods=['GET'])
+@login_required
+def get_free_numbers_api():
+    """Получить полностью свободные номера (не принадлежат ни одному отделу)"""
+    try:
+        conn = create_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT id, phone_number, assigned_to, whatsapp, telegram, blocked, prohibit_issuance, created_at, updated_at
+            FROM corp_numbers
+            WHERE department IS NULL OR department = ''
+        """)
+        numbers = cursor.fetchall()
+        return jsonify({'success': True, 'numbers': numbers})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
     finally:
         if 'cursor' in locals():
             cursor.close()

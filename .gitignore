@@ -31,6 +31,7 @@ ENV/
 *.swo
 
 # Logs
+app.log
 *.log
 
 # Local configuration
@@ -49,3 +50,6 @@ media/
 # Temporary files
 .DS_Store
 Thumbs.db 
+
+# Client secret
+client_secret.json 
