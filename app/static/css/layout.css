@@ -84,11 +84,6 @@ body {
   background-color: rgba(255, 255, 255, 0.1) !important;
 }
 
-.sidebar a.active {
-  background-color: var(--primary-color) !important;
-  color: white !important;
-}
-
 /* Верхняя панель */
 .topbar {
   position: fixed !important;

@@ -18,6 +18,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/overrides.css') }}?v={{ range(1, 100000) | random }}">
     <!-- Core JS -->
     <script src="{{ url_for('static', filename='js/core.js') }}?v={{ range(1, 100000) | random }}"></script>
+    <!-- Sidebar CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}?v={{ range(1, 100000) | random }}">
     {% block extra_css %}{% endblock %}
     <style>
         /* Основные стили */
@@ -273,79 +275,7 @@
     <div class="toast-container"></div>
     
     <!-- Боковая панель -->
-    <div class="sidebar">
-        {% set accessible_modules = get_accessible_modules() %}
-        
-        {% if 'Дашборд' in accessible_modules or current_user.role == 'admin' %}
-        <a href="{{ url_for('admin_dashboard.admin_dashboard') }}" {% if request.endpoint == 'admin_dashboard.admin_dashboard' or request.endpoint == 'admin.admin_dashboard' %}class="active"{% endif %}>
-            <i class="fas fa-home"></i>
-            <span>Дашборд</span>
-        </a>
-        {% endif %}
-        
-        {% if 'Персонал' in accessible_modules or current_user.role == 'admin' %}
-        <a href="{{ url_for('admin_routes_unique.personnel') }}" {% if request.endpoint == 'admin_routes_unique.personnel' or request.endpoint == 'admin_routes_unique.fired_employees' or request.endpoint == 'admin_routes_unique.personnel_dashboard' %}class="active"{% endif %}>
-            <i class="fas fa-users"></i>
-            <span>Персонал</span>
-        </a>
-        {% endif %}
-        
-        {% if 'Рейтинг' in accessible_modules or current_user.role == 'admin' %}
-        <a href="{{ url_for('rating.show_rating') }}" {% if request.endpoint == 'rating.show_rating' %}class="active"{% endif %}>
-            <i class="fas fa-star"></i>
-            <span>Рейтинг</span>
-        </a>
-        {% endif %}
-        
-        {% if 'Колл-центр' in accessible_modules or current_user.role == 'admin' %}
-        <a href="{{ url_for('callcenter.call_center_dashboard') }}" {% if request.endpoint == 'callcenter.call_center_dashboard' %}class="active"{% endif %}>
-            <i class="fas fa-phone"></i>
-            <span>Колл-центр</span>
-        </a>
-        {% endif %}
-        
-        {% if 'Хелпдеск' in accessible_modules or current_user.role == 'admin' %}
-        <a href="{{ url_for('helpdesk.index') }}" {% if request.endpoint and request.endpoint.startswith('helpdesk.') %}class="active"{% endif %}>
-            <i class="fas fa-life-ring"></i>
-            <span>Хелпдеск</span>
-        </a>
-        {% endif %}
-        
-        {% if 'IT-Tech' in accessible_modules or current_user.role == 'admin' %}
-        <a href="{{ url_for('itinvent.it_tech_dashboard') }}" {% if request.endpoint and request.endpoint.startswith('itinvent.') %}class="active"{% endif %}>
-            <i class="fas fa-desktop"></i>
-            <span>IT-Tech</span>
-        </a>
-        {% endif %}
-        
-        {% if 'Новости' in accessible_modules or current_user.role == 'admin' %}
-        <a href="{{ url_for('news.index') }}" {% if request.endpoint and request.endpoint.startswith('news.') %}class="active"{% endif %}>
-            <i class="fas fa-newspaper"></i>
-            <span>Новости</span>
-        </a>
-        {% endif %}
-        
-        {% if 'ВАТС' in accessible_modules or current_user.role == 'admin' %}
-        <a href="{{ url_for('vats.index') }}" {% if request.endpoint and request.endpoint.startswith('vats.') %}class="active"{% endif %}>
-            <i class="fas fa-phone-alt"></i>
-            <span>ВАТС</span>
-        </a>
-        {% endif %}
-        
-        {% if 'АВИТО-ПРО' in accessible_modules or current_user.role == 'admin' %}
-        <a href="{{ url_for('avito.avito_category', category='Вторички') }}" {% if request.endpoint and request.endpoint.startswith('avito.') %}class="active"{% endif %}>
-            <i class="fas fa-home"></i>
-            <span>Авито-Про</span>
-        </a>
-        {% endif %}
-        
-        {% if current_user.role == 'admin' %}
-        <a href="{{ url_for('admin.settings') }}" {% if request.endpoint == 'admin.settings' %}class="active"{% endif %}>
-            <i class="fas fa-cog"></i>
-            <span>Настройки</span>
-        </a>
-        {% endif %}
-    </div>
+    {% include "sidebar.html" %}
 
     <!-- Верхняя панель -->
     <div class="topbar">

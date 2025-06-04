@@ -39,12 +39,6 @@
     color: white !important;
 }
 
-.sidebar a.active {
-    background-color: #34495e !important;
-    color: white !important;
-    border-left: 3px solid #3498db !important;
-}
-
 /* Переопределение для основного контента */
 .main-content {
     margin-left: 300px !important;

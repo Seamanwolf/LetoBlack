@@ -89,10 +89,6 @@ body {
     background-color: #34495e;
 }
 
-.sidebar a.active {
-    background-color: #3498db;
-}
-
 /* Верхняя панель */
 .topbar {
     margin-left: 60px;
