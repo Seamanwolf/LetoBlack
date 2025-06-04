@@ -517,3 +517,28 @@ def get_user_accessible_modules(user):
         modules.extend(['vats'])
         
     return modules 
+
+def validate_role_form(form_data):
+    """
+    Валидация формы создания роли
+    Возвращает (is_valid, error_message)
+    """
+    name = form_data.get('name')
+    display_name = form_data.get('display_name')
+    import re
+    if not name or not display_name:
+        return False, 'Имя и отображаемое имя обязательны для заполнения'
+    if not re.match(r'^[a-z0-9_]+$', name):
+        return False, 'Системное имя может содержать только латинские буквы в нижнем регистре, цифры и подчеркивания'
+    return True, None
+
+def validate_update_role_form(form_data):
+    """
+    Валидация формы обновления роли
+    Возвращает (is_valid, error_message)
+    """
+    role_id = form_data.get('role_id')
+    display_name = form_data.get('display_name')
+    if not role_id or not display_name:
+        return False, 'ID роли и отображаемое имя обязательны для заполнения'
+    return True, None 

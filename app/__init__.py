@@ -120,9 +120,9 @@ def create_app(config_class=Config):
     logger.debug("Регистрация api_bp с префиксом /api")
     app.register_blueprint(api_bp, url_prefix='/api')
     
-    # Регистрируем admin_bp с префиксом /admin_old
-    logger.debug("Регистрация admin_bp с префиксом /admin_old")
-    app.register_blueprint(admin_bp, url_prefix='/admin_old', name='admin_old_unique')
+    # Регистрируем admin_bp с префиксом /admin
+    logger.debug("Регистрация admin_bp с префиксом /admin")
+    app.register_blueprint(admin_bp, url_prefix='/admin')
     
     logger.debug("Все маршруты зарегистрированы")
     

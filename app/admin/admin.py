@@ -10,6 +10,7 @@ import os
 import traceback
 from datetime import datetime, date
 from os import path, makedirs
+from app.db_connection import get_connection
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -133,7 +134,7 @@ def save_ldap():
     ldap_settings['password'] = password
 
     flash('Настройки LDAP сохранены успешно.', 'success')
-    return redirect(url_for('settings'))
+    return redirect(url_for('admin.settings'))
 
 @admin_bp.route('/upload_logo', methods=['POST'])
 @login_required
@@ -1692,11 +1693,11 @@ def save_notification():
     """Сохранение уведомления на рабочем столе"""
     if current_user.role != 'admin':
         flash('У вас нет доступа к этой странице', 'error')
-        return redirect(url_for('admin_old_unique.settings'))
+        return redirect(url_for('admin.settings'))
 
     # Здесь должна быть логика сохранения уведомления на рабочем столе
     flash('Уведомление сохранено', 'success')
-    return redirect(url_for('admin_old_unique.settings'))
+    return redirect(url_for('admin.settings'))
 
 @admin_bp.route('/toggle_system_maintenance', methods=['POST'])
 @login_required
@@ -1704,7 +1705,7 @@ def toggle_system_maintenance():
     """Включение/выключение режима обслуживания"""
     if current_user.role != 'admin':
         flash('У вас нет доступа к этой странице', 'error')
-        return redirect(url_for('admin_old_unique.settings'))
+        return redirect(url_for('admin.settings'))
         
     try:
         # Здесь логика переключения режима
@@ -1712,7 +1713,7 @@ def toggle_system_maintenance():
     except Exception as e:
         flash(f'Ошибка: {str(e)}', 'error')
     
-    return redirect(url_for('admin_old_unique.settings'))
+    return redirect(url_for('admin.settings'))
 
 @admin_bp.route('/reset_user_password/<int:user_id>', methods=['POST'])
 @login_required
@@ -1720,8 +1721,65 @@ def reset_user_password(user_id):
     """Сброс пароля пользователя"""
     if current_user.role != 'admin':
         flash('У вас нет доступа к этой странице', 'error')
-        return redirect(url_for('admin_old_unique.settings'))
+        return redirect(url_for('admin.settings'))
 
     # Здесь должна быть логика сброса пароля пользователя
     flash('Пароль пользователя успешно сброшен', 'success')
-    return redirect(url_for('admin_old_unique.settings'))
+    return redirect(url_for('admin.settings'))
+
+@admin_bp.route('/settings/logs')
+@login_required
+@admin_required
+def settings_logs():
+    """
+    Страница просмотра логов действий пользователей с фильтрами
+    """
+    from app.models.audit_log import AuditLog
+    from flask import request
+    # Получаем фильтры из query-параметров
+    username = request.args.get('username')
+    action = request.args.get('action')
+    status = request.args.get('status')
+    date_from = request.args.get('date_from')
+    date_to = request.args.get('date_to')
+    # Формируем SQL-запрос с учётом фильтров
+    sql = 'SELECT * FROM audit_log WHERE 1=1'
+    params = []
+    if username:
+        sql += ' AND username LIKE %s'
+        params.append(f'%{username}%')
+    if action:
+        sql += ' AND action = %s'
+        params.append(action)
+    if status:
+        sql += ' AND status = %s'
+        params.append(status)
+    if date_from:
+        sql += ' AND timestamp >= %s'
+        params.append(date_from)
+    if date_to:
+        sql += ' AND timestamp <= %s'
+        params.append(date_to)
+    sql += ' ORDER BY timestamp DESC LIMIT 200'
+    conn = create_db_connection()  # Заменяю get_connection() на create_db_connection()
+    logs = []
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(sql, params)
+        logs = cursor.fetchall()
+        cursor.close()
+    finally:
+        if conn:
+            conn.close()
+    # Для фильтров actions/status можно получить уникальные значения
+    actions = set([log['action'] for log in logs])
+    statuses = set([log['status'] for log in logs])
+    return render_template(
+        'admin/settings_logs.html',
+        logs=logs,
+        actions=actions,
+        statuses=statuses,
+        active_page='settings',
+        active_tab='logs',
+        filters={'username': username, 'action': action, 'status': status, 'date_from': date_from, 'date_to': date_to}
+    )

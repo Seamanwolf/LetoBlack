@@ -17,7 +17,7 @@
     <!-- Навигационная панель -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="{{ url_for('admin_old_unique.admin_dashboard') }}">
+            <a class="navbar-brand" href="{{ url_for('admin.admin_dashboard') }}">
                 <i class="fas fa-tachometer-alt"></i> Админ-панель
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -26,12 +26,12 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'admin_old_unique.admin_dashboard' %}active{% endif %}" href="{{ url_for('admin_old_unique.admin_dashboard') }}">
+                        <a class="nav-link {% if request.endpoint == 'admin.admin_dashboard' %}active{% endif %}" href="{{ url_for('admin.admin_dashboard') }}">
                             <i class="fas fa-home"></i> Главная
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'admin_old_unique.settings' %}active{% endif %}" href="{{ url_for('admin_old_unique.settings') }}">
+                        <a class="nav-link {% if request.endpoint == 'admin.settings' %}active{% endif %}" href="{{ url_for('admin.settings') }}">
                             <i class="fas fa-cog"></i> Настройки
                         </a>
                     </li>

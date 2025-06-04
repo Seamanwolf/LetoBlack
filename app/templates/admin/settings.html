@@ -114,13 +114,13 @@
     <!-- Меню настроек -->
     <div class="settings-menu">
         <ul>
-            <li><a href="{{ url_for('admin_old_unique.settings') }}" class="active"><i class="fas fa-cog"></i> Общие настройки</a></li>
+            <li><a href="{{ url_for('admin.settings') }}" class="active"><i class="fas fa-cog"></i> Общие настройки</a></li>
             <li><a href="#"><i class="fas fa-users"></i> Пользователи</a></li>
             <li><a href="#"><i class="fas fa-database"></i> База данных</a></li>
             <li><a href="#"><i class="fas fa-shield-alt"></i> Безопасность</a></li>
             <li><a href="{{ url_for('roles.index') }}"><i class="fas fa-user-tag"></i> Роли пользователей</a></li>
             <li><a href="#"><i class="fas fa-bell"></i> Уведомления</a></li>
-            <li><a href="#"><i class="fas fa-file-alt"></i> Логи системы</a></li>
+            <li><a href="{{ url_for('admin.settings_logs') }}" {% if active_tab == 'logs' %}class="active"{% endif %}><i class="fas fa-file-alt"></i> Логи системы</a></li>
         </ul>
     </div>
     
@@ -132,7 +132,7 @@
                     <h5 class="card-title mb-0">Загрузка логотипа</h5>
                 </div>
                 <div class="card-body">
-                    <form action="{{ url_for('admin_old_unique.upload_logo') }}" method="post" enctype="multipart/form-data" class="mb-3">
+                    <form action="{{ url_for('admin.upload_logo') }}" method="post" enctype="multipart/form-data" class="mb-3">
                         <div class="mb-3">
                             <label class="form-label">Выберите файл логотипа</label>
                             <div class="custom-file-input">
@@ -156,7 +156,7 @@
                             {% endif %}
                         </div>
                         {% if logo_url %}
-                        <form action="{{ url_for('admin_old_unique.delete_logo') }}" method="post" class="d-inline mt-4">
+                        <form action="{{ url_for('admin.delete_logo') }}" method="post" class="d-inline mt-4">
                             <button type="submit" class="btn btn-danger btn-xs"><i class="fas fa-trash"></i> Удалить</button>
                         </form>
                         {% endif %}
@@ -172,7 +172,7 @@
                     <h5 class="card-title mb-0">Загрузка фонового изображения</h5>
                 </div>
                 <div class="card-body">
-                    <form action="{{ url_for('admin_old_unique.upload_background') }}" method="post" enctype="multipart/form-data" class="mb-3">
+                    <form action="{{ url_for('admin.upload_background') }}" method="post" enctype="multipart/form-data" class="mb-3">
                         <div class="mb-3">
                             <label class="form-label">Выберите фоновое изображение</label>
                             <div class="custom-file-input">
@@ -196,7 +196,7 @@
                             {% endif %}
                         </div>
                         {% if background_url %}
-                        <form action="{{ url_for('admin_old_unique.delete_background') }}" method="post" class="d-inline mt-4">
+                        <form action="{{ url_for('admin.delete_background') }}" method="post" class="d-inline mt-4">
                             <button type="submit" class="btn btn-danger btn-xs"><i class="fas fa-trash"></i> Удалить</button>
                         </form>
                         {% endif %}

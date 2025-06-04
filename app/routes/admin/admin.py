@@ -65,14 +65,14 @@ def upload_logo():
     
     if 'logo' not in request.files:
         flash('Файл не выбран', 'danger')
-        return redirect(url_for('admin_old_unique.settings'))
+        return redirect(url_for('admin.settings'))
     
     file = request.files['logo']
     logger.debug(f"Получен файл: {file.filename}, тип: {file.content_type}")
     
     if file.filename == '':
         flash('Файл не выбран', 'danger')
-        return redirect(url_for('admin_old_unique.settings'))
+        return redirect(url_for('admin.settings'))
     
     if file and allowed_file(file.filename, {'png', 'jpg', 'jpeg', 'bmp'}):
         try:
@@ -98,7 +98,7 @@ def upload_logo():
                 if not os.path.exists(temp_path):
                     logger.error(f"Временный файл не был создан: {temp_path}")
                     flash('Ошибка при создании временного файла', 'danger')
-                    return redirect(url_for('admin_old_unique.settings'))
+                    return redirect(url_for('admin.settings'))
                 
                 # Загружаем изображение с помощью Pillow
                 img = Image.open(temp_path)
@@ -172,7 +172,7 @@ def upload_logo():
     else:
         flash('Недопустимый формат файла', 'danger')
     
-    return redirect(url_for('admin_old_unique.settings'))
+    return redirect(url_for('admin.settings'))
 
 @admin_routes_bp.route('/upload_background', methods=['POST'])
 @flask_login_required
@@ -183,13 +183,13 @@ def upload_background():
     
     if 'background' not in request.files:
         flash('Файл не выбран', 'danger')
-        return redirect(url_for('admin_old_unique.settings'))
+        return redirect(url_for('admin.settings'))
     
     file = request.files['background']
     
     if file.filename == '':
         flash('Файл не выбран', 'danger')
-        return redirect(url_for('admin_old_unique.settings'))
+        return redirect(url_for('admin.settings'))
     
     if file and allowed_file(file.filename, {'png', 'jpg', 'jpeg'}):
         try:
@@ -215,7 +215,7 @@ def upload_background():
     else:
         flash('Недопустимый формат файла', 'danger')
     
-    return redirect(url_for('admin_old_unique.settings'))
+    return redirect(url_for('admin.settings'))
 
 @admin_routes_bp.route('/delete_logo', methods=['POST'])
 @flask_login_required
@@ -238,7 +238,7 @@ def delete_logo():
         logger.exception(f"Ошибка при удалении логотипа: {str(e)}")
         flash(f'Ошибка при удалении логотипа: {str(e)}', 'danger')
     
-    return redirect(url_for('admin_old_unique.settings'))
+    return redirect(url_for('admin.settings'))
 
 @admin_routes_bp.route('/delete_background', methods=['POST'])
 @flask_login_required
@@ -261,7 +261,7 @@ def delete_background():
         logger.exception(f"Ошибка при удалении фонового изображения: {str(e)}")
         flash(f'Ошибка при удалении фонового изображения: {str(e)}', 'danger')
     
-    return redirect(url_for('admin_old_unique.settings'))
+    return redirect(url_for('admin.settings'))
 
 def allowed_file(filename, allowed_extensions):
     """Проверка расширения файла"""
