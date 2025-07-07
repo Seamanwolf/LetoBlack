@@ -142,7 +142,7 @@
                         if (response.success) {
                             $('#successMessage').show();
                             setTimeout(function () {
-                                window.location.href = '{{ url_for("userlist.dashboard") }}';
+                                window.location.href = '{{ url_for("main.dashboard") }}';
                             }, 2000);
                         } else {
                             alert(response.message);

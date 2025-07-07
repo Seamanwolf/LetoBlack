@@ -18,7 +18,7 @@ def roles_list():
     """
     if current_user.role != 'admin':
         flash('У вас нет доступа к этой странице', 'danger')
-        return redirect(url_for('userlist.dashboard'))
+        return redirect(url_for('main.dashboard'))
         
     role_dao = get_role_dao()
     roles = role_dao.get_all_roles()
@@ -37,7 +37,7 @@ def role_create():
     """
     if current_user.role != 'admin':
         flash('У вас нет доступа к этой странице', 'danger')
-        return redirect(url_for('userlist.dashboard'))
+        return redirect(url_for('main.dashboard'))
     
     role_dao = get_role_dao()
     
@@ -95,7 +95,7 @@ def role_edit(role_id):
     """
     if current_user.role != 'admin':
         flash('У вас нет доступа к этой странице', 'danger')
-        return redirect(url_for('userlist.dashboard'))
+        return redirect(url_for('main.dashboard'))
     
     role_dao = get_role_dao()
     role = role_dao.get_role_by_id(role_id)
@@ -172,7 +172,7 @@ def role_delete(role_id):
     """
     if current_user.role != 'admin':
         flash('У вас нет доступа к этой операции', 'danger')
-        return redirect(url_for('userlist.dashboard'))
+        return redirect(url_for('main.dashboard'))
     
     role_dao = get_role_dao()
     role = role_dao.get_role_by_id(role_id)
@@ -208,7 +208,7 @@ def role_users(role_id):
     """
     if current_user.role != 'admin':
         flash('У вас нет доступа к этой странице', 'danger')
-        return redirect(url_for('userlist.dashboard'))
+        return redirect(url_for('main.dashboard'))
     
     role_dao = get_role_dao()
     role = role_dao.get_role_by_id(role_id)

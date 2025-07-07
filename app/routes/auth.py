@@ -36,18 +36,20 @@ def login():
                 FROM User u 
                 LEFT JOIN UserRole ur ON u.id = ur.user_id 
                 LEFT JOIN Role r ON ur.role_id = r.id 
-                WHERE u.login = %s
+                WHERE u.login = %s AND u.is_active = 1
             """, (username,))
             user_data = cursor.fetchone()
             
             if user_data and check_password_hash(user_data['password'], password):
                 # Создаем объект пользователя
+                user_role = user_data['role_name'] or user_data['role'] or 'user'  # Используем role_name из Role или старый role
                 user = User(
                     id=user_data['id'],
                     login=user_data['login'],
                     password=user_data['password'],
                     full_name=user_data['full_name'],
-                    role=user_data['role_name'] or user_data['role']  # Используем role_name из Role или старый role
+                    role=user_role,
+                    department=user_data.get('department')
                 )
                 
                 # Авторизуем пользователя
@@ -56,7 +58,7 @@ def login():
                 # Сохраняем данные в сессии
                 session['username'] = user_data['login']
                 session['id'] = user_data['id']
-                session['role'] = user_data['role_name'] or user_data['role']
+                session['role'] = user_role
                 session['full_name'] = user_data['full_name']
                 session['department'] = user_data.get('department')
                 session['ukc_kc'] = user_data.get('ukc_kc')
@@ -108,27 +110,30 @@ def login():
 
 def redirect_based_on_role(user):
     """Перенаправляет пользователя на соответствующую страницу на основе его роли"""
-    if user.role == 'operator':
+    # Нормализуем роль для сравнения
+    role = user.role.lower() if user.role else 'user'
+    
+    if role in ['operator', 'оператор']:
         session['login_time'] = datetime.now()
         update_operator_status(user.id, 'Онлайн')
         return redirect(url_for('callcenter.operator_dashboard'))
-    elif user.role == 'admin':
+    elif role in ['admin', 'администратор']:
         # Здесь возможен циклический редирект, перенаправляем на страницу персонала вместо дашборда
         return redirect(url_for('admin_routes_unique.personnel'))
-    elif user.role == 'leader':
+    elif role in ['leader', 'руководитель']:
         return redirect(url_for('leader.leader_dashboard'))
-    elif user.role == 'backoffice':
+    elif role in ['backoffice', 'бэк-офис']:
         department = user.department if hasattr(user, 'department') else None
         if department == 'HR':
             return redirect(url_for('hr.candidates_list'))
         elif department == 'Ресепшн':
             return redirect(url_for('reception.reception_dashboard'))
         else:
-            return redirect('/vats')
-    elif user.role == 'user':
-        return redirect('/vats')
+            return redirect(url_for('admin_routes_unique.personnel'))
+    elif role in ['user', 'пользователь']:
+        return redirect(url_for('admin_routes_unique.personnel'))
     else:
-        return redirect('/auth/login')
+        return redirect(url_for('auth.login'))
 
 @auth_bp.route('/logout')
 @login_required

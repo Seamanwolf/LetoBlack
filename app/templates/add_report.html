@@ -105,7 +105,7 @@
             <input type="date" id="date" name="date" required>
             <button type="submit">Отправить</button>
         </form>
-        <a href="{{ url_for('userlist.dashboard') }}" class="back-button"><i class="fas fa-arrow-left"></i> Назад</a>
+        <a href="{{ url_for('main.dashboard') }}" class="back-button"><i class="fas fa-arrow-left"></i> Назад</a>
         <div class="alert alert-success" id="successMessage">Отчет успешно отправлен</div>
     </div>
 
@@ -117,13 +117,13 @@
                 var formData = $(this).serialize();
                 $.ajax({
                     type: 'POST',
-                    url: '{{ url_for("userlist.add_report") }}',
+                    url: '{{ url_for("main.dashboard") }}',  <!-- TODO: Заменить на правильный маршрут для добавления отчета -->
                     data: formData,
                     success: function (response) {
                         if (response.success) {
                             $('#successMessage').show();
                             setTimeout(function () {
-                                window.location.href = '{{ url_for(userlist.dashboard") }}';
+                                window.location.href = '{{ url_for("main.dashboard") }}';
                             }, 2000);
                         } else {
                             alert(response.message);

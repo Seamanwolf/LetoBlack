@@ -130,7 +130,7 @@ def login():
                         else:
                             redirect_url = url_for('main.index')  # На главную, если нет доступа к специфическим модулям
                 else:
-                    redirect_url = url_for('userlist.dashboard')
+                    redirect_url = url_for('main.dashboard')
                     
             current_app.logger.info(f"Redirecting to {redirect_url}")
             if redirect_url:

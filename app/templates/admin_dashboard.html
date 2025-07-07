@@ -4,6 +4,7 @@
 {% block page_title %}Администраторская панель{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/unified_dashboard.css') }}">
 <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -59,54 +60,108 @@
       color: #2c3e50;
       margin-bottom: 20px;
     }
+    
+    /* Дополнительные стили для админ панели */
+    .info-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+    
+    .info-card h4 {
+        margin-bottom: 15px;
+        font-weight: 600;
+    }
+    
+    .info-card .btn {
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        font-weight: 500;
+    }
+    
+    .info-card .btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        border-color: rgba(255, 255, 255, 0.5);
+        color: white;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
+<!-- Навигационное меню -->
+<div class="nav-menu">
+    <a href="{{ url_for('admin_dashboard.admin_dashboard') }}" class="active">
+        <i class="fas fa-tachometer-alt"></i>
+        Дашборд
+    </a>
+    <a href="{{ url_for('admin_routes_unique.personnel') }}">
+        <i class="fas fa-users"></i>
+        Персонал
+    </a>
+    <a href="{{ url_for('admin.settings') }}">
+        <i class="fas fa-cog"></i>
+        Настройки
+    </a>
+    <a href="{{ url_for('rating.show_rating') }}">
+        <i class="fas fa-star"></i>
+        Рейтинг
+    </a>
+</div>
+
 <!-- Основной контент -->
 <div class="container-fluid">
     <div class="row">
         <!-- Статистика -->
         <div class="col-md-3">
-            <div class="stat-card">
+            <div class="stat-card fade-in">
                 <i class="fas fa-users stat-icon"></i>
                 <div class="stat-title">Всего сотрудников</div>
-                <div class="stat-value">{{ total_employees }}</div>
+                <div class="stat-value">{{ total_employees|default(0) }}</div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="stat-card">
+            <div class="stat-card fade-in">
                 <i class="fas fa-user-check stat-icon"></i>
                 <div class="stat-title">Активных</div>
-                <div class="stat-value">{{ active_employees }}</div>
+                <div class="stat-value">{{ active_employees|default(0) }}</div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="stat-card">
+            <div class="stat-card fade-in">
                 <i class="fas fa-user-slash stat-icon"></i>
                 <div class="stat-title">Уволенных</div>
-                <div class="stat-value">{{ fired_employees }}</div>
+                <div class="stat-value">{{ fired_employees|default(0) }}</div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="stat-card">
+            <div class="stat-card fade-in">
                 <i class="fas fa-chart-line stat-icon"></i>
                 <div class="stat-title">Средний скорринг</div>
-                <div class="stat-value">{{ avg_score }}</div>
+                <div class="stat-value">{{ avg_score|default(0) }}</div>
             </div>
         </div>
     </div>
 
     <div class="row mt-4">
         <div class="col-md-12">
-            <div class="alert alert-info">
-                <h4 class="alert-heading">Информация!</h4>
-                <p>Графики перенесены на страницу дашборда персонала. Перейдите по ссылке в меню "Персонал" -> "Дашборд" для просмотра подробной аналитики.</p>
-                <hr>
+            <div class="info-card">
+                <h4 class="alert-heading">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Добро пожаловать в административную панель!
+                </h4>
+                <p>Графики и подробная аналитика доступны на странице дашборда персонала. Используйте навигационное меню для быстрого доступа к различным разделам системы.</p>
+                <hr style="border-color: rgba(255, 255, 255, 0.3);">
                 <p class="mb-0">Для навигации используйте меню сверху.</p>
                 <div class="mt-3">
-                    <a href="{{ url_for('admin_routes_unique.personnel') }}" class="btn btn-primary">
-                        <i class="fas fa-users"></i> Перейти к управлению персоналом
+                    <a href="{{ url_for('admin_routes_unique.personnel') }}" class="btn me-2">
+                        <i class="fas fa-users"></i> Управление персоналом
+                    </a>
+                    <a href="{{ url_for('admin_routes_unique.personnel_dashboard') }}" class="btn">
+                        <i class="fas fa-chart-line"></i> Дашборд персонала
                     </a>
                 </div>
             </div>
@@ -116,8 +171,11 @@
     <div class="row mt-4">
         <!-- Последние события -->
         <div class="col-md-12">
-            <div class="chart-container">
-                <div class="chart-title">Последние события</div>
+            <div class="table-container">
+                <div class="table-title">
+                    <i class="fas fa-history me-2"></i>
+                    Последние события
+                </div>
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
@@ -129,14 +187,23 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for event in recent_events %}
-                            <tr>
-                                <td>{{ event.date }}</td>
-                                <td>{{ event.user }}</td>
-                                <td>{{ event.action }}</td>
-                                <td>{{ event.details }}</td>
-                            </tr>
-                            {% endfor %}
+                            {% if recent_events %}
+                                {% for event in recent_events %}
+                                <tr>
+                                    <td>{{ event.date }}</td>
+                                    <td>{{ event.user }}</td>
+                                    <td>{{ event.action }}</td>
+                                    <td>{{ event.details }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        Нет данных для отображения
+                                    </td>
+                                </tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
@@ -148,6 +215,21 @@
 
 {% block extra_js %}
 <script>
-// Графики временно удалены и перенесены на страницу dashboard
+// Анимация появления карточек
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.stat-card');
+    cards.forEach((card, index) => {
+        setTimeout(() => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'all 0.5s ease';
+            
+            setTimeout(() => {
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 100);
+        }, index * 100);
+    });
+});
 </script>
 {% endblock %}

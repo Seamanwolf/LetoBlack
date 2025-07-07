@@ -14,8 +14,8 @@ else:
     config['database'] = {
         'host': '192.168.2.225',
         'port': '3306',
-        'user': 'test_user',
-        'password': 'password',
+        'user': 'root',
+        'password': 'Podego53055',
         'database': 'Brokers'
     }
     config['app'] = {
@@ -40,8 +40,8 @@ class Config:
     db_config = {
         'host': config.get('database', 'host', fallback='192.168.2.225'),
         'port': int(config.get('database', 'port', fallback='3306')),
-        'user': config.get('database', 'user', fallback='test_user'),
-        'password': config.get('database', 'password', fallback='password'),
+        'user': config.get('database', 'user', fallback='root'),
+        'password': config.get('database', 'password', fallback='Podego53055'),
         'database': config.get('database', 'database', fallback='Brokers'),
     }
     

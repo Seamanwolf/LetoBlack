@@ -1,7 +1,277 @@
 {% extends "base.html" %}
 
 {% block title %}Дашборд Ресепшн{% endblock %}
+{% block page_title %}Ресепшн{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/unified_dashboard.css') }}">
+{% endblock %}
 
 {% block content %}
-<!-- основной контент страницы -->
+<!-- Навигационное меню -->
+<div class="nav-menu">
+    <a href="{{ url_for('reception.dashboard') }}" class="active">
+        <i class="fas fa-tachometer-alt"></i>
+        Дашборд
+    </a>
+    <a href="{{ url_for('reception.personnel') }}">
+        <i class="fas fa-users"></i>
+        Персонал
+    </a>
+    <a href="#">
+        <i class="fas fa-calendar-check"></i>
+        Посетители
+    </a>
+    <a href="#">
+        <i class="fas fa-envelope"></i>
+        Корреспонденция
+    </a>
+</div>
+
+<div class="container-fluid">
+    <!-- Статистика ресепшн -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="stat-card fade-in">
+                <i class="fas fa-user-friends stat-icon"></i>
+                <div class="stat-title">Посетители сегодня</div>
+                <div class="stat-value">42</div>
+                <div class="status-info mt-2">
+                    <i class="fas fa-clock me-1"></i>
+                    С 9:00
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card fade-in">
+                <i class="fas fa-envelope stat-icon"></i>
+                <div class="stat-title">Корреспонденция</div>
+                <div class="stat-value">18</div>
+                <div class="status-warning mt-2">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    Ожидает
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card fade-in">
+                <i class="fas fa-phone stat-icon"></i>
+                <div class="stat-title">Звонки</div>
+                <div class="stat-value">67</div>
+                <div class="status-success mt-2">
+                    <i class="fas fa-check-circle me-1"></i>
+                    Обработано
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card fade-in">
+                <i class="fas fa-users stat-icon"></i>
+                <div class="stat-title">Сотрудники в офисе</div>
+                <div class="stat-value">89</div>
+                <div class="status-success mt-2">
+                    <i class="fas fa-building me-1"></i>
+                    Присутствуют
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Текущие посетители -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="table-container">
+                <div class="table-title">
+                    <i class="fas fa-user-clock me-2"></i>
+                    Текущие посетители
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Время</th>
+                                <th>Посетитель</th>
+                                <th>К кому</th>
+                                <th>Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>14:30</td>
+                                <td>Иванов А.П.</td>
+                                <td>Петров С.И.</td>
+                                <td><span class="badge bg-warning">Ожидает</span></td>
+                            </tr>
+                            <tr>
+                                <td>14:15</td>
+                                <td>ООО "Компания"</td>
+                                <td>Сидорова М.В.</td>
+                                <td><span class="badge bg-success">На встрече</span></td>
+                            </tr>
+                            <tr>
+                                <td>13:45</td>
+                                <td>Курьер "СДЭК"</td>
+                                <td>Склад</td>
+                                <td><span class="badge bg-info">Ожидает</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Корреспонденция -->
+        <div class="col-md-6">
+            <div class="table-container">
+                <div class="table-title">
+                    <i class="fas fa-mail-bulk me-2"></i>
+                    Корреспонденция
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Время</th>
+                                <th>Отправитель</th>
+                                <th>Получатель</th>
+                                <th>Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>14:20</td>
+                                <td>Почта России</td>
+                                <td>Иванов И.И.</td>
+                                <td><span class="badge bg-warning">Не получено</span></td>
+                            </tr>
+                            <tr>
+                                <td>13:55</td>
+                                <td>DHL</td>
+                                <td>Отдел закупок</td>
+                                <td><span class="badge bg-success">Выдано</span></td>
+                            </tr>
+                            <tr>
+                                <td>12:30</td>
+                                <td>Курьерская служба</td>
+                                <td>Петрова А.С.</td>
+                                <td><span class="badge bg-info">Ожидает</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Сегодняшние события -->
+    <div class="row mt-4">
+        <div class="col-md-8">
+            <div class="table-container">
+                <div class="table-title">
+                    <i class="fas fa-calendar-day me-2"></i>
+                    Сегодняшние события
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Время</th>
+                                <th>Событие</th>
+                                <th>Участники</th>
+                                <th>Кабинет</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>15:00</td>
+                                <td>Совещание по проекту</td>
+                                <td>Руководители отделов</td>
+                                <td>Переговорная 1</td>
+                            </tr>
+                            <tr>
+                                <td>16:30</td>
+                                <td>Презентация для клиента</td>
+                                <td>Отдел продаж</td>
+                                <td>Переговорная 2</td>
+                            </tr>
+                            <tr>
+                                <td>17:00</td>
+                                <td>Интервью кандидата</td>
+                                <td>HR-отдел</td>
+                                <td>Кабинет HR</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Быстрые действия -->
+        <div class="col-md-4">
+            <div class="table-container">
+                <div class="table-title">
+                    <i class="fas fa-bolt me-2"></i>
+                    Быстрые действия
+                </div>
+                <div class="d-flex flex-column gap-2">
+                    <button class="btn btn-primary">
+                        <i class="fas fa-user-plus me-2"></i>
+                        Зарегистрировать посетителя
+                    </button>
+                    <button class="btn btn-info">
+                        <i class="fas fa-envelope me-2"></i>
+                        Принять корреспонденцию
+                    </button>
+                    <button class="btn btn-warning">
+                        <i class="fas fa-phone me-2"></i>
+                        Записать звонок
+                    </button>
+                    <button class="btn btn-success">
+                        <i class="fas fa-calendar-plus me-2"></i>
+                        Забронировать переговорную
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Анимация появления карточек
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.stat-card');
+    cards.forEach((card, index) => {
+        setTimeout(() => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'all 0.5s ease';
+            
+            setTimeout(() => {
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 100);
+        }, index * 100);
+    });
+
+    // Обновление времени
+    function updateTime() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('ru-RU');
+        // Здесь можно обновить элементы с текущим временем
+    }
+    
+    setInterval(updateTime, 1000);
+    updateTime();
+
+    // Уведомления о новых посетителях
+    function checkNewVisitors() {
+        // Здесь можно добавить AJAX-запрос для проверки новых посетителей
+        console.log('Проверка новых посетителей...');
+    }
+    
+    setInterval(checkNewVisitors, 30000);
+});
+</script>
 {% endblock %}

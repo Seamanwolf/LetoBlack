@@ -171,7 +171,7 @@ def impersonate_user(user_id):
 
         # Проверяем роль нового пользователя и перенаправляем
         if user_data['role'] == 'user':
-            return redirect(url_for('userlist.dashboard'))  # Перенаправляем на маршрут пользователя
+            return redirect(url_for('main.dashboard'))  # Перенаправляем на маршрут пользователя
         elif user_data['role'] == 'leader':
             return redirect(url_for('leader.leader_dashboard'))  # Перенаправляем на маршрут руководителя
         else:
@@ -608,7 +608,7 @@ def get_department_statistics(department_id, start_date, end_date):
 def manage_fields():
     if current_user.role != 'leader':
         flash('Доступно только для руководителей.', 'danger')
-        return redirect(url_for('userlist.dashboard'))
+        return redirect(url_for('main.dashboard'))
 
     department = session.get('department')
     connection = create_db_connection()
@@ -655,7 +655,7 @@ def manage_fields():
 def department_statistics():
     if current_user.role != 'leader':
         flash('Доступно только для руководителей.', 'danger')
-        return redirect(url_for('userlist.dashboard'))
+        return redirect(url_for('main.dashboard'))
 
     department_id = session.get('department')
 

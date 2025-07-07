@@ -1,300 +1,207 @@
 {% extends "base.html" %}
 
 {% block title %}Дашборд персонала{% endblock %}
-{% block page_title %}Дашборд персонала{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="/static/css/layout.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/personnel_clean.css') }}">
 <style>
-    /* Принудительный сброс стилей */
-    :root {
-        --flush-cache: {{ range(1, 100000) | random }};
-        --sidebar-width: 240px;
-        --topbar-height: 60px;
-    }
+/* Дополнительные стили для дашборда */
+.dashboard-charts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
 
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f8f9fa;
-      font-size: 0.85rem;
-    }
-    
-    /* Сильно специфичные стили для верхней панели с повышенным приоритетом */
-    html body .topbar,
-    body .topbar,
-    .topbar {
-        position: fixed !important;
-        top: 0 !important;
-        right: 0 !important;
-        left: calc(var(--sidebar-width) - 200px) !important; /* Увеличиваем смещение влево */
-        height: var(--topbar-height) !important;
-        background-color: white !important;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05) !important;
-        padding: 0 20px 0 15px !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: space-between !important;
-        z-index: 999 !important; /* Ниже sidebar (z-index: 1000), но выше nav-menu */
-        width: calc(100% - var(--sidebar-width) + 200px) !important; /* Увеличиваем ширину */
-        margin-left: 0 !important; /* Сбрасываем все возможные margin-left */
-    }
+.chart-card {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-light);
+}
 
-    /* Стиль для заголовка в верхней панели */
-    html body .topbar .title,
-    body .topbar .title,
-    .topbar .title {
-        font-size: 20px !important;
-        font-weight: 600 !important;
-        color: #2c3e50;
-        margin-left: 50px !important; /* Добавляем отступ слева для смещения текста вправо */
-        padding-left: 30px !important; /* Дополнительный отступ */
-        text-align: left !important;
-    }
+.chart-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--dark-color);
+    margin-bottom: 1rem;
+}
 
-    /* Стили для верхнего меню - максимальная специфичность и самый высокий приоритет */
-    html body .content-wrapper .nav-menu,
-    .nav-menu {
-        background-color: white !important;
-        padding: 0 1.2rem !important;
-        border-radius: 12px !important;
-        display: flex !important;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
-        margin-bottom: 2rem !important;
-        border-bottom: 2px solid #dee2e6 !important;
-        align-items: center !important;
-        width: 100% !important;
-        justify-content: flex-start !important;
-        margin-left: -50px !important;
-        margin-right: 10px !important;
-        position: relative !important;
-        z-index: 990 !important; /* Снижаем z-index, чтобы быть ниже topbar */
-        padding-left: 15px !important; /* Среднее значение для внутреннего отступа */
-    }
-   
-    /* Выравнивание элементов внутри nav-menu - усиливаем смещение */
-    body .content-wrapper .nav-menu a {
-        margin-left: -10px !important; /* Увеличиваем отступ для пунктов меню */
-        position: relative !important;
-        padding-left: 0 !important; /* Уменьшаем внутренний отступ слева */
-    }
-    
-    /* Для активного элемента */
-    body .content-wrapper .nav-menu a.active {
-        margin-left: -10px !important;
-        padding-left: 0 !important;
-    }
-      
-    /* Контент-враппер вместо main-content для этой страницы */
-    body .content-wrapper {
-        padding: 0 10px 0 0 !important;
-        width: calc(100% - 12px) !important;
-        margin-left: -15px !important; /* Усиливаем отрицательный отступ */
-        position: relative !important;
-        z-index: 5 !important;
-    }
+.chart-container {
+    position: relative;
+    height: 300px;
+}
 
-    /* Убираем отступы контейнера */
-    body .container-fluid {
-        padding: 0 10px 0 0 !important;
-        margin-left: -15px !important; /* Усиливаем отрицательный отступ */
-        width: calc(100% + 15px) !important;
-        position: relative !important;
-    }
-    
-    /* Стили для карточек статистики */
-    .stat-card {
-      border-radius: 10px;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-      padding: 20px;
-      margin-bottom: 20px;
-      background: white;
-      transition: transform 0.3s;
-    }
-    
-    .stat-card:hover {
-      transform: translateY(-5px);
-    }
-    
-    .stat-card .stat-title {
-      font-size: 1rem;
-      color: #7f8c8d;
-      margin-bottom: 10px;
-    }
-    
-    .stat-card .stat-value {
-      font-size: 2rem;
-      font-weight: 700;
-      color: #2c3e50;
-    }
-    
-    .stat-card .stat-icon {
-      float: right;
-      font-size: 2.5rem;
-      opacity: 0.2;
-      color: #3498db;
-    }
-    
-    /* Стили для графиков */
-    .chart-container {
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-      padding: 20px;
-      margin-bottom: 20px;
-    }
-    
-    .chart-title {
-      font-size: 1.1rem;
-      color: #2c3e50;
-      margin-bottom: 15px;
-      font-weight: 600;
-    }
-    
-    /* Стили для таблиц */
-    .table-container {
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-      padding: 20px;
-      margin-bottom: 20px;
-    }
-    
-    .table-title {
-      font-size: 1.1rem;
-      color: #2c3e50;
-      margin-bottom: 15px;
-      font-weight: 600;
-    }
-    
-    .table {
-      margin-bottom: 0;
-    }
-    
-    .table th {
-      border-top: none;
-      font-weight: 600;
-      color: #7f8c8d;
-    }
-    
-    .table td {
-      vertical-align: middle;
-    }
-    
-    /* Стили для фильтров */
-    .filters {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-    
-    .filter-btn {
-      border: none;
-      background-color: white;
-      border-radius: 50px;
-      padding: 10px 20px;
-      font-size: 0.9rem;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-      transition: all 0.3s;
-    }
-    
-    .filter-btn:hover, .filter-btn.active {
-      background-color: #3498db;
-      color: white;
-    }
+.dashboard-tables {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 2rem;
+}
+
+.table-card {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-light);
+}
+
+.table-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--dark-color);
+    margin-bottom: 1rem;
+}
+
+.dashboard-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.dashboard-table th {
+    background: var(--light-color);
+    padding: 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--dark-color);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.dashboard-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+
+.dashboard-table tr:hover {
+    background: rgba(52, 152, 219, 0.05);
+}
+
+.period-filters {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+}
+
+.period-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border-color);
+    background: white;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 0.9rem;
+}
+
+.period-btn:hover {
+    background: var(--light-color);
+}
+
+.period-btn.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Навигационное меню -->
-<div class="nav-menu">
-    <a href="{{ url_for('admin_routes_unique.personnel') }}">
-        <i class="fas fa-users"></i>
-        Активные
-    </a>
-    <a href="{{ url_for('admin_routes_unique.fired_employees') }}">
-        <i class="fas fa-user-times"></i>
-        Уволенные
-    </a>
-    <a href="{{ url_for('admin_routes_unique.personnel_dashboard') }}" class="active">
-        <i class="fas fa-chart-line"></i>
-        Дашборд
-    </a>
-    <a href="{{ url_for('admin_routes_unique.phone_numbers') }}">
-        <i class="fas fa-phone"></i>
-        Номера
-    </a>
-</div>
+<div class="container-fluid">
+    <!-- Навигационное меню -->
+    <div class="personnel-nav">
+        <a href="{{ url_for('admin_routes_unique.personnel') }}">
+            <i class="fas fa-users"></i>
+            Активные
+        </a>
+        <a href="{{ url_for('admin_routes_unique.fired_employees') }}">
+            <i class="fas fa-user-times"></i>
+            Уволенные
+        </a>
+        <a href="{{ url_for('admin_routes_unique.personnel_dashboard') }}" class="active">
+            <i class="fas fa-chart-line"></i>
+            Дашборд
+        </a>
+        <a href="{{ url_for('admin_routes_unique.phone_numbers') }}">
+            <i class="fas fa-phone"></i>
+            Номера
+        </a>
+    </div>
 
-<div class="container-fluid p-0">
-    <div class="content-wrapper">
-<!-- Статистика -->
-<div class="row mb-4">
-    <div class="col-md-3">
+    <!-- Статистические карточки -->
+    <div class="stats-grid">
         <div class="stat-card">
-            <i class="fas fa-users stat-icon"></i>
-            <div class="stat-title">Всего сотрудников</div>
-            <div class="stat-value">{{ total_employees }}</div>
+            <div class="stat-card-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-title">Всего сотрудников</div>
+                <div class="stat-card-value">{{ total_employees }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-icon">
+                <i class="fas fa-user-check"></i>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-title">Активные</div>
+                <div class="stat-card-value">{{ active_employees }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-icon">
+                <i class="fas fa-building"></i>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-title">Отделов</div>
+                <div class="stat-card-value">{{ departments_count }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-icon">
+                <i class="fas fa-user-minus"></i>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-title">Уволенные</div>
+                <div class="stat-card-value">{{ fired_employees }}</div>
+            </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="stat-card">
-            <i class="fas fa-user-check stat-icon"></i>
-            <div class="stat-title">Активные сотрудники</div>
-            <div class="stat-value">{{ active_employees }}</div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="stat-card">
-            <i class="fas fa-building stat-icon"></i>
-            <div class="stat-title">Отделов</div>
-            <div class="stat-value">{{ departments_count }}</div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="stat-card">
-            <i class="fas fa-user-minus stat-icon"></i>
-            <div class="stat-title">Уволенные</div>
-            <div class="stat-value">{{ fired_employees }}</div>
-        </div>
-    </div>
-</div>
 
-<!-- Фильтры -->
-<div class="filters">
-    <button class="filter-btn active" data-period="week">Неделя</button>
-    <button class="filter-btn" data-period="month">Месяц</button>
-    <button class="filter-btn" data-period="year">Год</button>
-</div>
+    <!-- Фильтры периодов -->
+    <div class="period-filters">
+        <button class="period-btn active" data-period="week">Неделя</button>
+        <button class="period-btn" data-period="month">Месяц</button>
+        <button class="period-btn" data-period="year">Год</button>
+    </div>
 
-<!-- Графики -->
-<div class="row">
-    <div class="col-md-6">
-        <div class="chart-container">
+    <!-- Графики -->
+    <div class="dashboard-charts">
+        <div class="chart-card">
             <div class="chart-title">Динамика численности персонала</div>
-            <canvas id="staffDynamicsChart" 
-                data-dates="{{ dates|tojson }}"
-                data-staff-counts="{{ staff_counts|tojson }}">
-            </canvas>
+            <div class="chart-container">
+                <canvas id="staffDynamicsChart" 
+                    data-dates="{{ dates|tojson }}"
+                    data-staff-counts="{{ staff_counts|tojson }}">
+                </canvas>
+            </div>
         </div>
-    </div>
-    <div class="col-md-6">
-        <div class="chart-container">
+        <div class="chart-card">
             <div class="chart-title">Распределение по отделам</div>
-            <canvas id="departmentDistributionChart"
-                data-department-names="{{ department_names|tojson }}"
-                data-department-counts="{{ department_counts|tojson }}">
-            </canvas>
+            <div class="chart-container">
+                <canvas id="departmentDistributionChart"
+                    data-department-names="{{ department_names|tojson }}"
+                    data-department-counts="{{ department_counts|tojson }}">
+                </canvas>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- Таблицы -->
-<div class="row">
-    <div class="col-md-6">
-        <div class="table-container">
+    <!-- Таблицы -->
+    <div class="dashboard-tables">
+        <div class="table-card">
             <div class="table-title">Последние наймы</div>
             <div class="table-responsive">
-                <table class="table">
+                <table class="dashboard-table">
                     <thead>
                         <tr>
                             <th>ФИО</th>
@@ -306,22 +213,26 @@
                     <tbody>
                         {% for hire in recent_hires %}
                         <tr>
-                            <td>{{ hire.full_name }}</td>
+                            <td><strong>{{ hire.full_name }}</strong></td>
                             <td>{{ hire.department }}</td>
                             <td>{{ hire.position }}</td>
-                            <td>{{ hire.hire_date }}</td>
+                            <td>
+                                <span class="text-success">
+                                    <i class="fas fa-calendar-plus"></i>
+                                    {{ hire.hire_date }}
+                                </span>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
-    </div>
-    <div class="col-md-6">
-        <div class="table-container">
+        
+        <div class="table-card">
             <div class="table-title">Последние увольнения</div>
             <div class="table-responsive">
-                <table class="table">
+                <table class="dashboard-table">
                     <thead>
                         <tr>
                             <th>ФИО</th>
@@ -333,16 +244,35 @@
                     <tbody>
                         {% for fire in recent_fires %}
                         <tr>
-                            <td>{{ fire.full_name }}</td>
+                            <td><strong>{{ fire.full_name }}</strong></td>
                             <td>{{ fire.department }}</td>
                             <td>{{ fire.position }}</td>
-                            <td>{{ fire.fire_date }}</td>
+                            <td>
+                                <span class="text-danger">
+                                    <i class="fas fa-calendar-times"></i>
+                                    {{ fire.fire_date }}
+                                </span>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
-                    </div>
-                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Дополнительная аналитика -->
+    <div class="dashboard-charts">
+        <div class="chart-card">
+            <div class="chart-title">Текучесть кадров по месяцам</div>
+            <div class="chart-container">
+                <canvas id="turnoverChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">Топ отделов по численности</div>
+            <div class="chart-container">
+                <canvas id="topDepartmentsChart"></canvas>
             </div>
         </div>
     </div>
@@ -351,37 +281,53 @@
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 (function() {
     'use strict';
 
-    // Инициализация графиков
-    var staffDynamicsCtx = document.getElementById('staffDynamicsChart');
-    var departmentDistributionCtx = document.getElementById('departmentDistributionChart');
+    // Получение данных
+    const staffDynamicsCtx = document.getElementById('staffDynamicsChart');
+    const departmentDistributionCtx = document.getElementById('departmentDistributionChart');
+    const turnoverCtx = document.getElementById('turnoverChart');
+    const topDepartmentsCtx = document.getElementById('topDepartmentsChart');
 
-    // Получение данных из data-атрибутов
-    var staffData = {
-        dates: JSON.parse(staffDynamicsCtx.dataset.dates),
-        counts: JSON.parse(staffDynamicsCtx.dataset.staffCounts)
+    // Данные для графиков
+    let staffData = {
+        dates: JSON.parse(staffDynamicsCtx.dataset.dates || '[]'),
+        counts: JSON.parse(staffDynamicsCtx.dataset.staffCounts || '[]')
     };
 
-    var departmentData = {
-        names: JSON.parse(departmentDistributionCtx.dataset.departmentNames),
-        counts: JSON.parse(departmentDistributionCtx.dataset.departmentCounts)
+    let departmentData = {
+        names: JSON.parse(departmentDistributionCtx.dataset.departmentNames || '[]'),
+        counts: JSON.parse(departmentDistributionCtx.dataset.departmentCounts || '[]')
+    };
+
+    // Цветовая палитра
+    const colors = {
+        primary: '#3498db',
+        success: '#27ae60',
+        warning: '#f39c12',
+        danger: '#e74c3c',
+        info: '#17a2b8',
+        secondary: '#6c757d'
     };
 
     // График динамики численности персонала
-    var staffDynamicsChart = new Chart(staffDynamicsCtx.getContext('2d'), {
+    const staffDynamicsChart = new Chart(staffDynamicsCtx, {
         type: 'line',
         data: {
             labels: staffData.dates,
             datasets: [{
                 label: 'Численность персонала',
                 data: staffData.counts,
-                borderColor: '#3498db',
+                borderColor: colors.primary,
+                backgroundColor: colors.primary + '20',
                 tension: 0.4,
-                fill: false
+                fill: true,
+                pointBackgroundColor: colors.primary,
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 5
             }]
         },
         options: {
@@ -395,8 +341,13 @@
             scales: {
                 y: {
                     beginAtZero: true,
-                    ticks: {
-                        stepSize: 1
+                    grid: {
+                        color: '#f1f1f1'
+                    }
+                },
+                x: {
+                    grid: {
+                        color: '#f1f1f1'
                     }
                 }
             }
@@ -404,20 +355,26 @@
     });
 
     // График распределения по отделам
-    var departmentDistributionChart = new Chart(departmentDistributionCtx.getContext('2d'), {
+    const departmentDistributionChart = new Chart(departmentDistributionCtx, {
         type: 'doughnut',
         data: {
             labels: departmentData.names,
             datasets: [{
                 data: departmentData.counts,
                 backgroundColor: [
-                    '#3498db',
-                    '#2ecc71',
-                    '#e74c3c',
-                    '#f1c40f',
+                    colors.primary,
+                    colors.success,
+                    colors.warning,
+                    colors.danger,
+                    colors.info,
+                    colors.secondary,
                     '#9b59b6',
-                    '#1abc9c'
-                ]
+                    '#e67e22',
+                    '#1abc9c',
+                    '#34495e'
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
             }]
         },
         options: {
@@ -425,166 +382,150 @@
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    position: 'right'
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true
+                    }
                 }
             }
         }
     });
 
-    // Обработка фильтров
-    var filterButtons = document.querySelectorAll('.filter-btn');
-    
-    function updateCharts(data) {
-        staffDynamicsChart.data.labels = data.dates;
-        staffDynamicsChart.data.datasets[0].data = data.staff_counts;
-        staffDynamicsChart.update();
-        
-        departmentDistributionChart.data.labels = data.department_names;
-        departmentDistributionChart.data.datasets[0].data = data.department_counts;
-        departmentDistributionChart.update();
-    }
+    // График текучести кадров (примерные данные)
+    const turnoverChart = new Chart(turnoverCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн'],
+            datasets: [{
+                label: 'Наймы',
+                data: [5, 8, 3, 6, 4, 7],
+                backgroundColor: colors.success + '80',
+                borderColor: colors.success,
+                borderWidth: 1
+            }, {
+                label: 'Увольнения',
+                data: [2, 3, 1, 4, 2, 3],
+                backgroundColor: colors.danger + '80',
+                borderColor: colors.danger,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: '#f1f1f1'
+                    }
+                },
+                x: {
+                    grid: {
+                        color: '#f1f1f1'
+                    }
+                }
+            }
+        }
+    });
 
-    function handleFilterClick() {
-        var period = this.getAttribute('data-period');
-        
-        filterButtons.forEach(function(b) {
-            b.classList.remove('active');
+    // График топ отделов
+    const topDepartmentsChart = new Chart(topDepartmentsCtx, {
+        type: 'horizontalBar',
+        data: {
+            labels: departmentData.names.slice(0, 5),
+            datasets: [{
+                label: 'Количество сотрудников',
+                data: departmentData.counts.slice(0, 5),
+                backgroundColor: [
+                    colors.primary + '80',
+                    colors.success + '80',
+                    colors.warning + '80',
+                    colors.info + '80',
+                    colors.secondary + '80'
+                ],
+                borderColor: [
+                    colors.primary,
+                    colors.success,
+                    colors.warning,
+                    colors.info,
+                    colors.secondary
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    grid: {
+                        color: '#f1f1f1'
+                    }
+                },
+                x: {
+                    beginAtZero: true,
+                    grid: {
+                        color: '#f1f1f1'
+                    }
+                }
+            }
+        }
+    });
+
+    // Фильтры периодов
+    document.querySelectorAll('.period-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            const period = this.dataset.period;
+            // Здесь можно добавить логику загрузки данных для выбранного периода
+            console.log('Выбран период:', period);
+            
+            // Обновление графиков с новыми данными
+            updateChartsForPeriod(period);
         });
-        this.classList.add('active');
+    });
 
-        fetch('/admin/get_staff_statistics?period=' + period)
-            .then(function(response) {
-                return response.json();
-            })
-            .then(updateCharts)
-            .catch(function(error) {
-                console.error('Ошибка при загрузке статистики:', error);
-            });
+    // Функция обновления графиков для выбранного периода
+    function updateChartsForPeriod(period) {
+        // Здесь должна быть логика загрузки данных с сервера
+        // и обновления графиков
+        fetch(`/api/dashboard_data?period=${period}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Обновление данных графиков
+                staffDynamicsChart.data.labels = data.dates;
+                staffDynamicsChart.data.datasets[0].data = data.staff_counts;
+                staffDynamicsChart.update();
+                
+                // Аналогично для других графиков
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка загрузки данных:', error);
+        });
     }
 
-    filterButtons.forEach(function(btn) {
-        btn.addEventListener('click', handleFilterClick);
-    });
+    // Автообновление данных каждые 5 минут
+    setInterval(() => {
+        const activePeriod = document.querySelector('.period-btn.active').dataset.period;
+        updateChartsForPeriod(activePeriod);
+    }, 300000); // 5 минут
+
 })();
-
-// Функция для применения смещения ко всем элементам
-function applyLeftShift() {
-    console.log('Применяем смещение влево для блока навигации и верхней панели...');
-    
-    // Получаем контейнер .nav-menu
-    const navMenu = document.querySelector('.nav-menu');
-    if (navMenu) {
-        // Применяем стили напрямую к контейнеру
-        navMenu.style.marginLeft = '-50px';
-        navMenu.style.width = '100%';
-        navMenu.style.position = 'relative';
-        navMenu.style.zIndex = '990';
-        
-        // Проверяем родительский элемент и убираем отступы на нем
-        if (navMenu.parentElement) {
-            navMenu.parentElement.style.paddingLeft = '0';
-            navMenu.parentElement.style.marginLeft = '0';
-        }
-        
-        // Сбрасываем внутренние отступы
-        navMenu.style.paddingLeft = '15px';
-    }
-    
-    // Обрабатываем верхнюю панель с гораздо большим смещением
-    const topbar = document.querySelector('.topbar');
-    if (topbar) {
-        topbar.style.left = 'calc(var(--sidebar-width) - 200px)'; // Существенно увеличиваем смещение влево
-        topbar.style.width = 'calc(100% - var(--sidebar-width) + 200px)'; // Соответствующе увеличиваем ширину
-        topbar.style.paddingLeft = '15px';
-        topbar.style.zIndex = '999'; // Ниже sidebar (z-index: 1000), но выше nav-menu
-        topbar.style.marginLeft = '0'; // Устанавливаем нулевой отступ слева
-    }
-    
-    // Создаем и добавляем встроенные стили для контейнеров, чтобы обойти все другие стили
-    const styleElem = document.createElement('style');
-    styleElem.textContent = `
-        .nav-menu {
-            margin-left: -50px !important;
-            width: 100% !important;
-            padding-left: 15px !important;
-            z-index: 990 !important; /* Снижаем z-index, чтобы быть ниже topbar */
-        }
-        .topbar {
-            left: calc(var(--sidebar-width) - 200px) !important;
-            width: calc(100% - var(--sidebar-width) + 200px) !important;
-            padding-left: 15px !important;
-            z-index: 999 !important; /* Ниже sidebar (z-index: 1000), но выше nav-menu */
-            margin-left: 0 !important;
-        }
-    `;
-    document.head.appendChild(styleElem);
-    
-    console.log('Смещение влево применено успешно!');
-    
-    // Повторим через небольшой промежуток времени для большей надежности
-    setTimeout(() => {
-        if (navMenu) {
-            navMenu.style.marginLeft = '-50px';
-            navMenu.style.width = '100%';
-            navMenu.style.paddingLeft = '15px';
-        }
-        if (topbar) {
-            topbar.style.left = 'calc(var(--sidebar-width) - 200px)';
-            topbar.style.width = 'calc(100% - var(--sidebar-width) + 200px)';
-            topbar.style.paddingLeft = '15px';
-            topbar.style.marginLeft = '0';
-        }
-    }, 300);
-    
-    // Добавим еще одну попытку с задержкой для обработки возможных переопределений стилей
-    setTimeout(() => {
-        if (topbar) {
-            // Применяем стили напрямую с !important через setAttribute
-            topbar.setAttribute('style', 
-                'position: fixed !important;' +
-                'top: 0 !important;' +
-                'right: 0 !important;' +
-                'left: calc(var(--sidebar-width) - 200px) !important;' +
-                'height: var(--topbar-height) !important;' +
-                'width: calc(100% - var(--sidebar-width) + 200px) !important;' +
-                'margin-left: 0 !important;' +
-                'padding-left: 15px !important;' +
-                'z-index: 999 !important;' + /* Ниже sidebar (z-index: 1000), но выше nav-menu */
-                'background-color: white !important;' +
-                'box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05) !important;');
-        }
-    }, 1000);
-}
-
-// Функция для обработки изменений в DOM
-function observeDOMChanges() {
-    // Создаем MutationObserver для отслеживания изменений в DOM
-    const observer = new MutationObserver((mutations) => {
-        // При любых изменениях вызываем функцию смещения
-        applyLeftShift();
-    });
-    
-    // Начинаем наблюдение за body и всеми его дочерними элементами
-    observer.observe(document.body, { 
-        childList: true, 
-        subtree: true 
-    });
-}
-
-// Вызываем функцию при загрузке документа
-document.addEventListener('DOMContentLoaded', function() {
-    // Принудительно вызываем applyLeftShift несколько раз
-    applyLeftShift();
-    setTimeout(applyLeftShift, 100);
-    setTimeout(applyLeftShift, 500);
-    setTimeout(applyLeftShift, 1000);
-    
-    // Запускаем наблюдение за DOM
-    observeDOMChanges();
-});
-
-// Дополнительно вызываем смещение при любом изменении размеров окна
-window.addEventListener('resize', applyLeftShift);
-window.addEventListener('load', applyLeftShift);
 </script>
-{% endblock %} 
+{% endblock %}

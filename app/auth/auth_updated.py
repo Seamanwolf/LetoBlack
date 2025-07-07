@@ -49,7 +49,7 @@ def login():
             elif user.role == 'backoffice' and user.department == 'HR':
                 return redirect(url_for('hr.candidates_list'))
             else:
-                return redirect(url_for('userlist.dashboard'))
+                return redirect(url_for('main.dashboard'))
         else:
             current_app.logger.warning("Authentication failed.")
             flash("Неверный логин или пароль", "danger")

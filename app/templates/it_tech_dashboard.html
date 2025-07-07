@@ -1,7 +1,320 @@
 {% extends "base.html" %}
 
 {% block title %}IT-Tech{% endblock %}
+{% block page_title %}IT-Tech{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/unified_dashboard.css') }}">
+{% endblock %}
 
 {% block content %}
-<!-- основной контент страницы -->
+<!-- Навигационное меню -->
+<div class="nav-menu">
+    <a href="{{ url_for('itinvent.it_tech_dashboard') }}" class="active">
+        <i class="fas fa-tachometer-alt"></i>
+        Дашборд
+    </a>
+    <a href="#">
+        <i class="fas fa-desktop"></i>
+        Инвентарь
+    </a>
+    <a href="#">
+        <i class="fas fa-tools"></i>
+        Заявки
+    </a>
+    <a href="#">
+        <i class="fas fa-network-wired"></i>
+        Мониторинг
+    </a>
+</div>
+
+<div class="container-fluid">
+    <!-- Статистика IT -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="stat-card fade-in">
+                <i class="fas fa-desktop stat-icon"></i>
+                <div class="stat-title">Всего устройств</div>
+                <div class="stat-value">156</div>
+                <div class="status-info mt-2">
+                    <i class="fas fa-info-circle me-1"></i>
+                    В инвентаре
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card fade-in">
+                <i class="fas fa-check-circle stat-icon"></i>
+                <div class="stat-title">Работающие</div>
+                <div class="stat-value">142</div>
+                <div class="status-success mt-2">
+                    <i class="fas fa-thumbs-up me-1"></i>
+                    91.0%
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card fade-in">
+                <i class="fas fa-exclamation-triangle stat-icon"></i>
+                <div class="stat-title">Требуют ремонта</div>
+                <div class="stat-value">14</div>
+                <div class="status-warning mt-2">
+                    <i class="fas fa-wrench me-1"></i>
+                    9.0%
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card fade-in">
+                <i class="fas fa-ticket-alt stat-icon"></i>
+                <div class="stat-title">Активные заявки</div>
+                <div class="stat-value">7</div>
+                <div class="status-info mt-2">
+                    <i class="fas fa-clock me-1"></i>
+                    В работе
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Системный мониторинг -->
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-title">Использование ЦП</div>
+                <div class="stat-value text-warning">67%</div>
+                <div class="progress mt-2">
+                    <div class="progress-bar bg-warning" style="width: 67%"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-title">Использование ОЗУ</div>
+                <div class="stat-value text-success">43%</div>
+                <div class="progress mt-2">
+                    <div class="progress-bar bg-success" style="width: 43%"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-title">Дисковое пространство</div>
+                <div class="stat-value text-danger">89%</div>
+                <div class="progress mt-2">
+                    <div class="progress-bar bg-danger" style="width: 89%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Активные заявки и оборудование -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="table-container">
+                <div class="table-title">
+                    <i class="fas fa-clipboard-list me-2"></i>
+                    Активные заявки
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Проблема</th>
+                                <th>Пользователь</th>
+                                <th>Приоритет</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>#001</td>
+                                <td>Не работает принтер</td>
+                                <td>Иванов И.И.</td>
+                                <td><span class="badge bg-danger">Высокий</span></td>
+                            </tr>
+                            <tr>
+                                <td>#002</td>
+                                <td>Медленный интернет</td>
+                                <td>Петрова А.С.</td>
+                                <td><span class="badge bg-warning">Средний</span></td>
+                            </tr>
+                            <tr>
+                                <td>#003</td>
+                                <td>Установка ПО</td>
+                                <td>Сидоров П.В.</td>
+                                <td><span class="badge bg-info">Низкий</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Проблемное оборудование -->
+        <div class="col-md-6">
+            <div class="table-container">
+                <div class="table-title">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Проблемное оборудование
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Устройство</th>
+                                <th>Локация</th>
+                                <th>Проблема</th>
+                                <th>Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>PC-001</td>
+                                <td>Отдел продаж</td>
+                                <td>Перегрев</td>
+                                <td><span class="badge bg-warning">Диагностика</span></td>
+                            </tr>
+                            <tr>
+                                <td>PRN-003</td>
+                                <td>Бухгалтерия</td>
+                                <td>Замятие бумаги</td>
+                                <td><span class="badge bg-danger">Критично</span></td>
+                            </tr>
+                            <tr>
+                                <td>SW-002</td>
+                                <td>Серверная</td>
+                                <td>Порт не работает</td>
+                                <td><span class="badge bg-info">Запланировано</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Статистика и действия -->
+    <div class="row mt-4">
+        <div class="col-md-8">
+            <div class="table-container">
+                <div class="table-title">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    Категории оборудования
+                </div>
+                <div class="row">
+                    <div class="col-md-3 text-center">
+                        <div class="mb-2">
+                            <i class="fas fa-desktop fa-2x text-primary"></i>
+                        </div>
+                        <h5>Компьютеры</h5>
+                        <span class="badge bg-primary">45 шт.</span>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="mb-2">
+                            <i class="fas fa-laptop fa-2x text-success"></i>
+                        </div>
+                        <h5>Ноутбуки</h5>
+                        <span class="badge bg-success">23 шт.</span>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="mb-2">
+                            <i class="fas fa-print fa-2x text-warning"></i>
+                        </div>
+                        <h5>Принтеры</h5>
+                        <span class="badge bg-warning">12 шт.</span>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="mb-2">
+                            <i class="fas fa-network-wired fa-2x text-info"></i>
+                        </div>
+                        <h5>Сетевое</h5>
+                        <span class="badge bg-info">8 шт.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Быстрые действия -->
+        <div class="col-md-4">
+            <div class="table-container">
+                <div class="table-title">
+                    <i class="fas fa-bolt me-2"></i>
+                    Быстрые действия
+                </div>
+                <div class="d-flex flex-column gap-2">
+                    <button class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>
+                        Новая заявка
+                    </button>
+                    <button class="btn btn-info">
+                        <i class="fas fa-desktop me-2"></i>
+                        Добавить устройство
+                    </button>
+                    <button class="btn btn-warning">
+                        <i class="fas fa-tools me-2"></i>
+                        Техническое обслуживание
+                    </button>
+                    <button class="btn btn-success">
+                        <i class="fas fa-chart-line me-2"></i>
+                        Отчеты
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Анимация появления карточек
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.stat-card');
+    cards.forEach((card, index) => {
+        setTimeout(() => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'all 0.5s ease';
+            
+            setTimeout(() => {
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 100);
+        }, index * 100);
+    });
+
+    // Симуляция обновления системных данных
+    function updateSystemStats() {
+        // CPU
+        const cpuUsage = Math.floor(Math.random() * 30) + 50; // 50-80%
+        const cpuBar = document.querySelector('.progress-bar.bg-warning');
+        if (cpuBar) {
+            cpuBar.style.width = cpuUsage + '%';
+            cpuBar.parentElement.previousElementSibling.querySelector('.stat-value').textContent = cpuUsage + '%';
+        }
+
+        // RAM
+        const ramUsage = Math.floor(Math.random() * 40) + 30; // 30-70%
+        const ramBar = document.querySelector('.progress-bar.bg-success');
+        if (ramBar) {
+            ramBar.style.width = ramUsage + '%';
+            ramBar.parentElement.previousElementSibling.querySelector('.stat-value').textContent = ramUsage + '%';
+        }
+
+        console.log('Обновлены системные показатели');
+    }
+
+    // Обновление каждые 5 секунд
+    setInterval(updateSystemStats, 5000);
+
+    // Проверка новых заявок
+    function checkNewTickets() {
+        // Здесь можно добавить AJAX-запрос для проверки новых заявок
+        console.log('Проверка новых заявок...');
+    }
+    
+    setInterval(checkNewTickets, 30000);
+});
+</script>
 {% endblock %}

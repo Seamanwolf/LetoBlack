@@ -3,1599 +3,1052 @@
 {% block title %}Корпоративные номера{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="/static/css/layout.css?v={{ range(1, 100000) | random }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/personnel_clean.css') }}">
 <style>
-    /* Принудительный сброс стилей */
-    :root {
-        --flush-cache: {{ range(1, 100000) | random }};
-        --sidebar-width: 240px;
-        --topbar-height: 60px;
-    }
-    
-    /* Базовые стили */
-    body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background-color: #f5f7f9;
-        color: #333;
-        overflow-x: hidden !important; /* Предотвращаем горизонтальный скролл */
-    }
-    
-    /* КРИТИЧЕСКИЕ СТИЛИ ДЛЯ МОДАЛЬНЫХ ОКОН */
-    body.modal-open {
-        overflow: hidden !important;
-        padding-right: 17px !important;
-    }
-    
-    .modal {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        z-index: 9999 !important; /* Максимально высокий z-index */
-        width: 100% !important;
-        height: 100% !important;
-        outline: 0 !important;
-        overflow-x: hidden !important;
-        overflow-y: auto !important;
-        background-color: rgba(0, 0, 0, 0.5) !important;
-        display: none;
-    }
-    
-    .modal.show {
-        display: block !important;
-        overflow-y: scroll !important;
-        transform: none !important;
-        opacity: 1 !important;
-        transition: opacity 0.15s linear;
-    }
-    
-    .modal-backdrop {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        z-index: 9998 !important; /* Чуть ниже модального окна */
-        width: 100vw !important;
-        height: 100vh !important;
-        background-color: #000 !important;
-    }
-    
-    .modal-backdrop.show {
-        opacity: 0.5 !important;
-    }
-    
-    .modal-dialog {
-        position: relative !important;
-        width: auto !important;
-        margin: 1.75rem auto !important;
-        pointer-events: auto !important;
-        max-width: 500px !important;
-        transform: translate(0, 0) !important;
-        transition: transform 0.3s ease-out !important;
-    }
-    
-    /* Стили для увеличенного модального окна */
-    .modal-dialog.modal-xl {
-        max-width: 90% !important;
-        width: 1200px !important;
-    }
-    
-    .modal-content {
-        position: relative !important;
-        display: flex !important;
-        flex-direction: column !important;
-        width: 100% !important;
-        pointer-events: auto !important;
-        background-color: #fff !important;
-        background-clip: padding-box !important;
-        border: 1px solid rgba(0, 0, 0, 0.2) !important;
-        border-radius: 0.3rem !important;
-        outline: 0 !important;
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.5) !important;
-    }
-    
-    /* Сильно специфичные стили для верхней панели с повышенным приоритетом */
-    html body .topbar,
-    body .topbar,
-    .topbar {
-        position: fixed !important;
-        top: 0 !important;
-        right: 0 !important;
-        left: calc(var(--sidebar-width) - 200px) !important; /* Увеличиваем смещение влево */
-        height: var(--topbar-height) !important;
-        background-color: white !important;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05) !important;
-        padding: 0 20px 0 15px !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: space-between !important;
-        z-index: 999 !important; /* Ниже sidebar (z-index: 1000), но выше nav-menu */
-        width: calc(100% - var(--sidebar-width) + 200px) !important; /* Увеличиваем ширину */
-        margin-left: 0 !important; /* Сбрасываем все возможные margin-left */
-    }
+/* Дополнительные стили для страницы номеров */
+.number-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
 
-    /* Стиль для заголовка в верхней панели */
-    html body .topbar .title,
-    body .topbar .title,
-    .topbar .title {
-        font-size: 20px !important;
-        font-weight: 600 !important;
-        color: #2c3e50;
-        margin-left: 50px !important; /* Добавляем отступ слева для смещения текста вправо */
-        padding-left: 30px !important; /* Дополнительный отступ */
-        text-align: left !important;
-    }
+.number-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
 
-    /* Стили для верхнего меню - максимальная специфичность и самый высокий приоритет */
-    html body .content-wrapper .nav-menu,
-    .nav-menu {
-        background-color: white !important;
-        padding: 0 1.2rem !important;
-        border-radius: 12px !important;
-        display: flex !important;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
-        margin-bottom: 2rem !important;
-        border-bottom: 2px solid #dee2e6 !important;
-        align-items: center !important;
-        width: 100% !important;
-        justify-content: flex-start !important;
-        margin-left: -50px !important;
-        margin-right: 10px !important;
-        position: relative !important;
-        z-index: 990 !important; /* Снижаем z-index, чтобы быть ниже topbar */
-        padding-left: 15px !important; /* Среднее значение для внутреннего отступа */
-    }
-   
-    /* Выравнивание элементов внутри nav-menu - усиливаем смещение */
-    body .content-wrapper .nav-menu a {
-        margin-left: -10px !important; /* Увеличиваем отступ для пунктов меню */
-        position: relative !important;
-        padding-left: 0 !important; /* Уменьшаем внутренний отступ слева */
-    }
-    
-    /* Для активного элемента */
-    body .content-wrapper .nav-menu a.active {
-        margin-left: -10px !important;
-        padding-left: 0 !important;
-    }
-      
-    /* Контент-враппер вместо main-content для этой страницы */
-    body .content-wrapper {
-        padding: 0 10px 0 0 !important;
-        width: calc(100% - 12px) !important;
-        margin-left: -15px !important; /* Усиливаем отрицательный отступ */
-        position: relative !important;
-        z-index: 5 !important;
-    }
+.number-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
 
-    /* Убираем отступы контейнера */
-    body .container-fluid {
-        padding: 0 10px 0 0 !important;
-        margin-left: -15px !important; /* Усиливаем отрицательный отступ */
-        width: calc(100% + 15px) !important;
-        position: relative !important;
-    }
-    
-    /* Стили для навигации (верхнее меню) */
-    .nav-menu a {
-        color: #6c757d;
-        font-weight: 500;
-        padding: 1rem 1.2rem;
-        margin-right: 1.2rem;
-        display: flex;
-        align-items: center;
-        text-decoration: none;
-        transition: all 0.2s ease;
-    }
+.number-switch-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 24px;
+}
 
-    .nav-menu a:hover {
-        color: #e74c3c;
-        background-color: rgba(231, 76, 60, 0.05);
-    }
+.number-switch-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
 
-    .nav-menu a.active {
-        color: #e74c3c;
-        border-bottom: 3px solid #e74c3c;
-        font-weight: 600;
-    }
+.number-switch input:checked + .number-switch-slider {
+    background-color: var(--primary-color);
+}
 
-    .nav-menu a i {
-        margin-right: 0.7rem;
-        font-size: 1.1rem;
-    }
-    
-    /* Стили для карточек статистики */
-    .stats-card {
-        background: #fff;
-        border-radius: 8px;
-        padding: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
+.number-switch input:checked + .number-switch-slider:before {
+    transform: translateX(26px);
+}
 
-    .stats-card h3 {
-        margin: 0;
-        font-size: 14px;
-        color: #666;
-    }
+.add-number-btn-floating {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    box-shadow: var(--shadow-medium);
+    transition: var(--transition);
+    z-index: 100;
+}
 
-    .stats-card .number {
-        font-size: 24px;
-        font-weight: bold;
-        color: #e74c3c;
-        margin: 10px 0;
-    }
-    
-    .stats-card .stat-icon {
-        float: right;
-        font-size: 2.5rem;
-        opacity: 0.2;
-        color: #e74c3c;
-    }
+.add-number-btn-floating:hover {
+    background: var(--primary-dark);
+    transform: scale(1.1);
+}
 
-    /* Стили для карточки отдела */
-    .department-section {
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-        margin-bottom: 20px;
-        overflow: hidden;
-        border: 1px solid rgba(0,0,0,0.05);
-    }
-    
-    .department-header {
-        background-color: #3498db;
-        color: white;
-        padding: 12px 15px;
-        font-weight: 600;
-        font-size: 1rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid #e9ecef;
-        transition: background-color 0.2s ease;
-        cursor: pointer;
-    }
-    
-    .department-header:hover {
-        background-color: #2980b9 !important;
-        color: #fff !important;
-    }
-    
-    .department-header .badge {
-        background-color: rgba(255, 255, 255, 0.9);
-        color: #3498db;
-        font-size: 0.8rem;
-        padding: 5px 10px;
-        border-radius: 20px;
-    }
-    
-    .department-header.orange {
-        background-color: #f39c12;
-    }
-    
-    .department-header.red {
-        background-color: #e74c3c;
-    }
-    
-    .number-table {
-        width: 100%;
-        font-size: 0.85rem;
-    }
-    
-    .number-table th {
-        font-weight: 600;
-        background-color: #f8f9fa;
-        padding: 8px;
-    }
-    
-    .number-table td {
-        padding: 6px 8px;
-        vertical-align: middle;
-    }
-    
-    .number-row {
-        transition: background-color 0.2s;
-    }
-    
-    .number-row:hover {
-        background-color: #f8f9fa;
-    }
-    
-    .action-icon {
-        cursor: pointer;
-        font-size: 0.9rem;
-        margin-right: 8px;
-        color: #3498db;
-    }
-    
-    .delete-icon {
-        color: #e74c3c;
-    }
-    
-    .move-icon {
-        color: #f39c12;
-    }
-    
-    /* Стили для фильтра и поиска */
-    .search-box {
-        position: relative;
-        width: 300px;
-    }
-    
-    .search-box input {
-        border-radius: 50px;
-        padding-left: 40px;
-        border: 1px solid #ddd;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-    }
-    
-    .search-box i {
-        position: absolute;
-        left: 15px;
-        top: 10px;
-        color: #7f8c8d;
-    }
-    
-    .add-number-btn {
-        border-radius: 50px;
-        padding: 6px 20px;
-        background-color: #3498db;
-        color: white;
-        border: none;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s;
-    }
-    
-    .add-number-btn:hover {
-        background-color: #2980b9;
-        transform: translateY(-2px);
-    }
+.number-status {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
 
-    /* Стили для drag-and-drop и управления отделами */
-    .department-controls {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    
-    .toggle-department {
-        cursor: pointer;
-        color: #6c757d;
-        transition: all 0.2s;
-    }
-    
-    .toggle-department:hover {
-        color: #3498db;
-        transform: scale(1.2);
-    }
-    
-    /* Стили для секции отдела */
-    .department-section {
-        transition: all 0.3s ease;
-        position: relative;
-        margin-bottom: 15px;
-    }
-    
-    .department-header {
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-        padding: 12px 15px;
-    }
-    
-    /* Убираем ховер-эффект для заголовка отдела */
-    .department-header:hover {
-        background-color: transparent;
-    }
+.status-badge {
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
 
-    .department-header.blue { background-color: #3498db; color: #fff; }
-    .department-header.orange { background-color: #f39c12; color: #fff; }
-    .department-header.red { background-color: #e74c3c; color: #fff; }
-    .department-header:hover { background-color: inherit !important; color: inherit !important; filter: none; }
-    .add-number-btn { border-radius: 50px; padding: 6px 20px; background-color: #3498db; color: white; border: none; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); transition: all 0.3s; margin-right: 4px; }
-    .add-number-btn:hover { background-color: #2980b9; transform: translateY(-2px); color: #fff; }
-    /* Компактный фильтр */
-    .dropdown-menu { min-width: 220px !important; max-width: 260px; padding: 10px 14px !important; }
-    .dropdown-menu .form-check { display: inline-block; margin-right: 10px; margin-bottom: 0; }
-    .dropdown-menu .form-check-label { font-size: 0.95em; }
-    .dropdown-menu .form-select { margin-bottom: 8px; }
+.status-badge.whatsapp {
+    background: #25d366;
+    color: white;
+}
+
+.status-badge.telegram {
+    background: #0088cc;
+    color: white;
+}
+
+.status-badge.blocked {
+    background: var(--danger-color);
+    color: white;
+}
+
+.status-badge.prohibited {
+    background: var(--warning-color);
+    color: white;
+}
+
+.number-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.number-table th {
+    background: var(--light-color);
+    padding: 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--dark-color);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.number-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+
+.number-table tr:hover {
+    background: rgba(52, 152, 219, 0.05);
+}
+
+.free-numbers-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.free-numbers-section::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100%;
+    height: 100%;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2"/></svg>');
+    opacity: 0.3;
+}
+
+.free-numbers-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.free-numbers-info h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.5rem;
+}
+
+.free-numbers-info p {
+    margin: 0;
+    opacity: 0.9;
+}
+
+.quick-actions {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.quick-action-card {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    box-shadow: var(--shadow-light);
+    cursor: pointer;
+    transition: var(--transition);
+    text-align: center;
+    flex: 1;
+    max-width: 200px;
+}
+
+.quick-action-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.quick-action-icon {
+    font-size: 2rem;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.quick-action-title {
+    font-weight: 600;
+    color: var(--dark-color);
+    margin-bottom: 0.25rem;
+}
+
+.quick-action-desc {
+    font-size: 0.85rem;
+    color: var(--muted-color);
+}
+
+.bulk-actions {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    box-shadow: var(--shadow-light);
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.bulk-actions select {
+    min-width: 150px;
+}
 </style>
 {% endblock %}
 
-{% block head %}
-<!-- Добавляем jQuery для работы с модальными окнами -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
-<!-- Подключаем core.js для базовых функций -->
-<script src="/static/js/core.js?v={{ range(1, 100000) | random }}"></script>
-<!-- Подключаем нашу простую реализацию модальных окон -->
-<script src="/static/js/simple-modal.js?v={{ range(1, 100000) | random }}"></script>
-<!-- Подключаем JavaScript для страницы управления номерами -->
-<script src="/static/js/phone-numbers.js?v={{ range(1, 100000) | random }}"></script>
-{% endblock %}
-
 {% block content %}
-<!-- Навигационное меню -->
-<div class="nav-menu">
-    <a href="{{ url_for('admin_routes_unique.personnel') }}">
-        <i class="fas fa-users"></i>
-        Активные
-    </a>
-    <a href="{{ url_for('admin_routes_unique.fired_employees') }}">
-        <i class="fas fa-user-times"></i>
-        Уволенные
-    </a>
-    <a href="{{ url_for('admin_routes_unique.personnel_dashboard') }}">
-        <i class="fas fa-chart-line"></i>
-        Дашборд
-    </a>
-    <a href="{{ url_for('admin_routes_unique.phone_numbers') }}" class="active">
-        <i class="fas fa-phone"></i>
-        Номера
-    </a>
+<div class="container-fluid">
+    <!-- Навигационное меню -->
+    <div class="personnel-nav">
+        <a href="{{ url_for('admin_routes_unique.personnel') }}">
+            <i class="fas fa-users"></i>
+            Активные
+        </a>
+        <a href="{{ url_for('admin_routes_unique.fired_employees') }}">
+            <i class="fas fa-user-times"></i>
+            Уволенные
+        </a>
+        <a href="{{ url_for('admin_routes_unique.personnel_dashboard') }}">
+            <i class="fas fa-chart-line"></i>
+            Дашборд
+        </a>
+        <a href="{{ url_for('admin_routes_unique.phone_numbers') }}" class="active">
+            <i class="fas fa-phone"></i>
+            Номера
+        </a>
+    </div>
+
+    <!-- Статистические карточки -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-card-icon">
+                <i class="fas fa-phone"></i>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-title">Всего номеров</div>
+                <div class="stat-card-value">{{ numbers|length }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-icon">
+                <i class="fas fa-phone-slash"></i>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-title">Свободные</div>
+                <div class="stat-card-value">{{ free_numbers_count }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-icon">
+                <i class="fas fa-whatsapp"></i>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-title">WhatsApp</div>
+                <div class="stat-card-value">{{ whatsapp_count }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-icon">
+                <i class="fab fa-telegram"></i>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-title">Telegram</div>
+                <div class="stat-card-value">{{ telegram_count }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Секция свободных номеров -->
+    {% if free_numbers %}
+    <div class="free-numbers-section">
+        <div class="free-numbers-content">
+            <div class="free-numbers-info">
+                <h3><i class="fas fa-phone-slash"></i> Свободные номера</h3>
+                <p>{{ free_numbers|length }} номеров доступны для назначения</p>
+            </div>
+            <button class="btn btn-light" onclick="openModal('freeNumbersModal')">
+                <i class="fas fa-list"></i>
+                Просмотреть все
+            </button>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Быстрые действия -->
+    <div class="quick-actions">
+        <div class="quick-action-card" onclick="openModal('addNumberModal')">
+            <div class="quick-action-icon">
+                <i class="fas fa-plus"></i>
+            </div>
+            <div class="quick-action-title">Добавить номер</div>
+            <div class="quick-action-desc">Новый корпоративный номер</div>
+        </div>
+        <div class="quick-action-card" onclick="openModal('bulkImportModal')">
+            <div class="quick-action-icon">
+                <i class="fas fa-file-upload"></i>
+            </div>
+            <div class="quick-action-title">Импорт</div>
+            <div class="quick-action-desc">Загрузить из файла</div>
+        </div>
+        <div class="quick-action-card" onclick="exportNumbers()">
+            <div class="quick-action-icon">
+                <i class="fas fa-download"></i>
+            </div>
+            <div class="quick-action-title">Экспорт</div>
+            <div class="quick-action-desc">Скачать список</div>
+        </div>
+        <div class="quick-action-card" onclick="openModal('settingsModal')">
+            <div class="quick-action-icon">
+                <i class="fas fa-cog"></i>
+            </div>
+            <div class="quick-action-title">Настройки</div>
+            <div class="quick-action-desc">Параметры номеров</div>
+        </div>
+    </div>
+
+    <!-- Поиск и фильтры -->
+    <div class="search-filters">
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Поиск номеров...">
+        </div>
+        <div class="filter-buttons">
+            <button class="filter-btn active" data-filter="all">
+                <i class="fas fa-phone"></i>
+                Все
+            </button>
+            <button class="btn btn-secondary" onclick="openModal('filtersModal')">
+                <i class="fas fa-filter"></i> Фильтры
+            </button>
+            <button class="btn btn-primary" id="toggleAllBtn">
+                <i class="fas fa-expand-arrows-alt"></i>
+                Развернуть все
+            </button>
+        </div>
+    </div>
+
+    <!-- Массовые действия -->
+    <div class="bulk-actions">
+        <label>Массовые действия:</label>
+        <select class="form-control" id="bulkAction">
+            <option value="">Выберите действие</option>
+            <option value="enable_whatsapp">Включить WhatsApp</option>
+            <option value="disable_whatsapp">Отключить WhatsApp</option>
+            <option value="enable_telegram">Включить Telegram</option>
+            <option value="disable_telegram">Отключить Telegram</option>
+            <option value="block">Заблокировать</option>
+            <option value="unblock">Разблокировать</option>
+            <option value="move">Переместить в отдел</option>
+            <option value="delete">Удалить</option>
+        </select>
+        <select class="form-control" id="targetDepartment" style="display: none;">
+            <option value="">Выберите отдел</option>
+            <option value="free">Свободные номера</option>
+            {% for dept in departments %}
+            <option value="{{ dept.id }}">{{ dept.name }}</option>
+            {% endfor %}
+        </select>
+        <button class="btn btn-primary" onclick="applyBulkAction()">
+            <i class="fas fa-check"></i>
+            Применить
+        </button>
+        <span class="text-muted" id="selectedCount">Выбрано: 0</span>
+    </div>
+
+    <!-- Отделы с номерами -->
+    <div class="departments-container">
+        {% for department in departments %}
+        {% if department.phone_numbers %}
+        <div class="department-card" data-department="{{ department.name }}" 
+             draggable="true" data-department-id="{{ department.id }}">
+            <div class="department-header">
+                <div class="department-name">
+            <div class="drag-handle">
+                <i class="fas fa-grip-vertical"></i>
+            </div>
+                    {{ department.name }}
+                </div>
+                <div class="department-controls">
+                    <div class="department-badge">{{ department.phone_numbers|length }}</div>
+                    <i class="fas fa-chevron-up department-toggle" data-department="{{ department.id }}"></i>
+                </div>
+            </div>
+            <div class="department-content" id="dept-{{ department.id }}">
+                <table class="number-table">
+                    <thead>
+                        <tr>
+                            <th>
+                                <input type="checkbox" class="select-all-dept" data-department="{{ department.id }}">
+                            </th>
+                            <th>ID</th>
+                            <th>Номер</th>
+                            <th>Назначен</th>
+                            <th>Статус</th>
+                            <th>Настройки</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for number in department.phone_numbers %}
+                        <tr class="number-row" data-number-id="{{ number.id }}">
+                            <td>
+                                <input type="checkbox" class="number-checkbox" value="{{ number.id }}">
+                            </td>
+                            <td>{{ number.id }}</td>
+                            <td>
+                                <strong>{{ number.phone_number }}</strong>
+                            </td>
+                            <td>{{ number.assigned_to or '—' }}</td>
+                            <td>
+                                <div class="number-status">
+                                    {% if number.whatsapp %}
+                                        <span class="status-badge whatsapp">WA</span>
+                                    {% endif %}
+                                    {% if number.telegram %}
+                                        <span class="status-badge telegram">TG</span>
+                                    {% endif %}
+                                    {% if number.blocked %}
+                                        <span class="status-badge blocked">Заблокирован</span>
+                                    {% endif %}
+                                    {% if number.prohibit_issuance %}
+                                        <span class="status-badge prohibited">Запрещена выдача</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="number-controls">
+                                    <label class="number-switch" title="WhatsApp">
+                                        <input type="checkbox" class="whatsapp-toggle" data-number-id="{{ number.id }}" {% if number.whatsapp %}checked{% endif %}>
+                                        <span class="number-switch-slider"></span>
+                                    </label>
+                                    <label class="number-switch" title="Telegram">
+                                        <input type="checkbox" class="telegram-toggle" data-number-id="{{ number.id }}" {% if number.telegram %}checked{% endif %}>
+                                        <span class="number-switch-slider"></span>
+                                    </label>
+                                    <label class="number-switch" title="Блокировка">
+                                        <input type="checkbox" class="block-toggle" data-number-id="{{ number.id }}" {% if number.blocked %}checked{% endif %}>
+                                        <span class="number-switch-slider"></span>
+                                    </label>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="action-icons">
+                                    <i class="fas fa-edit action-icon edit" title="Редактировать" data-number-id="{{ number.id }}"></i>
+                                    <i class="fas fa-exchange-alt action-icon move" title="Переместить" data-number-id="{{ number.id }}"></i>
+                                    <i class="fas fa-trash-alt action-icon delete" title="Удалить" data-number-id="{{ number.id }}"></i>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    <!-- Плавающая кнопка добавления -->
+    <button class="add-number-btn-floating" onclick="openModal('addNumberModal')" title="Добавить номер">
+        <i class="fas fa-plus"></i>
+    </button>
 </div>
 
-<div class="container-fluid p-0">
-    <!-- Основной контент -->
-    <div class="content-wrapper">
-        <!-- Заголовок страницы -->
-        <div class="page-title mb-4 text-center">
-            <h2>Управление корпоративными номерами</h2>
+<!-- Модальные окна -->
+<!-- Добавление номера -->
+<div class="modal" id="addNumberModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Добавить номер</h3>
+            <button class="modal-close" onclick="closeModal('addNumberModal')">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
-
-        <!-- Сводная статистика -->
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="stats-card">
-                    <i class="fas fa-phone-alt stat-icon"></i>
-                    <h3>Всего номеров</h3>
-                    <div class="number">{{ total_numbers }}</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stats-card">
-                    <i class="fas fa-user-check stat-icon"></i>
-                    <h3>Закреплено</h3>
-                    <div class="number">{{ assigned_numbers }}</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stats-card">
-                    <i class="fas fa-phone-slash stat-icon"></i>
-                    <h3>Свободно</h3>
-                    <div class="number">{{ free_numbers }}</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stats-card">
-                    <i class="fas fa-ban stat-icon"></i>
-                    <h3>Запрещены</h3>
-                    <div class="number">{{ prohibited_numbers }}</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Поиск и добавление -->
-        <div class="row mb-4">
-            <div class="col-md-6">
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="searchNumbers" class="form-control" placeholder="Поиск номера...">
-                </div>
-            </div>
-            <div class="col-md-6 text-end d-flex justify-content-end align-items-center gap-2">
-                <button id="showFreeNumbersBtn" class="add-number-btn me-2">
-                    <i class="fas fa-list"></i> Свободные номера
-                </button>
-                <button id="addNumberBtn" class="add-number-btn me-2" data-bs-toggle="modal" data-bs-target="#addNumberModal">
-                    <i class="fas fa-plus"></i> Добавить номер
-                </button>
-                <!-- Кнопка фильтра -->
-                <div class="dropdown d-inline-block me-2">
-                    <button class="add-number-btn dropdown-toggle" type="button" id="filterDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-filter"></i> Фильтр
-                    </button>
-                    <div class="dropdown-menu dropdown-menu-end p-3" aria-labelledby="filterDropdownBtn" style="min-width: 260px;">
-                        <label for="departmentFilter" class="form-label fw-bold mb-1">Фильтр по отделам:</label>
-                        <select id="departmentFilter" class="form-select form-select-sm mb-2">
-                                <option value="all">Все отделы</option>
-                                {% for dept in departments %}
-                                    <option value="{{ dept.name }}">{{ dept.name }}</option>
-                                {% endfor %}
-                            </select>
-                        <div class="fw-bold mb-1 mt-2">Статусы:</div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="filterWA">
-                            <label class="form-check-label" for="filterWA">WhatsApp</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="filterTG">
-                            <label class="form-check-label" for="filterTG">Telegram</label>
-                    </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="filterBlocked">
-                            <label class="form-check-label" for="filterBlocked">Блок</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="filterProhibit">
-                            <label class="form-check-label" for="filterProhibit">Запрет выдачи</label>
-                        </div>
+        <div class="modal-body">
+            <form id="addNumberForm">
+                <div class="form-group">
+                    <label class="form-label">Номер телефона</label>
+                    <div class="input-group">
+                        <span>+7</span>
+                        <input type="tel" class="form-control" name="phone_number" placeholder="9001234567" required>
                     </div>
                 </div>
-                <!-- Кнопка свернуть/развернуть -->
-                <button id="toggleAllBtn" class="add-number-btn" type="button">
-                    <i class="fas fa-compress"></i> <span id="toggleAllText">Свернуть все</span>
-                </button>
+                <div class="form-group">
+                    <label class="form-label">Отдел</label>
+                    <select class="form-control" name="department_id">
+                        <option value="">Свободный номер</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept.id }}">{{ dept.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Назначить сотруднику</label>
+                    <input type="text" class="form-control" name="assigned_to" placeholder="ФИО сотрудника">
+                </div>
+                <div class="form-group">
+                    <div class="d-flex gap-2">
+                        <label>
+                            <input type="checkbox" name="whatsapp"> WhatsApp
+                        </label>
+                        <label>
+                            <input type="checkbox" name="telegram"> Telegram
+                        </label>
+                        <label>
+                            <input type="checkbox" name="blocked"> Заблокирован
+                        </label>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('addNumberModal')">Отмена</button>
+            <button class="btn btn-primary" onclick="saveNumber()">Сохранить</button>
+        </div>
+    </div>
+</div>
+
+<!-- Просмотр свободных номеров -->
+<div class="modal" id="freeNumbersModal">
+    <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-header">
+            <h3 class="modal-title">Свободные номера</h3>
+            <button class="modal-close" onclick="closeModal('freeNumbersModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="search-box mb-3">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchFreeNumbers" placeholder="Поиск среди свободных номеров...">
+            </div>
+            <div id="freeNumbersList">
+                {% for number in free_numbers %}
+                <div class="free-number-item d-flex justify-content-between align-items-center p-2 border-bottom">
+                    <span><strong>{{ number.phone_number }}</strong></span>
+                    <div>
+                        <button class="btn btn-sm btn-primary" onclick="assignNumber('{{ number.id }}')">
+                            <i class="fas fa-user-plus"></i> Назначить
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для фильтров -->
+<div class="modal" id="filtersModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Фильтры</h3>
+            <button class="modal-close" onclick="closeModal('filtersModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Фильтр по статусу</label>
+                <div class="checkbox-group">
+                    <label>
+                        <input type="checkbox" name="status_filter" value="whatsapp" id="filter_whatsapp"> WhatsApp
+                    </label>
+                    <label>
+                        <input type="checkbox" name="status_filter" value="telegram" id="filter_telegram"> Telegram
+                    </label>
+                    <label>
+                        <input type="checkbox" name="status_filter" value="blocked" id="filter_blocked"> Заблокированные
+                    </label>
+                    <label>
+                        <input type="checkbox" name="status_filter" value="free" id="filter_free"> Свободные
+                    </label>
                 </div>
             </div>
             
-        <!-- Группировка номеров по отделам -->
-        <h3 class="section-title mb-4">Телефонные номера по отделам</h3>
-        
-        <div class="department-container">
-            <!-- Отображаем номера по отделам из departments_dict -->
-            <div class="departments-cards-container">
-                <!-- Основная часть с отображением номеров по отделам -->
-                <div class="row mt-4">
-                    <div class="col-12">
-                        <div class="card">
-                            <div class="card-body">
-                                <!-- Итерация по отделам из departments_dict -->
-                                {% for department, numbers in departments_dict.items() %}
-                                    {% set free_numbers = numbers | selectattr('assigned_to', 'equalto', None) | list %}
-                                    {% set free_numbers2 = numbers | selectattr('assigned_to', 'equalto', '—') | list %}
-                                    {% set free_count = (free_numbers | length) + (free_numbers2 | length) %}
-                                    {% set header_class = 'blue' if free_count >= 3 else 'orange' if free_count > 0 else 'red' %}
-                                    <div class="department-section" data-department-id="{{ dept_id_map[department] }}" data-order="{{ loop.index }}">
-                                        <div class="department-header {{ header_class }} d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#dept-{{ loop.index }}">
-                                            <span class="department-name">{{ department }}
-                                                <span class="badge bg-light text-dark ms-2">Свободно: {{ free_count }}</span>
-                                            </span>
-                                            <div class="department-controls">
-                                                <i class="fas fa-chevron-up toggle-department" title="Свернуть/развернуть"></i>
-                                            </div>
-                                        </div>
-                                        <div class="collapse show" id="dept-{{ loop.index }}">
-                                            <div class="p-2">
-                                                <table class="table table-striped table-hover numbers-table">
-                                                    <thead>
-                                                        <tr>
-                                                            <th style="width: 5%">ID</th>
-                                                            <th style="width: 15%">Номер</th>
-                                                            <th style="width: 25%">Назначен</th>
-                                                            <th style="width: 8%">WA</th>
-                                                            <th style="width: 8%">TG</th>
-                                                            <th style="width: 8%">Блок</th>
-                                                            <th style="width: 10%">Запрет выдачи</th>
-                                                            <th style="width: 21%">Действия</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {% for number in numbers %}
-                                                            <tr class="number-row" data-number-id="{{ number.id }}" data-department="{{ number.department }}">
-                                                                <td>{{ number.id }}</td>
-                                                                <td>{{ number.phone_number }}</td>
-                                                                <td>{{ number.assigned_to or '—' }}</td>
-                                                                <td>
-                                                                    <div class="form-check form-switch">
-                                                                        <input class="form-check-input whatsapp-checkbox" type="checkbox" data-number-id="{{ number.id }}" {% if number.whatsapp %}checked{% endif %}>
-                                                                    </div>
-                                                                </td>
-                                                                <td>
-                                                                    <div class="form-check form-switch">
-                                                                        <input class="form-check-input telegram-checkbox" type="checkbox" data-number-id="{{ number.id }}" {% if number.telegram %}checked{% endif %}>
-                                                                    </div>
-                                                                </td>
-                                                                <td>
-                                                                    <div class="form-check form-switch">
-                                                                        <input class="form-check-input blocked-checkbox" type="checkbox" data-number-id="{{ number.id }}" {% if number.blocked %}checked{% endif %}>
-                                                                    </div>
-                                                                </td>
-                                                                <td>
-                                                                    <div class="form-check form-switch">
-                                                                        <input class="form-check-input prohibit-checkbox" type="checkbox" data-number-id="{{ number.id }}" {% if number.prohibit_issuance %}checked{% endif %}>
-                                                                        <label class="form-check-label small">{{ 'Запрещен' if number.prohibit_issuance else 'Разрешен' }}</label>
-                                                                    </div>
-                                                                </td>
-                                                                <td>
-                                                                    <i class="fas fa-exchange-alt action-icon move-icon" title="Переместить" data-bs-toggle="modal" data-bs-target="#moveNumberModal" data-number-id="{{ number.id }}" data-department="{{ number.department }}"></i>
-                                                                    <i class="fas fa-pen action-icon edit-icon" title="Редактировать" data-bs-toggle="modal" data-bs-target="#editNumberModal" data-number-id="{{ number.id }}"></i>
-                                                                    <i class="fas fa-trash-alt action-icon delete-icon" title="Удалить" data-bs-toggle="modal" data-bs-target="#deleteNumberModal" data-number-id="{{ number.id }}" data-number-phone="{{ number.phone_number }}"></i>
-                                                                </td>
-                                                            </tr>
-                                                        {% endfor %}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
+            <div class="form-group">
+                <label class="form-label">Фильтр по отделам</label>
+                <div class="checkbox-group" id="departmentFilters">
+                    {% for department in departments %}
+                    <label>
+                        <input type="checkbox" name="department_filter" value="{{ department.id }}"> {{ department.name }}
+                    </label>
+                    {% endfor %}
                 </div>
             </div>
+            
+            <div class="form-group">
+                <label class="form-label">Назначение номера</label>
+                <div class="checkbox-group">
+                    <label>
+                        <input type="checkbox" name="assignment_filter" value="assigned" id="filter_assigned"> Назначенные
+                    </label>
+                    <label>
+                        <input type="checkbox" name="assignment_filter" value="unassigned" id="filter_unassigned"> Не назначенные
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="resetFilters()">Сбросить</button>
+            <button class="btn btn-primary" onclick="applyFilters()">Применить</button>
         </div>
     </div>
 </div>
 
-<!-- Модальное окно для добавления номера -->
-<div class="modal fade" id="addNumberModal" tabindex="-1" aria-labelledby="addNumberModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addNumberModalLabel">Добавление номера</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="addNumberForm">
-                    <div class="mb-3">
-                        <label for="phoneNumberInput" class="form-label">Номер телефона</label>
-                        <div class="input-group">
-                            <span class="input-group-text">+7</span>
-                            <input type="text" class="form-control" id="phoneNumberInput" name="phone_number" placeholder="Введите номер телефона" required>
-                    </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="departmentSelect" class="form-label">Отдел</label>
-                        <select class="form-select" id="departmentSelect" name="department" required>
-                            <option value="" selected disabled>Выберите отдел</option>
-                            {% for dept in departments %}
-                                <option value="{{ dept.id }}">{{ dept.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    
-                    <hr>
-                    <h6>Дополнительные номера (будут добавлены как свободные)</h6>
-                    <div class="mb-3">
-                        <div class="input-group mb-2">
-                            <span class="input-group-text">+7</span>
-                            <input type="text" class="form-control" id="addAdditionalNumberInput" placeholder="Введите дополнительный номер">
-                            <button class="btn btn-outline-primary" type="button" id="addAdditionalNumberButton">
-                                <i class="fas fa-plus"></i> Добавить отдельно
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                <button type="button" class="btn btn-primary" id="submitAddNumberForm">Добавить</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Модальное окно для перемещения номера между отделами -->
-<div class="modal fade" id="moveNumberModal" tabindex="-1" aria-labelledby="moveNumberModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="moveNumberModalLabel">Перемещение номера</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-            </div>
-            <form id="moveNumberForm">
-                <div class="modal-body">
-                    <input type="hidden" name="number_id" id="moveNumberId">
-                    <div class="mb-3">
-                        <label for="moveDepartmentSelect" class="form-label">Новый отдел</label>
-                        <select class="form-select" id="moveDepartmentSelect" name="new_department" required>
-                            <option value="">Выберите отдел</option>
-                            <option value="free">Свободные номера</option>
-                            {% for dept in departments %}
-                            <option value="{{ dept.id }}">{{ dept.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" class="btn btn-primary">Переместить</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Модальное окно для подтверждения удаления -->
-<div class="modal fade" id="deleteNumberModal" tabindex="-1" aria-labelledby="deleteNumberModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="deleteNumberModalLabel">Подтверждение удаления</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-            </div>
-            <form id="deleteNumberForm">
-                <div class="modal-body">
-                    <input type="hidden" name="number_id" id="deleteNumberId">
-                    <p>Вы уверены, что хотите <b>безвозвратно удалить</b> номер <span id="deleteNumberSpan" data-number-span></span>?<br>
-                    <span class="text-danger">Этот номер будет удалён из системы навсегда.</span></p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" class="btn btn-danger">Удалить</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Модальное окно для редактирования номера -->
-<div class="modal fade" id="editNumberModal" tabindex="-1" aria-labelledby="editNumberModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form id="editNumberForm">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="editNumberModalLabel">Редактировать номер</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" id="editNumberId" name="number_id">
-                    <div class="mb-3">
-                        <label for="editNumberInput" class="form-label">Номер телефона</label>
-                        <div class="input-group">
-                            <span class="input-group-text">+7</span>
-                            <input type="text" class="form-control" id="editNumberInput" name="phone_number" required>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" class="btn btn-primary">Сохранить</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Модальное окно для свободных номеров -->
-<div class="modal fade" id="freeNumbersModal" tabindex="-1" aria-labelledby="freeNumbersModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-xxl">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="freeNumbersModalLabel">Свободные номера</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <!-- Добавляем строку поиска -->
-                <div class="mb-3">
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="fas fa-search"></i></span>
-                        <input type="text" id="searchFreeNumbers" class="form-control" placeholder="Поиск номера...">
-                    </div>
-                </div>
-                
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover">
-                        <thead>
-                            <tr>
-                                <th>Номер телефона</th>
-                                <th>Отдел</th>
-                                <th>Статус</th>
-                                <th>Действия</th>
-                            </tr>
-                        </thead>
-                        <tbody id="freeNumbersTableBody">
-                            <!-- Здесь будут отображаться свободные номера -->
-                            <tr>
-                                <td colspan="4" class="text-center">Загрузка свободных номеров...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Модальное окно для добавления нового отдела -->
-<div class="modal fade" id="addDepartmentModal" tabindex="-1" aria-labelledby="addDepartmentModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form id="addDepartmentForm">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addDepartmentModalLabel">Добавить новый отдел</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="newDepartmentName" class="form-label">Название отдела</label>
-                        <input type="text" class="form-control" id="newDepartmentName" name="department_name" required>
-                        <div class="form-text">Введите название нового отдела. Будет добавлен в справочник и доступен для выбора.</div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" class="btn btn-primary">Добавить отдел</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Модальное окно для успешных операций -->
-<div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="successModalLabel">Успешно</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-            </div>
-            <div class="modal-body">
-                <p id="successMessage"></p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Модальное окно для ошибок -->
-<div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="errorModalLabel">Ошибка</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-            </div>
-            <div class="modal-body">
-                <p id="errorMessage"></p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Модальное окно для ошибок валидации -->
-<div class="modal fade" id="validationErrorModal" tabindex="-1" aria-labelledby="validationErrorModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-warning text-white">
-                <h5 class="modal-title" id="validationErrorModalLabel">Ошибка валидации</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p id="validationErrorMessage"></p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Общее модальное окно подтверждения -->
-<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="confirmModalLabel">Подтверждение</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p id="confirmMessage"></p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="confirmNoBtn">Нет</button>
-                <button type="button" class="btn btn-primary" id="confirmYesBtn">Да</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Скрипт для инициализации таблицы номеров -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  console.log('Инициализация таблицы номеров');
-  
-  // Подсчитываем и отображаем количество номеров
-  const rows = document.querySelectorAll('tr[data-number-id]');
-  console.log(`Найдено ${rows.length} строк в таблице`);
-});
-</script>
-
-<!-- Скрипт для добавления функциональности для свертывания/развертывания отделов -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  console.log('Инициализация функциональности управления отделами');
-
-  // Находим все заголовки отделов
-  const departmentSections = document.querySelectorAll('.department-section');
-  const departmentHeaders = document.querySelectorAll('.department-header');
-  
-  console.log(`Найдено ${departmentSections.length} отделов для управления`);
-
-  // Инициализация состояний отделов (свернуто/развернуто)
-  function loadDepartmentStates() {
-    const states = JSON.parse(localStorage.getItem('phoneNumbersDepartmentStates') || '{}');
-    return states;
-  }
-
-  function saveDepartmentState(departmentId, isCollapsed) {
-    const states = loadDepartmentStates();
-    states[departmentId] = isCollapsed;
-    localStorage.setItem('phoneNumbersDepartmentStates', JSON.stringify(states));
-  }
-
-  // Восстанавливаем состояние отделов при загрузке страницы
-  function restoreDepartmentStates() {
-    const states = loadDepartmentStates();
-    
-    departmentSections.forEach(section => {
-      const departmentId = section.getAttribute('data-department-id');
-      const content = section.querySelector('.collapse');
-      const toggleIcon = section.querySelector('.toggle-department');
-      
-      if (departmentId && states[departmentId]) {
-        content.classList.remove('show');
-        toggleIcon.classList.remove('fa-chevron-up');
-        toggleIcon.classList.add('fa-chevron-down');
-      } else {
-        content.classList.add('show');
-        toggleIcon.classList.remove('fa-chevron-down');
-        toggleIcon.classList.add('fa-chevron-up');
-      }
-    });
-  }
-  
-  // Добавляем функционал сворачивания/разворачивания отделов
-  departmentHeaders.forEach(header => {
-    const toggleIcon = header.querySelector('.toggle-department');
-    const section = header.closest('.department-section');
-    const departmentId = section.getAttribute('data-department-id');
-    const content = section.querySelector('.collapse');
-    
-    toggleIcon.addEventListener('click', function(e) {
-      e.stopPropagation(); // Предотвращаем срабатывание клика по заголовку
-      
-      const isCollapsed = !content.classList.contains('show');
-      
-      if (isCollapsed) {
-        content.classList.add('show');
-        toggleIcon.classList.remove('fa-chevron-down');
-        toggleIcon.classList.add('fa-chevron-up');
-      } else {
-        content.classList.remove('show');
-        toggleIcon.classList.remove('fa-chevron-up');
-        toggleIcon.classList.add('fa-chevron-down');
-      }
-      
-      // Сохраняем состояние в localStorage
-      saveDepartmentState(departmentId, !isCollapsed);
-    });
-  });
-
-  // Восстанавливаем состояния отделов при загрузке страницы
-  restoreDepartmentStates();
-
-  // Одна кнопка свернуть/развернуть все
-  let allCollapsed = false;
-  const toggleAllBtn = document.getElementById('toggleAllBtn');
-  const toggleAllText = document.getElementById('toggleAllText');
-  toggleAllBtn.addEventListener('click', function() {
-    allCollapsed = !allCollapsed;
-    document.querySelectorAll('.department-section').forEach(section => {
-      const content = section.querySelector('.collapse');
-      const toggleIcon = section.querySelector('.toggle-department');
-      if (allCollapsed) {
-        content.classList.remove('show');
-        toggleIcon.classList.remove('fa-chevron-up');
-        toggleIcon.classList.add('fa-chevron-down');
-      } else {
-        content.classList.add('show');
-        toggleIcon.classList.remove('fa-chevron-down');
-        toggleIcon.classList.add('fa-chevron-up');
-      }
-      // Сохраняем состояние
-      const departmentId = section.getAttribute('data-department-id');
-      if (departmentId) {
-        const states = JSON.parse(localStorage.getItem('phoneNumbersDepartmentStates') || '{}');
-        states[departmentId] = allCollapsed;
-        localStorage.setItem('phoneNumbersDepartmentStates', JSON.stringify(states));
-      }
-    });
-    toggleAllText.textContent = allCollapsed ? 'Развернуть все' : 'Свернуть все';
-    toggleAllBtn.querySelector('i').className = allCollapsed ? 'fas fa-expand' : 'fas fa-compress';
-  });
-
-  // Фильтрация по чекбоксам
-  function filterNumbers() {
-    const wa = document.getElementById('filterWA').checked;
-    const tg = document.getElementById('filterTG').checked;
-    const blocked = document.getElementById('filterBlocked').checked;
-    const prohibit = document.getElementById('filterProhibit').checked;
-    const dept = document.getElementById('departmentFilter').value;
-    document.querySelectorAll('.department-section').forEach(section => {
-      let showDept = true;
-      if (dept !== 'all' && section.querySelector('.department-name').textContent.trim().indexOf(dept) === -1) {
-        showDept = false;
-      }
-      // Фильтрация по статусам внутри отдела
-      let hasMatch = false;
-      section.querySelectorAll('tr.number-row').forEach(row => {
-        let match = true;
-        if (wa && !row.querySelector('.whatsapp-checkbox').checked) match = false;
-        if (tg && !row.querySelector('.telegram-checkbox').checked) match = false;
-        if (blocked && !row.querySelector('.blocked-checkbox').checked) match = false;
-        if (prohibit && !row.querySelector('.prohibit-checkbox').checked) match = false;
-        row.style.display = match ? '' : 'none';
-        if (match) hasMatch = true;
-      });
-      section.style.display = (showDept && hasMatch) ? '' : 'none';
-    });
-  }
-  document.getElementById('filterWA').addEventListener('change', filterNumbers);
-  document.getElementById('filterTG').addEventListener('change', filterNumbers);
-  document.getElementById('filterBlocked').addEventListener('change', filterNumbers);
-  document.getElementById('filterProhibit').addEventListener('change', filterNumbers);
-  document.getElementById('departmentFilter').addEventListener('change', filterNumbers);
-
-  // Поиск по номерам
-  document.getElementById('searchNumbers').addEventListener('input', function() {
-    const val = this.value.trim().toLowerCase();
-    document.querySelectorAll('tr.number-row').forEach(row => {
-      let text = row.innerText.toLowerCase();
-      row.style.display = text.indexOf(val) !== -1 ? '' : 'none';
-    });
-    // Скрывать отдел, если нет видимых строк
-    document.querySelectorAll('.department-section').forEach(section => {
-      const visibleRows = section.querySelectorAll('tr.number-row:not([style*="display: none"])');
-      section.style.display = visibleRows.length ? '' : 'none';
-    });
-  });
-
-  // Перемещение номера
-  document.getElementById('moveNumberForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const numberId = document.getElementById('moveNumberId').value;
-    const newDept = document.getElementById('moveDepartmentSelect').value;
-    let payload = { number_id: numberId };
-    if (newDept === 'free') {
-      payload.new_department = null;
-    } else {
-      payload.new_department = newDept;
-    }
-    // Для отладки
-    console.log('Отправка перемещения:', payload);
-    fetch('/admin/api/move_number', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-      body: JSON.stringify(payload)
-    })
-    .then(r => r.json())
-    .then(data => {
-      if (data.success) {
-        location.reload();
-      } else {
-        alert(data.message || 'Ошибка перемещения');
-      }
-    });
-  });
-
-  // Удаление номера
-  document.getElementById('deleteNumberForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const numberId = document.getElementById('deleteNumberId').value;
-    // Для отладки
-    console.log('Отправка удаления:', { number_id: numberId });
-    fetch('/admin/api/delete_number', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-      body: JSON.stringify({ number_id: numberId })
-    })
-    .then(r => r.json())
-    .then(data => {
-      if (data.success) {
-        document.querySelectorAll(`tr[data-number-id='${numberId}']`).forEach(row => row.remove());
-        document.getElementById('deleteNumberModal').classList.remove('show');
-        document.body.classList.remove('modal-open');
-        document.querySelectorAll('.department-section').forEach(section => {
-          const visibleRows = section.querySelectorAll('tr.number-row');
-          if (!visibleRows.length) section.style.display = 'none';
-        });
-      } else {
-        alert(data.message || 'Ошибка удаления');
-      }
-    });
-  });
-
-  // Чекбоксы WA, TG, блок, запрет выдачи
-  document.querySelectorAll('.whatsapp-checkbox, .telegram-checkbox, .blocked-checkbox, .prohibit-checkbox').forEach(cb => {
-    cb.addEventListener('change', function() {
-      const numberId = this.getAttribute('data-number-id');
-      const payload = {
-        number_id: numberId,
-        whatsapp: this.classList.contains('whatsapp-checkbox') ? this.checked : undefined,
-        telegram: this.classList.contains('telegram-checkbox') ? this.checked : undefined,
-        blocked: this.classList.contains('blocked-checkbox') ? this.checked : undefined,
-        prohibit_issuance: this.classList.contains('prohibit-checkbox') ? this.checked : undefined
-      };
-      fetch('/api/update_number_status', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-        body: JSON.stringify(payload)
-      });
-    });
-  });
-
-  // Устанавливаем number_id при открытии модального окна удаления
-  $('#deleteNumberModal').on('show.bs.modal', function (event) {
-    var button = $(event.relatedTarget);
-    var numberId = button.data('number-id');
-    $('#deleteNumberId').val(numberId);
-    // Для отладки
-    console.log('Открыт модал удаления, number_id:', numberId);
-  });
-
-  // Устанавливаем number_id при открытии модального окна перемещения
-  $('#moveNumberModal').on('show.bs.modal', function (event) {
-    var button = $(event.relatedTarget);
-    var numberId = button.data('number-id');
-    $('#moveNumberId').val(numberId);
-    // Для отладки
-    console.log('Открыт модал перемещения, number_id:', numberId);
-  });
-});
-</script>
-
-<!-- Скрипт для добавления функциональности для свертывания/развертывания отделов -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  console.log('Инициализация функциональности управления отделами');
-
-  // Находим все заголовки отделов
-  const departmentSections = document.querySelectorAll('.department-section');
-  const departmentHeaders = document.querySelectorAll('.department-header');
-  
-  console.log(`Найдено ${departmentSections.length} отделов для управления`);
-
-  // Инициализация состояний отделов (свернуто/развернуто)
-  function loadDepartmentStates() {
-    const states = JSON.parse(localStorage.getItem('phoneNumbersDepartmentStates') || '{}');
-    return states;
-  }
-
-  function saveDepartmentState(departmentId, isCollapsed) {
-    const states = loadDepartmentStates();
-    states[departmentId] = isCollapsed;
-    localStorage.setItem('phoneNumbersDepartmentStates', JSON.stringify(states));
-  }
-
-  // Восстанавливаем состояние отделов при загрузке страницы
-  function restoreDepartmentStates() {
-    const states = loadDepartmentStates();
-    
-    departmentSections.forEach(section => {
-      const departmentId = section.getAttribute('data-department-id');
-      const content = section.querySelector('.collapse');
-      const toggleIcon = section.querySelector('.toggle-department');
-      
-      if (departmentId && states[departmentId]) {
-        content.classList.remove('show');
-        toggleIcon.classList.remove('fa-chevron-up');
-        toggleIcon.classList.add('fa-chevron-down');
-      } else {
-        content.classList.add('show');
-        toggleIcon.classList.remove('fa-chevron-down');
-        toggleIcon.classList.add('fa-chevron-up');
-      }
-    });
-  }
-  
-  // Добавляем функционал сворачивания/разворачивания отделов
-  departmentHeaders.forEach(header => {
-    const toggleIcon = header.querySelector('.toggle-department');
-    const section = header.closest('.department-section');
-    const departmentId = section.getAttribute('data-department-id');
-    const content = section.querySelector('.collapse');
-    
-    toggleIcon.addEventListener('click', function(e) {
-      e.stopPropagation(); // Предотвращаем срабатывание клика по заголовку
-      
-      const isCollapsed = !content.classList.contains('show');
-      
-      if (isCollapsed) {
-        content.classList.add('show');
-        toggleIcon.classList.remove('fa-chevron-down');
-        toggleIcon.classList.add('fa-chevron-up');
-      } else {
-        content.classList.remove('show');
-        toggleIcon.classList.remove('fa-chevron-up');
-        toggleIcon.classList.add('fa-chevron-down');
-      }
-      
-      // Сохраняем состояние в localStorage
-      saveDepartmentState(departmentId, !isCollapsed);
-    });
-  });
-
-  // Восстанавливаем состояния отделов при загрузке страницы
-  restoreDepartmentStates();
-
-  // Одна кнопка свернуть/развернуть все
-  let allCollapsed = false;
-  const toggleAllBtn = document.getElementById('toggleAllBtn');
-  const toggleAllText = document.getElementById('toggleAllText');
-  toggleAllBtn.addEventListener('click', function() {
-    allCollapsed = !allCollapsed;
-    document.querySelectorAll('.department-section').forEach(section => {
-      const content = section.querySelector('.collapse');
-      const toggleIcon = section.querySelector('.toggle-department');
-      if (allCollapsed) {
-        content.classList.remove('show');
-        toggleIcon.classList.remove('fa-chevron-up');
-        toggleIcon.classList.add('fa-chevron-down');
-      } else {
-        content.classList.add('show');
-        toggleIcon.classList.remove('fa-chevron-down');
-        toggleIcon.classList.add('fa-chevron-up');
-      }
-      // Сохраняем состояние
-      const departmentId = section.getAttribute('data-department-id');
-      if (departmentId) {
-        const states = JSON.parse(localStorage.getItem('phoneNumbersDepartmentStates') || '{}');
-        states[departmentId] = allCollapsed;
-        localStorage.setItem('phoneNumbersDepartmentStates', JSON.stringify(states));
-      }
-    });
-    toggleAllText.textContent = allCollapsed ? 'Развернуть все' : 'Свернуть все';
-    toggleAllBtn.querySelector('i').className = allCollapsed ? 'fas fa-expand' : 'fas fa-compress';
-  });
-
-  // Фильтрация по чекбоксам
-  function filterNumbers() {
-    const wa = document.getElementById('filterWA').checked;
-    const tg = document.getElementById('filterTG').checked;
-    const blocked = document.getElementById('filterBlocked').checked;
-    const prohibit = document.getElementById('filterProhibit').checked;
-    const dept = document.getElementById('departmentFilter').value;
-    document.querySelectorAll('.department-section').forEach(section => {
-      let showDept = true;
-      if (dept !== 'all' && section.querySelector('.department-name').textContent.trim().indexOf(dept) === -1) {
-        showDept = false;
-      }
-      // Фильтрация по статусам внутри отдела
-      let hasMatch = false;
-      section.querySelectorAll('tr.number-row').forEach(row => {
-        let match = true;
-        if (wa && !row.querySelector('.whatsapp-checkbox').checked) match = false;
-        if (tg && !row.querySelector('.telegram-checkbox').checked) match = false;
-        if (blocked && !row.querySelector('.blocked-checkbox').checked) match = false;
-        if (prohibit && !row.querySelector('.prohibit-checkbox').checked) match = false;
-        row.style.display = match ? '' : 'none';
-        if (match) hasMatch = true;
-      });
-      section.style.display = (showDept && hasMatch) ? '' : 'none';
-    });
-  }
-  document.getElementById('filterWA').addEventListener('change', filterNumbers);
-  document.getElementById('filterTG').addEventListener('change', filterNumbers);
-  document.getElementById('filterBlocked').addEventListener('change', filterNumbers);
-  document.getElementById('filterProhibit').addEventListener('change', filterNumbers);
-  document.getElementById('departmentFilter').addEventListener('change', filterNumbers);
-
-  // Поиск по номерам
-  document.getElementById('searchNumbers').addEventListener('input', function() {
-    const val = this.value.trim().toLowerCase();
-    document.querySelectorAll('tr.number-row').forEach(row => {
-      let text = row.innerText.toLowerCase();
-      row.style.display = text.indexOf(val) !== -1 ? '' : 'none';
-    });
-    // Скрывать отдел, если нет видимых строк
-    document.querySelectorAll('.department-section').forEach(section => {
-      const visibleRows = section.querySelectorAll('tr.number-row:not([style*="display: none"])');
-      section.style.display = visibleRows.length ? '' : 'none';
-    });
-  });
-
-  // Перемещение номера
-  document.getElementById('moveNumberForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-    const numberId = document.getElementById('moveNumberId').value;
-    const newDept = document.getElementById('moveDepartmentSelect').value;
-    let payload = { number_id: numberId };
-    if (newDept === 'free') {
-      payload.new_department = null;
-    } else {
-      payload.new_department = newDept;
-    }
-    // Для отладки
-    console.log('Отправка перемещения:', payload);
-    fetch('/admin/api/move_number', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-      body: JSON.stringify(payload)
-    })
-    .then(r => r.json())
-    .then(data => {
-      if (data.success) {
-        location.reload();
-      } else {
-        alert(data.message || 'Ошибка перемещения');
-      }
-    });
-  });
-
-  // Удаление номера
-  document.getElementById('deleteNumberForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const numberId = document.getElementById('deleteNumberId').value;
-    // Для отладки
-    console.log('Отправка удаления:', { number_id: numberId });
-    fetch('/admin/api/delete_number', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-      body: JSON.stringify({ number_id: numberId })
-    })
-    .then(r => r.json())
-    .then(data => {
-      if (data.success) {
-        document.querySelectorAll(`tr[data-number-id='${numberId}']`).forEach(row => row.remove());
-        document.getElementById('deleteNumberModal').classList.remove('show');
-        document.body.classList.remove('modal-open');
-        document.querySelectorAll('.department-section').forEach(section => {
-          const visibleRows = section.querySelectorAll('tr.number-row');
-          if (!visibleRows.length) section.style.display = 'none';
-        });
-      } else {
-        alert(data.message || 'Ошибка удаления');
-      }
-    });
-  });
-  
-  // Чекбоксы WA, TG, блок, запрет выдачи
-  document.querySelectorAll('.whatsapp-checkbox, .telegram-checkbox, .blocked-checkbox, .prohibit-checkbox').forEach(cb => {
-    cb.addEventListener('change', function() {
-      const numberId = this.getAttribute('data-number-id');
-      const payload = {
-        number_id: numberId,
-        whatsapp: this.classList.contains('whatsapp-checkbox') ? this.checked : undefined,
-        telegram: this.classList.contains('telegram-checkbox') ? this.checked : undefined,
-        blocked: this.classList.contains('blocked-checkbox') ? this.checked : undefined,
-        prohibit_issuance: this.classList.contains('prohibit-checkbox') ? this.checked : undefined
-      };
-      fetch('/api/update_number_status', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-        body: JSON.stringify(payload)
-      });
-    });
-  });
-});
-</script>
-
-<!-- Скрипт для добавления функциональности для свертывания/развертывания отделов -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  console.log('Инициализация функциональности управления отделами');
-
-  // Находим все заголовки отделов
-  const departmentSections = document.querySelectorAll('.department-section');
-  const departmentHeaders = document.querySelectorAll('.department-header');
-  
-  console.log(`Найдено ${departmentSections.length} отделов для управления`);
-
-  // Инициализация состояний отделов (свернуто/развернуто)
-  function loadDepartmentStates() {
-    const states = JSON.parse(localStorage.getItem('phoneNumbersDepartmentStates') || '{}');
-    return states;
-  }
-
-  function saveDepartmentState(departmentId, isCollapsed) {
-    const states = loadDepartmentStates();
-    states[departmentId] = isCollapsed;
-    localStorage.setItem('phoneNumbersDepartmentStates', JSON.stringify(states));
-  }
-
-  // Восстанавливаем состояние отделов при загрузке страницы
-  function restoreDepartmentStates() {
-    const states = loadDepartmentStates();
-    
-    departmentSections.forEach(section => {
-      const departmentId = section.getAttribute('data-department-id');
-      const content = section.querySelector('.collapse');
-      const toggleIcon = section.querySelector('.toggle-department');
-      
-      if (departmentId && states[departmentId]) {
-        content.classList.remove('show');
-        toggleIcon.classList.remove('fa-chevron-up');
-        toggleIcon.classList.add('fa-chevron-down');
-      } else {
-        content.classList.add('show');
-        toggleIcon.classList.remove('fa-chevron-down');
-        toggleIcon.classList.add('fa-chevron-up');
-      }
-    });
-  }
-  
-  // Добавляем функционал сворачивания/разворачивания отделов
-  departmentHeaders.forEach(header => {
-    const toggleIcon = header.querySelector('.toggle-department');
-    const section = header.closest('.department-section');
-    const departmentId = section.getAttribute('data-department-id');
-    const content = section.querySelector('.collapse');
-    
-    toggleIcon.addEventListener('click', function(e) {
-      e.stopPropagation(); // Предотвращаем срабатывание клика по заголовку
-      
-      const isCollapsed = !content.classList.contains('show');
-      
-      if (isCollapsed) {
-        content.classList.add('show');
-        toggleIcon.classList.remove('fa-chevron-down');
-        toggleIcon.classList.add('fa-chevron-up');
-      } else {
-        content.classList.remove('show');
-        toggleIcon.classList.remove('fa-chevron-up');
-        toggleIcon.classList.add('fa-chevron-down');
-      }
-      
-      // Сохраняем состояние в localStorage
-      saveDepartmentState(departmentId, !isCollapsed);
-    });
-  });
-
-  // Восстанавливаем состояния отделов при загрузке страницы
-  restoreDepartmentStates();
-
-  // Одна кнопка свернуть/развернуть все
-  let allCollapsed = false;
-  const toggleAllBtn = document.getElementById('toggleAllBtn');
-  const toggleAllText = document.getElementById('toggleAllText');
-  toggleAllBtn.addEventListener('click', function() {
-    allCollapsed = !allCollapsed;
-    document.querySelectorAll('.department-section').forEach(section => {
-      const content = section.querySelector('.collapse');
-      const toggleIcon = section.querySelector('.toggle-department');
-      if (allCollapsed) {
-        content.classList.remove('show');
-        toggleIcon.classList.remove('fa-chevron-up');
-        toggleIcon.classList.add('fa-chevron-down');
-      } else {
-        content.classList.add('show');
-        toggleIcon.classList.remove('fa-chevron-down');
-        toggleIcon.classList.add('fa-chevron-up');
-      }
-      // Сохраняем состояние
-      const departmentId = section.getAttribute('data-department-id');
-      if (departmentId) {
-        const states = JSON.parse(localStorage.getItem('phoneNumbersDepartmentStates') || '{}');
-        states[departmentId] = allCollapsed;
-        localStorage.setItem('phoneNumbersDepartmentStates', JSON.stringify(states));
-      }
-    });
-    toggleAllText.textContent = allCollapsed ? 'Развернуть все' : 'Свернуть все';
-    toggleAllBtn.querySelector('i').className = allCollapsed ? 'fas fa-expand' : 'fas fa-compress';
-  });
-
-  // Фильтрация по чекбоксам
-  function filterNumbers() {
-    const wa = document.getElementById('filterWA').checked;
-    const tg = document.getElementById('filterTG').checked;
-    const blocked = document.getElementById('filterBlocked').checked;
-    const prohibit = document.getElementById('filterProhibit').checked;
-    const dept = document.getElementById('departmentFilter').value;
-    document.querySelectorAll('.department-section').forEach(section => {
-      let showDept = true;
-      if (dept !== 'all' && section.querySelector('.department-name').textContent.trim().indexOf(dept) === -1) {
-        showDept = false;
-      }
-      // Фильтрация по статусам внутри отдела
-      let hasMatch = false;
-      section.querySelectorAll('tr.number-row').forEach(row => {
-        let match = true;
-        if (wa && !row.querySelector('.whatsapp-checkbox').checked) match = false;
-        if (tg && !row.querySelector('.telegram-checkbox').checked) match = false;
-        if (blocked && !row.querySelector('.blocked-checkbox').checked) match = false;
-        if (prohibit && !row.querySelector('.prohibit-checkbox').checked) match = false;
-        row.style.display = match ? '' : 'none';
-        if (match) hasMatch = true;
-      });
-      section.style.display = (showDept && hasMatch) ? '' : 'none';
-    });
-  }
-  document.getElementById('filterWA').addEventListener('change', filterNumbers);
-  document.getElementById('filterTG').addEventListener('change', filterNumbers);
-  document.getElementById('filterBlocked').addEventListener('change', filterNumbers);
-  document.getElementById('filterProhibit').addEventListener('change', filterNumbers);
-  document.getElementById('departmentFilter').addEventListener('change', filterNumbers);
-
-  // Поиск по номерам
-  document.getElementById('searchNumbers').addEventListener('input', function() {
-    const val = this.value.trim().toLowerCase();
-    document.querySelectorAll('tr.number-row').forEach(row => {
-      let text = row.innerText.toLowerCase();
-      row.style.display = text.indexOf(val) !== -1 ? '' : 'none';
-    });
-    // Скрывать отдел, если нет видимых строк
-    document.querySelectorAll('.department-section').forEach(section => {
-      const visibleRows = section.querySelectorAll('tr.number-row:not([style*="display: none"])');
-      section.style.display = visibleRows.length ? '' : 'none';
-    });
-  });
-
-  // Перемещение номера
-  document.getElementById('moveNumberForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-    const numberId = document.getElementById('moveNumberId').value;
-    const newDept = document.getElementById('moveDepartmentSelect').value;
-    let payload = { number_id: numberId };
-    if (newDept === 'free') {
-      payload.new_department = null;
-    } else {
-      payload.new_department = newDept;
-    }
-    // Для отладки
-    console.log('Отправка перемещения:', payload);
-    fetch('/admin/api/move_number', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-      body: JSON.stringify(payload)
-    })
-    .then(r => r.json())
-    .then(data => {
-      if (data.success) {
-        location.reload();
-      } else {
-        alert(data.message || 'Ошибка перемещения');
-      }
-    });
-  });
-
-  // Удаление номера
-  document.getElementById('deleteNumberForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const numberId = document.getElementById('deleteNumberId').value;
-    // Для отладки
-    console.log('Отправка удаления:', { number_id: numberId });
-    fetch('/admin/api/delete_number', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-      body: JSON.stringify({ number_id: numberId })
-    })
-    .then(r => r.json())
-    .then(data => {
-      if (data.success) {
-        document.querySelectorAll(`tr[data-number-id='${numberId}']`).forEach(row => row.remove());
-        document.getElementById('deleteNumberModal').classList.remove('show');
-        document.body.classList.remove('modal-open');
-        document.querySelectorAll('.department-section').forEach(section => {
-          const visibleRows = section.querySelectorAll('tr.number-row');
-          if (!visibleRows.length) section.style.display = 'none';
-        });
-      } else {
-        alert(data.message || 'Ошибка удаления');
-      }
-    });
-  });
-  
-  // Чекбоксы WA, TG, блок, запрет выдачи
-  document.querySelectorAll('.whatsapp-checkbox, .telegram-checkbox, .blocked-checkbox, .prohibit-checkbox').forEach(cb => {
-    cb.addEventListener('change', function() {
-      const numberId = this.getAttribute('data-number-id');
-      const payload = {
-        number_id: numberId,
-        whatsapp: this.classList.contains('whatsapp-checkbox') ? this.checked : undefined,
-        telegram: this.classList.contains('telegram-checkbox') ? this.checked : undefined,
-        blocked: this.classList.contains('blocked-checkbox') ? this.checked : undefined,
-        prohibit_issuance: this.classList.contains('prohibit-checkbox') ? this.checked : undefined
-      };
-      fetch('/api/update_number_status', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-        body: JSON.stringify(payload)
-      });
-    });
-  });
-});
-</script>
 {% endblock %}
 
 {% block extra_js %}
-<!-- Весь JavaScript-код перенесен в отдельный файл app/static/js/phone-numbers.js -->
-{% endblock %} 
+<script>
+// Поиск номеров
+document.getElementById('searchInput').addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    const rows = document.querySelectorAll('.number-row');
+    
+    rows.forEach(row => {
+        const number = row.cells[2].textContent.toLowerCase();
+        const assigned = row.cells[3].textContent.toLowerCase();
+        
+        if (number.includes(searchTerm) || assigned.includes(searchTerm)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    // Скрыть пустые отделы
+    updateDepartmentVisibility();
+});
+
+// Фильтрация
+document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        if (this.dataset.filter) {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            const filter = this.dataset.filter;
+            const rows = document.querySelectorAll('.number-row');
+            
+            rows.forEach(row => {
+                const statusCell = row.cells[4];
+                
+                if (filter === 'all') {
+                    row.style.display = '';
+                } else if (filter === 'whatsapp' && statusCell.querySelector('.whatsapp')) {
+                    row.style.display = '';
+                } else if (filter === 'telegram' && statusCell.querySelector('.telegram')) {
+                    row.style.display = '';
+                } else if (filter === 'blocked' && statusCell.querySelector('.blocked')) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            updateDepartmentVisibility();
+        }
+    });
+});
+
+// Сворачивание/разворачивание отделов
+document.querySelectorAll('.department-toggle').forEach(toggle => {
+    toggle.addEventListener('click', function() {
+        const departmentId = this.dataset.department;
+        const content = document.getElementById('dept-' + departmentId);
+        
+        if (content.style.display === 'none') {
+            content.style.display = '';
+            this.classList.remove('fa-chevron-down');
+            this.classList.add('fa-chevron-up');
+        } else {
+            content.style.display = 'none';
+            this.classList.remove('fa-chevron-up');
+            this.classList.add('fa-chevron-down');
+        }
+    });
+});
+
+// Развернуть/свернуть все
+document.getElementById('toggleAllBtn').addEventListener('click', function() {
+    const allExpanded = document.querySelectorAll('.department-toggle.fa-chevron-up').length > 0;
+    
+    document.querySelectorAll('.department-toggle').forEach(toggle => {
+        const departmentId = toggle.dataset.department;
+        const content = document.getElementById('dept-' + departmentId);
+        
+        if (allExpanded) {
+            content.style.display = 'none';
+            toggle.classList.remove('fa-chevron-up');
+            toggle.classList.add('fa-chevron-down');
+        } else {
+            content.style.display = '';
+            toggle.classList.remove('fa-chevron-down');
+            toggle.classList.add('fa-chevron-up');
+        }
+    });
+    
+    this.innerHTML = allExpanded ? 
+        '<i class="fas fa-expand-arrows-alt"></i> Развернуть все' : 
+        '<i class="fas fa-compress-arrows-alt"></i> Свернуть все';
+});
+
+// Переключатели номеров
+document.querySelectorAll('.whatsapp-toggle, .telegram-toggle, .block-toggle').forEach(toggle => {
+    toggle.addEventListener('change', function() {
+        const numberId = this.dataset.numberId;
+        const type = this.classList.contains('whatsapp-toggle') ? 'whatsapp' :
+                    this.classList.contains('telegram-toggle') ? 'telegram' : 'blocked';
+        
+        updateNumberStatus(numberId, type, this.checked);
+    });
+});
+
+// Чекбоксы для массовых действий
+document.querySelectorAll('.number-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', updateSelectedCount);
+});
+
+document.querySelectorAll('.select-all-dept').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        const departmentId = this.dataset.department;
+        const deptCheckboxes = document.querySelectorAll(`#dept-${departmentId} .number-checkbox`);
+        
+        deptCheckboxes.forEach(cb => {
+            cb.checked = this.checked;
+        });
+        
+        updateSelectedCount();
+    });
+});
+
+// Массовые действия
+document.getElementById('bulkAction').addEventListener('change', function() {
+    const targetDepartment = document.getElementById('targetDepartment');
+    if (this.value === 'move') {
+        targetDepartment.style.display = '';
+    } else {
+        targetDepartment.style.display = 'none';
+    }
+});
+
+// Модальные окна
+function openModal(modalId) {
+    document.getElementById(modalId).classList.add('show');
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('show');
+}
+
+// Функции API
+function updateNumberStatus(numberId, type, value) {
+    const data = {
+        number_id: numberId,
+        [type]: value
+    };
+    
+    fetch('/api/update_number_status', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            alert('Ошибка: ' + data.message);
+        }
+    });
+}
+
+function saveNumber() {
+    const form = document.getElementById('addNumberForm');
+    const formData = new FormData(form);
+    
+    fetch('/api/add_number', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Ошибка: ' + data.message);
+        }
+    });
+}
+
+function updateSelectedCount() {
+    const selected = document.querySelectorAll('.number-checkbox:checked').length;
+    document.getElementById('selectedCount').textContent = `Выбрано: ${selected}`;
+}
+
+function applyBulkAction() {
+    const action = document.getElementById('bulkAction').value;
+    const selectedNumbers = Array.from(document.querySelectorAll('.number-checkbox:checked')).map(cb => cb.value);
+    
+    if (!action || selectedNumbers.length === 0) {
+        alert('Выберите действие и номера');
+        return;
+    }
+    
+    const data = {
+        action: action,
+        number_ids: selectedNumbers
+    };
+    
+    if (action === 'move') {
+        const targetDept = document.getElementById('targetDepartment').value;
+        if (!targetDept) {
+            alert('Выберите отдел назначения');
+            return;
+        }
+        data.target_department = targetDept;
+    }
+    
+    fetch('/api/bulk_action_numbers', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Ошибка: ' + data.message);
+        }
+    });
+}
+
+function updateDepartmentVisibility() {
+    document.querySelectorAll('.department-card').forEach(dept => {
+        const visibleRows = dept.querySelectorAll('.number-row:not([style*="display: none"])');
+        if (visibleRows.length === 0) {
+            dept.style.display = 'none';
+        } else {
+            dept.style.display = '';
+        }
+    });
+}
+
+function exportNumbers() {
+    window.location.href = '/api/export_numbers';
+}
+
+function assignNumber(numberId) {
+    // Здесь можно открыть модальное окно для назначения номера
+    console.log('Назначить номер:', numberId);
+}
+
+// Drag and Drop функционал для отделов
+let draggedElement = null;
+let draggedOverElement = null;
+
+document.querySelectorAll('.department-card').forEach(card => {
+    card.addEventListener('dragstart', function(e) {
+        draggedElement = this;
+        this.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/html', this.outerHTML);
+    });
+    
+    card.addEventListener('dragend', function(e) {
+        this.classList.remove('dragging');
+        draggedElement = null;
+        
+        // Убираем все классы drag-over
+        document.querySelectorAll('.department-card').forEach(c => {
+            c.classList.remove('drag-over', 'drag-over-bottom');
+        });
+    });
+    
+    card.addEventListener('dragover', function(e) {
+        if (draggedElement && draggedElement !== this) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            
+            // Определяем позицию курсора относительно элемента
+            const rect = this.getBoundingClientRect();
+            const midPoint = rect.top + rect.height / 2;
+            
+            // Убираем все классы drag-over
+            document.querySelectorAll('.department-card').forEach(c => {
+                c.classList.remove('drag-over', 'drag-over-bottom');
+            });
+            
+            this.classList.add('drag-over');
+            if (e.clientY > midPoint) {
+                this.classList.add('drag-over-bottom');
+            }
+            
+            draggedOverElement = this;
+        }
+    });
+    
+    card.addEventListener('drop', function(e) {
+        if (draggedElement && draggedElement !== this) {
+            e.preventDefault();
+            
+            const draggedId = draggedElement.dataset.departmentId;
+            const targetId = this.dataset.departmentId;
+            
+            // Определяем позицию (до или после)
+            const rect = this.getBoundingClientRect();
+            const midPoint = rect.top + rect.height / 2;
+            const position = e.clientY > midPoint ? 'after' : 'before';
+            
+            // Отправляем запрос на сервер
+            fetch('/api/update_department_positions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    dragged_id: draggedId,
+                    target_id: targetId,
+                    position: position
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Ошибка при перемещении: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                alert('Произошла ошибка при перемещении отдела');
+            });
+        }
+        
+        // Убираем все классы drag-over
+        document.querySelectorAll('.department-card').forEach(c => {
+            c.classList.remove('drag-over', 'drag-over-bottom');
+        });
+    });
+});
+
+// Функции для продвинутых фильтров
+function applyFilters() {
+    const statusFilters = Array.from(document.querySelectorAll('input[name="status_filter"]:checked')).map(cb => cb.value);
+    const departmentFilters = Array.from(document.querySelectorAll('input[name="department_filter"]:checked')).map(cb => cb.value);
+    const assignmentFilters = Array.from(document.querySelectorAll('input[name="assignment_filter"]:checked')).map(cb => cb.value);
+    
+    const rows = document.querySelectorAll('.number-row');
+    
+    rows.forEach(row => {
+        let shouldShow = true;
+        
+        // Фильтр по статусу
+        if (statusFilters.length > 0) {
+            const statusCell = row.cells[4];
+            
+            const matchesStatus = statusFilters.some(filter => {
+                if (filter === 'whatsapp' && statusCell.querySelector('.whatsapp')) return true;
+                if (filter === 'telegram' && statusCell.querySelector('.telegram')) return true;
+                if (filter === 'blocked' && statusCell.querySelector('.blocked')) return true;
+                if (filter === 'free' && !statusCell.querySelector('.whatsapp') && !statusCell.querySelector('.telegram') && !statusCell.querySelector('.blocked')) return true;
+                return false;
+            });
+            
+            if (!matchesStatus) shouldShow = false;
+        }
+        
+        // Фильтр по отделам
+        if (departmentFilters.length > 0) {
+            const departmentCard = row.closest('.department-card');
+            const departmentId = departmentCard ? departmentCard.dataset.departmentId : null;
+            
+            if (!departmentId || !departmentFilters.includes(departmentId)) {
+                shouldShow = false;
+            }
+        }
+        
+        // Фильтр по назначению
+        if (assignmentFilters.length > 0) {
+            const assignedCell = row.cells[3];
+            const isAssigned = assignedCell.textContent.trim() !== '—';
+            
+            const matchesAssignment = assignmentFilters.some(filter => {
+                if (filter === 'assigned' && isAssigned) return true;
+                if (filter === 'unassigned' && !isAssigned) return true;
+                return false;
+            });
+            
+            if (!matchesAssignment) shouldShow = false;
+        }
+        
+        row.style.display = shouldShow ? '' : 'none';
+    });
+    
+    // Скрыть пустые отделы
+    updateDepartmentVisibility();
+    
+    closeModal('filtersModal');
+}
+
+function resetFilters() {
+    document.querySelectorAll('#filtersModal input[type="checkbox"]').forEach(cb => {
+        cb.checked = false;
+    });
+    
+    const rows = document.querySelectorAll('.number-row');
+    rows.forEach(row => {
+        row.style.display = '';
+    });
+    
+    // Показать все отделы
+    document.querySelectorAll('.department-card').forEach(dept => {
+        dept.style.display = '';
+    });
+    
+    closeModal('filtersModal');
+}
+</script>
+{% endblock %}

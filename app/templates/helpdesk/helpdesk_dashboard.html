@@ -4,7 +4,7 @@
 {% block page_title %}Хелпдеск{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/helpdesk.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/unified_dashboard.css') }}">
 {% endblock %}
 
 {% block top_nav %}
@@ -25,43 +25,93 @@
 {% endblock %}
 
 {% block content %}
-<div class="card">
-    <h2>Статистика заявок</h2>
+<div class="container-fluid">
+    <!-- Статистика заявок -->
     <div class="row">
         <div class="col-md-3">
-            <div class="card">
-                <h3>Новые заявки</h3>
-                <div class="number">5</div>
-                <div class="status status-warning">Требуют внимания</div>
+            <div class="stat-card fade-in">
+                <i class="fas fa-ticket-alt stat-icon"></i>
+                <div class="stat-title">Новые заявки</div>
+                <div class="stat-value">5</div>
+                <div class="status-warning mt-2">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    Требуют внимания
+                </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card">
-                <h3>В работе</h3>
-                <div class="number">12</div>
-                <div class="status status-success">Активно</div>
+            <div class="stat-card fade-in">
+                <i class="fas fa-clock stat-icon"></i>
+                <div class="stat-title">В работе</div>
+                <div class="stat-value">12</div>
+                <div class="status-success mt-2">
+                    <i class="fas fa-check-circle me-1"></i>
+                    Активно
+                </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card">
-                <h3>Закрыто сегодня</h3>
-                <div class="number">8</div>
-                <div class="status status-success">Завершено</div>
+            <div class="stat-card fade-in">
+                <i class="fas fa-check-circle stat-icon"></i>
+                <div class="stat-title">Закрыто сегодня</div>
+                <div class="stat-value">8</div>
+                <div class="status-success mt-2">
+                    <i class="fas fa-thumbs-up me-1"></i>
+                    Завершено
+                </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card">
-                <h3>Среднее время</h3>
-                <div class="number">4:20</div>
-                <div class="status">На решение</div>
+            <div class="stat-card fade-in">
+                <i class="fas fa-hourglass-half stat-icon"></i>
+                <div class="stat-title">Среднее время</div>
+                <div class="stat-value">4:20</div>
+                <div class="status-info mt-2">
+                    <i class="fas fa-info-circle me-1"></i>
+                    На решение
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<div class="card">
-    <h2>График открытых и закрытых заявок</h2>
-    <canvas id="ticketsChart" width="400" height="200"></canvas>
+    <!-- График открытых и закрытых заявок -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="chart-container">
+                <div class="chart-title">
+                    <i class="fas fa-chart-line me-2"></i>
+                    График открытых и закрытых заявок
+                </div>
+                <canvas id="ticketsChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Быстрые действия -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="table-container">
+                <div class="table-title">
+                    <i class="fas fa-bolt me-2"></i>
+                    Быстрые действия
+                </div>
+                <div class="d-flex gap-3 flex-wrap">
+                    <a href="{{ url_for('helpdesk.new_tickets') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>
+                        Новая заявка
+                    </a>
+                    <a href="{{ url_for('helpdesk.in_progress_tickets') }}" class="btn btn-info">
+                        <i class="fas fa-tasks me-2"></i>
+                        Мои заявки
+                    </a>
+                    <a href="{{ url_for('helpdesk.closed_tickets') }}" class="btn btn-success">
+                        <i class="fas fa-history me-2"></i>
+                        История
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Уведомление о новой заявке -->
@@ -73,62 +123,67 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
 <script>
-    $(document).ready(function () {
-        // Данные для графика
-        var ctx = document.getElementById('ticketsChart').getContext('2d');
-        var ticketsChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь'],
-                datasets: [{
-                    label: 'Открытые заявки',
-                    data: [12, 19, 3, 5, 2, 3],
-                    backgroundColor: 'rgba(52, 152, 219, 0.2)',
-                    borderColor: 'rgba(52, 152, 219, 1)',
-                    borderWidth: 1
-                }, {
-                    label: 'Закрытые заявки',
-                    data: [7, 11, 5, 8, 3, 7],
-                    backgroundColor: 'rgba(46, 204, 113, 0.2)',
-                    borderColor: 'rgba(46, 204, 113, 1)',
-                    borderWidth: 1
-                }]
+// Инициализация графика
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('ticketsChart').getContext('2d');
+    
+    // Данные для графика (здесь можно заменить на реальные данные)
+    const data = {
+        labels: ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'],
+        datasets: [{
+            label: 'Открытые заявки',
+            data: [12, 19, 3, 5, 2, 3, 8],
+            backgroundColor: 'rgba(52, 152, 219, 0.2)',
+            borderColor: 'rgba(52, 152, 219, 1)',
+            borderWidth: 2,
+            fill: true
+        }, {
+            label: 'Закрытые заявки',
+            data: [8, 15, 7, 9, 4, 6, 12],
+            backgroundColor: 'rgba(39, 174, 96, 0.2)',
+            borderColor: 'rgba(39, 174, 96, 1)',
+            borderWidth: 2,
+            fill: true
+        }]
+    };
+    
+    const config = {
+        type: 'line',
+        data: data,
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: false
+                }
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
+            scales: {
+                y: {
+                    beginAtZero: true
                 }
             }
-        });
-
-        // Функция для отображения уведомления
-        function showNotification(message) {
-            const notification = $("#notification");
-            notification.text(message);
-            notification.fadeIn();
-            
-            setTimeout(function() {
-                notification.fadeOut();
-            }, 5000);
-            
-            // При клике на уведомление, перенаправляем на страницу новых заявок
-            notification.click(function() {
-                window.location.href = '{{ url_for("helpdesk.new_tickets") }}';
-            });
         }
+    };
+    
+    new Chart(ctx, config);
 
-        // Пример вызова функции уведомления
-        // showNotification("Новая заявка!");
-
-        // WebSocket соединение для получения уведомлений в реальном времени
-        // const socket = io.connect('/helpdesk');
-        // socket.on('new_ticket', function(data) {
-        //     showNotification("Новая заявка: " + data.title);
-        // });
+    // Анимация появления карточек
+    const cards = document.querySelectorAll('.stat-card');
+    cards.forEach((card, index) => {
+        setTimeout(() => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'all 0.5s ease';
+            
+            setTimeout(() => {
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 100);
+        }, index * 100);
     });
+});
 </script>
 {% endblock %} 

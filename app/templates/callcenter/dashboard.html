@@ -3,6 +3,261 @@
 {% block title %}Колл-центр{% endblock %}
 {% block page_title %}Колл-центр{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/unified_dashboard.css') }}">
+{% endblock %}
+
 {% block content %}
-<!-- основной контент страницы -->
+<!-- Навигационное меню -->
+<div class="nav-menu">
+    <a href="{{ url_for('callcenter.call_center_dashboard') }}" class="active">
+        <i class="fas fa-tachometer-alt"></i>
+        Дашборд
+    </a>
+    <a href="{{ url_for('callcenter.operator_dashboard') }}">
+        <i class="fas fa-headset"></i>
+        Операторы
+    </a>
+    <a href="#">
+        <i class="fas fa-chart-bar"></i>
+        Отчеты
+    </a>
+    <a href="#">
+        <i class="fas fa-cog"></i>
+        Настройки
+    </a>
+</div>
+
+<div class="container-fluid">
+    <!-- Статистика колл-центра -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="stat-card fade-in">
+                <i class="fas fa-phone stat-icon"></i>
+                <div class="stat-title">Всего звонков</div>
+                <div class="stat-value">245</div>
+                <div class="status-info mt-2">
+                    <i class="fas fa-clock me-1"></i>
+                    За сегодня
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card fade-in">
+                <i class="fas fa-phone-volume stat-icon"></i>
+                <div class="stat-title">Отвеченные</div>
+                <div class="stat-value">198</div>
+                <div class="status-success mt-2">
+                    <i class="fas fa-check-circle me-1"></i>
+                    80.8%
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card fade-in">
+                <i class="fas fa-phone-slash stat-icon"></i>
+                <div class="stat-title">Пропущенные</div>
+                <div class="stat-value">47</div>
+                <div class="status-warning mt-2">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    19.2%
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card fade-in">
+                <i class="fas fa-user-headset stat-icon"></i>
+                <div class="stat-title">Операторы онлайн</div>
+                <div class="stat-value">8</div>
+                <div class="status-success mt-2">
+                    <i class="fas fa-users me-1"></i>
+                    Из 12
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Дополнительная статистика -->
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-title">Среднее время ожидания</div>
+                <div class="stat-value text-primary">2:30</div>
+                <small class="text-muted">минут</small>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-title">Среднее время разговора</div>
+                <div class="stat-value text-success">4:15</div>
+                <small class="text-muted">минут</small>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-title">Уровень сервиса</div>
+                <div class="stat-value text-primary">94.2%</div>
+                <small class="text-muted">качество</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Активные операторы -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="table-container">
+                <div class="table-title">
+                    <i class="fas fa-users me-2"></i>
+                    Активные операторы
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Оператор</th>
+                                <th>Статус</th>
+                                <th>Звонки</th>
+                                <th>Время</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-user-circle text-success me-2"></i>
+                                        Иванов И.И.
+                                    </div>
+                                </td>
+                                <td><span class="badge bg-success">Онлайн</span></td>
+                                <td>23</td>
+                                <td>3:45</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-user-circle text-warning me-2"></i>
+                                        Петрова А.С.
+                                    </div>
+                                </td>
+                                <td><span class="badge bg-warning">Занят</span></td>
+                                <td>18</td>
+                                <td>2:12</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-user-circle text-success me-2"></i>
+                                        Сидоров П.В.
+                                    </div>
+                                </td>
+                                <td><span class="badge bg-success">Онлайн</span></td>
+                                <td>31</td>
+                                <td>4:22</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Последние звонки -->
+        <div class="col-md-6">
+            <div class="table-container">
+                <div class="table-title">
+                    <i class="fas fa-phone me-2"></i>
+                    Последние звонки
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Время</th>
+                                <th>Номер</th>
+                                <th>Оператор</th>
+                                <th>Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>14:25</td>
+                                <td>+7 (495) 123-45-67</td>
+                                <td>Иванов И.И.</td>
+                                <td><span class="badge bg-success">Отвечен</span></td>
+                            </tr>
+                            <tr>
+                                <td>14:22</td>
+                                <td>+7 (903) 987-65-43</td>
+                                <td>Петрова А.С.</td>
+                                <td><span class="badge bg-success">Отвечен</span></td>
+                            </tr>
+                            <tr>
+                                <td>14:18</td>
+                                <td>+7 (985) 111-22-33</td>
+                                <td>-</td>
+                                <td><span class="badge bg-danger">Пропущен</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Быстрые действия -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="table-container">
+                <div class="table-title">
+                    <i class="fas fa-bolt me-2"></i>
+                    Быстрые действия
+                </div>
+                <div class="d-flex gap-3 flex-wrap">
+                    <button class="btn btn-primary">
+                        <i class="fas fa-phone me-2"></i>
+                        Исходящий звонок
+                    </button>
+                    <button class="btn btn-info">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Отчеты за день
+                    </button>
+                    <button class="btn btn-warning">
+                        <i class="fas fa-users me-2"></i>
+                        Управление операторами
+                    </button>
+                    <button class="btn btn-success">
+                        <i class="fas fa-cog me-2"></i>
+                        Настройки АТС
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Анимация появления карточек
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.stat-card');
+    cards.forEach((card, index) => {
+        setTimeout(() => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'all 0.5s ease';
+            
+            setTimeout(() => {
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 100);
+        }, index * 100);
+    });
+
+    // Обновление статистики каждые 30 секунд
+    setInterval(function() {
+        // Здесь можно добавить AJAX-запрос для обновления данных
+        console.log('Обновление статистики...');
+    }, 30000);
+});
+</script>
 {% endblock %} 

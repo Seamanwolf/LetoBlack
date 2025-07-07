@@ -85,13 +85,13 @@ def create_app(config_class=Config):
     from app.routes.admin.organization import bp as admin_organization_bp
     from app.routes.admin.dashboard import admin_dashboard_bp
     from app.callcenter.callcenter import callcenter_bp
-    from app.vats.vats import vats_bp
+    # from app.vats.vats import vats_bp  # Временно закомментировано - модуль не найден
     from app.avito.avito import avito_bp
     from app.helpdesk.helpdesk import helpdesk_bp
     from app.reception import reception_bp
     from app.rating.rating import rating_bp
     from app.itinvent.itinvent import itinvent_bp
-    from app.userlist.userlist import userlist_bp
+    # from app.userlist.userlist import userlist_bp  # Временно закомментировано - модуль не найден
     from app.news import news_bp
     from app.routes.api import api_bp
     
@@ -103,13 +103,13 @@ def create_app(config_class=Config):
     app.register_blueprint(admin_organization_bp, url_prefix='/admin')
     app.register_blueprint(admin_dashboard_bp)
     app.register_blueprint(callcenter_bp)
-    app.register_blueprint(vats_bp)
+    # app.register_blueprint(vats_bp)  # Временно закомментировано - модуль не найден
     app.register_blueprint(avito_bp)
     app.register_blueprint(helpdesk_bp)
     app.register_blueprint(reception_bp)
     app.register_blueprint(rating_bp)
     app.register_blueprint(itinvent_bp)
-    app.register_blueprint(userlist_bp)
+    # app.register_blueprint(userlist_bp)  # Временно закомментировано - модуль не найден
     app.register_blueprint(news_bp, url_prefix='/news')
     
     # Регистрируем admin_routes_bp с префиксом /admin

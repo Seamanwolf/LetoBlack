@@ -42,12 +42,14 @@
         <span>Новости</span>
     </a>
     {% endif %}
+    {# ВАТС модуль не реализован - временно закомментирован
     {% if 'ВАТС' in accessible_modules or current_user.role == 'admin' %}
     <a href="{{ url_for('vats.index') }}" {% if request.endpoint and request.endpoint.startswith('vats.') %}class="active"{% endif %}>
         <i class="fas fa-phone-alt"></i>
         <span>ВАТС</span>
     </a>
     {% endif %}
+    #}
     {% if 'АВИТО-ПРО' in accessible_modules or current_user.role == 'admin' %}
     <a href="{{ url_for('avito.avito_category', category='Вторички') }}" {% if request.endpoint and request.endpoint.startswith('avito.') %}class="active"{% endif %}>
         <i class="fas fa-home"></i>

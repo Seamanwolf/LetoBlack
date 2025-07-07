@@ -24,7 +24,7 @@ def users_list():
     """
     if current_user.role != 'admin':
         flash('У вас нет доступа к этой странице', 'danger')
-        return redirect(url_for('userlist.dashboard'))
+        return redirect(url_for('main.dashboard'))
     
     user_dao = get_user_dao()
     users = user_dao.get_all_users(include_fired=False)
@@ -43,7 +43,7 @@ def user_edit(user_id):
     """
     if current_user.role != 'admin':
         flash('У вас нет доступа к этой странице', 'danger')
-        return redirect(url_for('userlist.dashboard'))
+        return redirect(url_for('main.dashboard'))
     
     user_dao = get_user_dao()
     role_dao = get_role_dao()
@@ -191,7 +191,7 @@ def user_add():
     """
     if current_user.role != 'admin':
         flash('У вас нет доступа к этой странице', 'danger')
-        return redirect(url_for('userlist.dashboard'))
+        return redirect(url_for('main.dashboard'))
     
     user_dao = get_user_dao()
     role_dao = get_role_dao()
