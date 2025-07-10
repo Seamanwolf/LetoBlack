@@ -1,0 +1,446 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Главная{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/personnel_clean.css') }}">
+<style>
+.charts-section {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-light);
+}
+
+.chart-card {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-light);
+    margin-bottom: 1rem;
+}
+
+.chart-card h5 {
+    margin-bottom: 1rem;
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.stat-card {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-light);
+    text-align: center;
+    transition: var(--transition);
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.stat-icon {
+    font-size: 2.5rem;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: var(--muted-color);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.reports-table {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-light);
+}
+
+.table th {
+    background-color: #f8f9fa;
+    border-top: none;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.table-responsive {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.field-column {
+    min-width: 80px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Заголовок -->
+    <div class="page-header mb-4 d-flex justify-content-between align-items-center">
+        <h1><i class="fas fa-home me-2"></i>Главная</h1>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addReportModal">
+                <i class="fas fa-edit me-1"></i>Заполнить отчет
+            </button>
+        </div>
+    </div>
+
+    <!-- Графики и диаграммы -->
+    <div class="charts-section">
+        <h3><i class="fas fa-chart-bar me-2"></i>Статистика за последние 7 дней</h3>
+        
+        <div class="row">
+            <!-- Круговая диаграмма по типам активности -->
+            <div class="col-md-6">
+                <div class="chart-card">
+                    <h5>Распределение активности</h5>
+                    <canvas id="activityPieChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+            
+            <!-- Гистограмма по дням -->
+            <div class="col-md-6">
+                <div class="chart-card">
+                    <h5>Активность по дням</h5>
+                    <canvas id="dailyBarChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-3">
+            <!-- Линейный график трендов -->
+            <div class="col-md-12">
+                <div class="chart-card">
+                    <h5>Тренды основных показателей</h5>
+                    <canvas id="trendsLineChart" width="800" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Статистические карточки -->
+        <div class="row mt-3">
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-handshake"></i>
+                    </div>
+                    <div class="stat-value" id="totalDeals">0</div>
+                    <div class="stat-label">Всего сделок</div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-eye"></i>
+                    </div>
+                    <div class="stat-value" id="totalShowings">0</div>
+                    <div class="stat-label">Всего показов</div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-phone"></i>
+                    </div>
+                    <div class="stat-value" id="totalCalls">0</div>
+                    <div class="stat-label">Всего звонков</div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-value" id="totalClients">0</div>
+                    <div class="stat-label">Новых клиентов</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Таблица отчетов -->
+    <div class="reports-table">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3><i class="fas fa-table me-2"></i>Отчеты сотрудников (последние 7 дней)</h3>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="refreshReports()">
+                    <i class="fas fa-refresh me-1"></i>Обновить
+                </button>
+                <select class="form-select form-select-sm" id="periodSelect" onchange="changePeriod()">
+                    <option value="7">Последние 7 дней</option>
+                    <option value="14">Последние 14 дней</option>
+                    <option value="30">Последний месяц</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-striped table-hover align-middle" id="reportsTable">
+                <thead>
+                    <tr>
+                        <th class="sticky-column">Сотрудник</th>
+                        <th class="sticky-column">Дата</th>
+                        {% for field in all_fields %}
+                            <th class="field-column" data-field-name="{{ field }}" {% if hidden_fields.get(field) %}style="display: none;"{% endif %}>
+                                {{ field_names[field] }}
+                            </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in reports %}
+                    <tr>
+                        <td class="sticky-column">{{ report.full_name }}</td>
+                        <td class="sticky-column">{{ report.date.strftime('%d.%m.%Y') }}</td>
+                        {% for field in all_fields %}
+                            <td class="field-column" data-field-name="{{ field }}" {% if hidden_fields.get(field) %}style="display: none;"{% endif %}>
+                                {{ report[field] or 0 }}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="{{ all_fields|length + 2 }}" class="text-center text-muted">
+                            Нет отчетов за выбранный период
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для заполнения отчета -->
+<div class="modal fade" id="addReportModal" tabindex="-1" aria-labelledby="addReportModalLabel" aria-hidden="true" style="z-index: 1060;">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addReportModalLabel">Заполнить отчет</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="reportForm">
+                    <div class="mb-3">
+                        <label for="report_date" class="form-label">Дата</label>
+                        <input type="date" class="form-control" id="report_date" name="date" required>
+                    </div>
+
+                    <div id="reportFieldsContainer">
+                        <!-- Поля для отчета будут вставлены сюда -->
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" onclick="submitReport()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Объявление глобальных переменных для графиков
+    let activityPieChart, dailyBarChart, trendsLineChart;
+
+    // Настройки полей, полученные из Flask
+    const fieldSettings = {
+        allFields: {{ all_fields | tojson | safe }},
+        fieldNames: {{ field_names | tojson | safe }},
+        hiddenFields: {{ hidden_fields | tojson | safe }}
+    };
+
+    // Функция для отрисовки полей в модальном окне
+    function renderReportFormFields() {
+        const container = document.getElementById('reportFieldsContainer');
+        container.innerHTML = '';
+        let row = document.createElement('div');
+        row.className = 'row';
+        let count = 0;
+
+        fieldSettings.allFields.forEach(field => {
+            if (!fieldSettings.hiddenFields[field]) {
+                if (count > 0 && count % 3 === 0) {
+                    container.appendChild(row);
+                    row = document.createElement('div');
+                    row.className = 'row';
+                }
+                const col = document.createElement('div');
+                col.className = 'col-md-4 mb-3';
+                col.innerHTML = `
+                    <label for="${field}" class="form-label">${fieldSettings.fieldNames[field]}</label>
+                    <input type="number" class="form-control" id="${field}" name="${field}" min="0" value="0">
+                `;
+                row.appendChild(col);
+                count++;
+            }
+        });
+        if (count > 0) {
+            container.appendChild(row);
+        }
+    }
+    
+    // Функция отправки формы отчета
+    function submitReport() {
+        const form = document.getElementById('reportForm');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        const formData = new FormData(form);
+        fetch('{{ url_for("leader.add_leader_report") }}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Отчет успешно сохранен', 'success');
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addReportModal'));
+                if (modal) {
+                    modal.hide();
+                }
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showNotification(data.message || 'Ошибка при сохранении отчета', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            showNotification('Ошибка сети при сохранении отчета', 'error');
+        });
+    }
+
+    // Инициализация модального окна
+    function initializeReportModal() {
+        const reportModal = document.getElementById('addReportModal');
+        reportModal.addEventListener('show.bs.modal', function () {
+            document.getElementById('report_date').valueAsDate = new Date();
+            renderReportFormFields();
+        });
+    }
+
+    // Функции для управления графиками
+    function initializeCharts(data) {
+        if (!data) return;
+        const chartContexts = {
+            pie: document.getElementById('activityPieChart').getContext('2d'),
+            bar: document.getElementById('dailyBarChart').getContext('2d'),
+            line: document.getElementById('trendsLineChart').getContext('2d')
+        };
+        
+        // Уничтожаем старые графики, если они есть
+        if (window.activityPieChart) window.activityPieChart.destroy();
+        if (window.dailyBarChart) window.dailyBarChart.destroy();
+        if (window.trendsLineChart) window.trendsLineChart.destroy();
+
+        window.activityPieChart = new Chart(chartContexts.pie, {
+            type: 'pie',
+            data: {
+                labels: ['Сделки', 'Показы', 'Звонки', 'Новые клиенты'],
+                datasets: [{
+                    data: [data.totalDeals || 0, data.totalShowings || 0, data.totalCalls || 0, data.totalClients || 0],
+                    backgroundColor: ['#28a745', '#17a2b8', '#ffc107', '#6f42c1'],
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+        
+        window.dailyBarChart = new Chart(chartContexts.bar, {
+            type: 'bar',
+            data: {
+                labels: data.dailyLabels || [],
+                datasets: [{ label: 'Активность', data: data.dailyActivity || [], backgroundColor: '#007bff' }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+        });
+
+        window.trendsLineChart = new Chart(chartContexts.line, {
+            type: 'line',
+            data: {
+                labels: data.trendLabels || [],
+                datasets: [
+                    { label: 'Сделки', data: data.dealsData || [], borderColor: '#28a745', tension: 0.1 },
+                    { label: 'Показы', data: data.showingsData || [], borderColor: '#17a2b8', tension: 0.1 },
+                    { label: 'Звонки', data: data.callsData || [], borderColor: '#ffc107', tension: 0.1 }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+        });
+    }
+
+    function updateStatCards(stats) {
+        if (!stats) return;
+        document.getElementById('totalDeals').textContent = stats.totalDeals || 0;
+        document.getElementById('totalShowings').textContent = stats.totalShowings || 0;
+        document.getElementById('totalCalls').textContent = stats.totalCalls || 0;
+        document.getElementById('totalClients').textContent = stats.totalClients || 0;
+    }
+
+    // Загрузка данных для графиков
+    function loadChartData() {
+        fetch('{{ url_for("leader.get_chart_data") }}')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    initializeCharts(data.chartData);
+                    updateStatCards(data.stats);
+                } else {
+                    console.error('Ошибка загрузки данных для графиков:', data.message);
+                }
+            })
+            .catch(error => console.error('Сетевая ошибка при загрузке данных для графиков:', error));
+    }
+
+    // Вспомогательные функции
+    function changePeriod() {
+        window.location.href = `{{ url_for("leader.leader_main") }}?period=${document.getElementById('periodSelect').value}`;
+    }
+
+    function refreshReports() {
+        location.reload();
+    }
+    
+    function showNotification(message, type) {
+        const alertId = `notification-${Date.now()}`;
+        const alertHtml = `
+            <div id="${alertId}" class="alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 2000;">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', alertHtml);
+        setTimeout(() => {
+            const alert = document.getElementById(alertId);
+            if (alert) {
+                bootstrap.Alert.getOrCreateInstance(alert).close();
+            }
+        }, 5000);
+    }
+    
+    // Запуск при загрузке страницы
+    document.addEventListener('DOMContentLoaded', () => {
+        loadChartData();
+        initializeReportModal();
+    });
+</script>
+{% endblock %} 

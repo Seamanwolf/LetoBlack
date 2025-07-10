@@ -219,7 +219,7 @@ class UserDAO:
                 SELECT u.id, u.login, u.full_name, u.department_id, d.name as department_name,
                        u.role_id, r.name as role_name, r.display_name as role_display_name,
                        u.position, u.Phone as phone, u.personal_email, u.pc_login, 
-                       u.office, u.corp_phone, u.fired, u.fire_date, u.hired_date,
+                       u.office, u.corp_phone, u.fired, u.fire_date, u.hire_date,
                        ua.status as active, ua.last_activity,
                        cc.ukc_kc
                 FROM User u
@@ -257,7 +257,7 @@ class UserDAO:
                     ukc_kc=row['ukc_kc'],
                     fired=bool(row['fired']),
                     fire_date=row['fire_date'],
-                    hired_date=row['hired_date'],
+                    hire_date=row['hire_date'],
                     active=row['active'],
                     last_activity=row['last_activity']
                 )

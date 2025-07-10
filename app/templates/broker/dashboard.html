@@ -1,0 +1,327 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Дашборд брокера{% endblock %}
+
+{% block content %}
+    <h2>Статистика отдела за последние 7 дней</h2>
+    <!-- Добавляем кнопку -->
+    <div class="d-flex justify-content-end mb-3">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addReportModal">
+            <i class="fas fa-edit me-1"></i>Заполнить отчет
+        </button>
+    </div>
+
+    <div class="table-responsive">
+        <table id="stats-table" class="table table-hover table-bordered custom-table">
+            <thead>
+                <tr>
+                    <th>Сотрудник <span class="sort-arrow"></span></th>
+                    {# Обязательные поля #}
+                    {% for field in mandatory_fields %}
+                    <th>{{ field_names.get(field, field) }} <span class="sort-arrow"></span></th>
+                    {% endfor %}
+                    {# Необязательные, если не скрыты #}
+                    {% for field in optional_fields %}
+                    {% if not hidden_fields.get(field, False) %}
+                    <th>{{ field_names.get(field, field) }} <span class="sort-arrow"></span></th>
+                    {% endif %}
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for stat in weekly_stats %}
+                <tr {% if stat['id'] == session.get('id') %}class="table-primary"{% endif %}>
+                    <td data-label="Сотрудник">
+                        {{ stat['full_name'] }}
+                        {% if stat['id'] == session.get('id') %}(вы){% endif %}
+                    </td>
+                    {% for field in mandatory_fields %}
+                    <td data-label="{{ field_names.get(field, field) }}">{{ stat.get(field, 0) or 0 }}</td>
+                    {% endfor %}
+                    {% for field in optional_fields %}
+                    {% if not hidden_fields.get(field, False) %}
+                    <td data-label="{{ field_names.get(field, field) }}">{{ stat.get(field, 0) or 0 }}</td>
+                    {% endif %}
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Модальное окно для заполнения отчета (скопировано из leader_main.html) -->
+    <div class="modal fade" id="addReportModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="addReportModalLabel" aria-hidden="true" style="z-index: 1100;">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addReportModalLabel">Заполнить отчет</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="reportForm">
+                        <div class="mb-3">
+                            <label for="report_date" class="form-label">Дата</label>
+                            <input type="date" class="form-control" id="report_date" name="date" required>
+                        </div>
+
+                        <div id="reportFieldsContainer">
+                            <!-- Поля для отчета будут вставлены сюда -->
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" onclick="submitReport()">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Стили для таблицы */
+.custom-table {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+    margin-bottom: 2rem;
+    border: 1px solid #e0e0e0;
+}
+
+.custom-table thead th {
+    background: #f8f9fa;
+    color: #2c3e50;
+    font-weight: 600;
+    padding: 1rem;
+    border-bottom: 2px solid #e0e0e0;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+}
+
+.custom-table tbody tr:hover {
+    background-color: #f8f9fa;
+    transition: all 0.2s ease;
+}
+
+.custom-table td {
+    padding: 1rem;
+    border: 1px solid #e0e0e0;
+    color: #333;
+}
+
+.custom-table tr:last-child td:first-child {
+    border-bottom-left-radius: 8px;
+}
+
+.custom-table tr:last-child td:last-child {
+    border-bottom-right-radius: 8px;
+}
+
+.custom-table thead th:first-child {
+    border-top-left-radius: 8px;
+    width: 25%; /* Увеличиваем ширину столбца "Сотрудник" */
+}
+
+.custom-table thead th:last-child {
+    border-top-right-radius: 8px;
+}
+
+.custom-table tbody tr.table-primary {
+    background-color: rgba(52, 152, 219, 0.1);
+}
+
+.custom-table tbody tr.table-primary:hover {
+    background-color: rgba(52, 152, 219, 0.15);
+}
+
+/* Сброс и переопределение стилей модального окна */
+.custom-modal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+    display: none;
+    z-index: 9999 !important;
+}
+
+.custom-modal.show {
+    display: block !important;
+}
+
+.custom-modal .modal-dialog {
+    position: relative !important;
+    width: auto !important;
+    margin: 1.75rem auto !important;
+    pointer-events: all !important;
+    z-index: 10000 !important;
+}
+
+.custom-modal .modal-content {
+    position: relative !important;
+    background-color: #fff !important;
+    border: 1px solid rgba(0, 0, 0, 0.2) !important;
+    border-radius: 0.3rem !important;
+    outline: 0 !important;
+    pointer-events: auto !important;
+}
+
+.custom-modal .modal-header,
+.custom-modal .modal-body,
+.custom-modal .modal-footer {
+    position: relative !important;
+    padding: 1rem !important;
+    pointer-events: auto !important;
+}
+
+/* Анимация появления */
+@keyframes modal-pop {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.custom-modal.show .modal-dialog {
+    animation: modal-pop 0.25s ease-out;
+}
+
+/* Убираем конфликты с другими стилями */
+.custom-modal * {
+    box-sizing: border-box !important;
+}
+
+.custom-modal input,
+.custom-modal button {
+    pointer-events: auto !important;
+}
+
+.modal-backdrop {
+    z-index: 9998 !important;
+}
+/* Увеличим z-index для модального окна, чтобы оно было поверх всего */
+#addReportModal {
+    z-index: 1100 !important;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Простейшая сортировка по клику на заголовок
+$(function(){
+    $('#stats-table th').click(function(){
+        const table = $(this).closest('table');
+        const rows = table.find('tbody tr').toArray().sort(comparer($(this).index()));
+        this.asc = !this.asc;
+        if (!this.asc) rows.reverse();
+        for (let i=0; i<rows.length; i++) table.children('tbody').append(rows[i]);
+    });
+
+    function comparer(idx){
+        return function(a,b){
+            const valA = getCell(a, idx), valB = getCell(b, idx);
+            const numA = parseFloat(valA.replace(',', '.')), numB = parseFloat(valB.replace(',', '.'));
+            if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+            return valA.localeCompare(valB);
+        }
+    }
+
+    function getCell(row, idx){
+        return $(row).children('td').eq(idx).text();
+    }
+});
+
+// ======= Добавление отчёта =======
+</script>
+{% endblock %}
+
+{% block js %}
+<script>
+    // Настройки полей, полученные из Flask
+    const fieldSettings = {
+        allFields: {{ all_fields | tojson | safe }},
+        fieldNames: {{ field_names | tojson | safe }},
+        hiddenFields: {{ hidden_fields | tojson | safe }}
+    };
+
+    // Функция для отрисовки полей в модальном окне
+    function renderReportFormFields() {
+        const container = document.getElementById('reportFieldsContainer');
+        container.innerHTML = '';
+        let row = document.createElement('div');
+        row.className = 'row';
+        let count = 0;
+
+        fieldSettings.allFields.forEach(field => {
+            if (!fieldSettings.hiddenFields[field]) {
+                if (count > 0 && count % 3 === 0) {
+                    container.appendChild(row);
+                    row = document.createElement('div');
+                    row.className = 'row';
+                }
+                const col = document.createElement('div');
+                col.className = 'col-md-4 mb-3';
+                col.innerHTML = `
+                    <label for="${field}" class="form-label">${fieldSettings.fieldNames[field]}</label>
+                    <input type="number" class="form-control" id="${field}" name="${field}" min="0" value="0">
+                `;
+                row.appendChild(col);
+                count++;
+            }
+        });
+        if (count > 0) {
+            container.appendChild(row);
+        }
+    }
+
+    // Функция отправки формы отчета
+    function submitReport() {
+        const form = document.getElementById('reportForm');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        const formData = new FormData(form);
+        fetch('{{ url_for("broker.add_report") }}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Отчет успешно сохранен');
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addReportModal'));
+                if (modal) {
+                    modal.hide();
+                }
+                location.reload();
+            } else {
+                alert(data.message || 'Ошибка при сохранении отчета');
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert('Ошибка сети при сохранении отчета');
+        });
+    }
+
+    // Инициализация модального окна
+    function initializeReportModal() {
+        const reportModal = document.getElementById('addReportModal');
+        reportModal.addEventListener('show.bs.modal', function () {
+            document.getElementById('report_date').valueAsDate = new Date();
+            renderReportFormFields();
+        });
+    }
+
+    // Запуск при загрузке страницы
+    document.addEventListener('DOMContentLoaded', () => {
+        initializeReportModal();
+    });
+</script>
+{% endblock %} 

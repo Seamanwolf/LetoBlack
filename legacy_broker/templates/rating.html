@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Скорринг сотрудников</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        .rating {
+            border: 1px solid black;
+            padding: 2px 5px;
+            border-radius: 3px;
+            background-color: #f8f9fa;
+        }
+
+        .sortable th {
+            cursor: pointer;
+            position: relative;
+            background-color: #f0f0f0;
+        }
+
+            .sortable th .arrow {
+                display: inline-block;
+                width: 0;
+                height: 0;
+                margin-left: 5px;
+                vertical-align: middle;
+                border-left: 5px solid transparent;
+                border-right: 5px solid transparent;
+            }
+
+            .sortable th.asc .arrow {
+                border-bottom: 5px solid black;
+            }
+
+            .sortable th.desc .arrow {
+                border-top: 5px solid black;
+            }
+
+            .sortable th:hover {
+                background-color: #e0e0e0;
+            }
+
+        .sortable th, .sortable td {
+            text-align: center;
+            border-right: 1px solid #ddd;
+        }
+
+        .sortable td {
+            background-color: white;
+        }
+
+            .sortable td:last-child, .sortable th:last-child {
+                border-right: none;
+            }
+
+            .sortable td.fio {
+                text-align: left;
+                position: relative;
+            }
+
+                .sortable td.fio a {
+                    color: black;
+                    text-decoration: none;
+                }
+
+                    .sortable td.fio a:hover {
+                        text-decoration: none;
+                    }
+
+                        .sortable td.fio a:hover .pencil {
+                            opacity: 0.5;
+                        }
+
+                .sortable td.fio .pencil {
+                    position: absolute;
+                    right: 5px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    opacity: 0;
+                    transition: opacity 0.3s;
+                }
+
+        .sidebar .menu a {
+            color: black;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">Л</div>
+        <div class="menu">
+            <a href="{{ url_for('admin.admin_dashboard') }}">
+                <i class="fas fa-arrow-left icon"></i><span class="text">Назад</span>
+            </a>
+            <a href="{{ url_for('rating.show_rating') }}">
+                <i class="fas fa-chart-line icon"></i><span class="text">Скорринг</span>
+            </a>
+        </div>
+    </div>
+    <div class="topbar">
+        <div class="title">Скорринг сотрудников</div>
+        <div class="right-icons">
+            <div class="profile-icon" tabindex="0">
+                <i class="fas fa-user"></i>
+                <div class="profile-menu">
+                    <div class="profile-info">
+                        <p>Администратор</p>
+                    </div>
+                    <a href="{{ url_for('userlist.logout') }}">Выход</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="content">
+        <h1>Скорринг сотрудников</h1>
+        <input type="text" id="searchInput" class="form-control mb-3" placeholder="Поиск по сотрудникам">
+        <div class="d-flex justify-content-end mb-3">
+            <button id="clearValuesButton" class="btn btn-warning btn-sm" style="margin-left: 10px;">Очистить значения</button>
+        </div>
+        <table class="table table-striped mt-3 sortable">
+            <thead>
+                <tr>
+                    <th data-type="number">№ <span class="arrow"></span></th>
+                    <th data-type="string">ФИО <span class="arrow"></span></th>
+                    <th data-type="string">Отдел <span class="arrow"></span></th>
+                    <th data-type="string">Дата приема <span class="arrow"></span></th>
+                    <th data-type="number">Ср. кол-во сделок <span class="arrow"></span></th>
+                    <th data-type="number">∫ рейтинг <span class="arrow"></span></th>
+                    <th data-type="number">Ассессмент брокера <span class="arrow"></span></th>
+                    <th data-type="number">Чек-лист звонка <span class="arrow"></span></th>
+                    <th data-type="number">Зап. карт CRM <span class="arrow"></span></th>
+                    <th data-type="number">Итоговый рейтинг <span class="arrow"></span></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rating in ratings %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td class="fio"><a href="#" class="edit-values-link" data-bs-toggle="modal" data-bs-target="#editValuesModal" data-id="{{ rating.user_id }}" data-fullname="{{ rating.full_name }}">{{ rating.full_name }}<i class="fas fa-pencil-alt pencil"></i></a></td>
+                    <td>{{ rating.department }}</td>
+                    <td>{{ rating.hire_date }}</td>
+                    <td>{{ rating.avg_deals }}</td>
+                    <td>{{ rating.quarterly_rating }}</td>
+                    <td>{{ rating.properties }}</td>
+                    <td>{{ rating.scripts }}</td>
+                    <td>{{ rating.crm_cards }}</td>
+                    <td><span class="rating">{{ rating.avg_score }}★</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Модальное окно для редактирования значений -->
+    <div class="modal fade" id="editValuesModal" tabindex="-1" aria-labelledby="editValuesModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editValuesModalLabel">Значения для <span id="editUserName"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editValuesForm">
+                        <input type="hidden" id="editUserId" name="user_id">
+                        <div class="mb-3">
+                            <label for="editAvgDealsInput" class="form-label">Ср. кол-во сделок</label>
+                            <input type="number" class="form-control" id="editAvgDealsInput" step="0.1" min="0" max="5" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editQuarterlyRatingInput" class="form-label">∫ рейтинг</label>
+                            <input type="number" class="form-control" id="editQuarterlyRatingInput" step="0.1" min="0" max="5" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editPropertiesInput" class="form-label">Ассессмент брокера</label>
+                            <input type="number" class="form-control" id="editPropertiesInput" step="0.1" min="0" max="5" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editScriptsInput" class="form-label">Чек-лист звонка</label>
+                            <input type="number" class="form-control" id="editScriptsInput" step="0.1" min="0" max="5" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editCrmCardsInput" class="form-label">Зап. карт CRM</label>
+                            <input type="number" class="form-control" id="editCrmCardsInput" step="0.1" min="0" max="5" required>
+                        </div>
+                        <!-- Закомментированные поля -->
+                        <!-- <div class="mb-3">
+                            <label for="editCallDurationInput" class="form-label">Длит-ть диалога</label>
+                            <input type="number" class="form-control" id="editCallDurationInput" step="0.1" min="0" max="5" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editExperienceInput" class="form-label">Стаж</label>
+                            <input type="number" class="form-control" id="editExperienceInput" step="0.1" min="0" max="5" required>
+                        </div> -->
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для загрузки данных -->
+    <div class="modal fade" id="uploadDataModal" tabindex="-1" aria-labelledby="uploadDataModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadDataModalLabel">Загрузить данные</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="uploadDataForm" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="avgDealsFile" class="form-label">Загрузить ср. кол-во сделок</label>
+                            <input type="file" class="form-control" id="avgDealsFile" name="avgDealsFile" accept=".xlsx, .xls" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Отправить</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>// Обработчик формы редактирования значений
+        document.getElementById('editValuesForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const userId = document.getElementById('editUserId').value;
+            const quarterlyRating = document.getElementById('editQuarterlyRatingInput').value;
+            const avgDeals = document.getElementById('editAvgDealsInput').value;
+            const properties = document.getElementById('editPropertiesInput').value;
+            const scripts = document.getElementById('editScriptsInput').value;
+            const crmCards = document.getElementById('editCrmCardsInput').value;
+            // const callDuration = document.getElementById('editCallDurationInput').value;
+            // const experience = document.getElementById('editExperienceInput').value;
+
+            fetch('/api/update_rating', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    user_id: userId,
+                    quarterly_rating: quarterlyRating,
+                    avg_deals: avgDeals,
+                    properties: properties,
+                    scripts: scripts,
+                    crm_cards: crmCards
+                    // , call_duration: callDuration,
+                    // experience: experience
+                })
+            }).then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert(data.message);
+                    }
+                });
+        });
+
+        // Сортировка таблицы
+        const table = document.querySelector('.sortable');
+        const headers = table.querySelectorAll('th');
+        const tableBody = table.querySelector('tbody');
+        const rows = Array.from(tableBody.querySelectorAll('tr'));
+
+        const directions = Array.from(headers).map(() => '');
+        const transform = function (index, content) {
+            const type = headers[index].getAttribute('data-type');
+            switch (type) {
+                case 'number':
+                    return parseFloat(content);
+                case 'string':
+                default:
+                    return content;
+            }
+        };
+
+        const sortColumn = function (index) {
+            const direction = directions[index] || 'asc';
+            const multiplier = direction === 'asc' ? 1 : -1;
+            directions[index] = direction === 'asc' ? 'desc' : 'asc';
+
+            const newRows = Array.from(rows);
+            newRows.sort((rowA, rowB) => {
+                const cellA = rowA.querySelectorAll('td')[index].innerHTML;
+                const cellB = rowB.querySelectorAll('td')[index].innerHTML;
+
+                const a = transform(index, cellA);
+                const b = transform(index, cellB);
+
+                return a > b ? (1 * multiplier) : (-1 * multiplier);
+            });
+
+            [].forEach.call(rows, row => {
+                tableBody.removeChild(row);
+            });
+
+            newRows.forEach(newRow => {
+                tableBody.appendChild(newRow);
+            });
+
+            headers.forEach(header => {
+                header.classList.remove('asc', 'desc');
+            });
+            headers[index].classList.add(direction);
+            headers[index].querySelector('.arrow').style.borderColor = direction === 'asc' ? 'transparent transparent black transparent' : 'black transparent transparent transparent';
+        };
+
+        headers.forEach((header, index) => {
+            header.addEventListener('click', () => {
+                sortColumn(index);
+            });
+        });
+
+        // Поиск по сотрудникам
+        document.getElementById('searchInput').addEventListener('keyup', function () {
+            const filter = this.value.toLowerCase();
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                const match = text.indexOf(filter) > -1;
+                row.style.display = match ? '' : 'none';
+            });
+        });
+
+        // Обработчик клика по ссылке редактирования значений
+        document.querySelectorAll('.edit-values-link').forEach(link => {
+            link.addEventListener('click', function () {
+                const userId = this.getAttribute('data-id');
+                const fullName = this.getAttribute('data-fullname');
+                document.getElementById('editUserName').innerText = fullName;
+
+                fetch(`/api/get_rating?full_name=${fullName}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('editUserId').value = data.user_id;
+                        document.getElementById('editQuarterlyRatingInput').value = data.quarterly_rating;
+                        document.getElementById('editAvgDealsInput').value = data.avg_deals;
+                        document.getElementById('editPropertiesInput').value = data.properties;
+                        document.getElementById('editScriptsInput').value = data.scripts;
+                        document.getElementById('editCrmCardsInput').value = data.crm_cards;
+                        // document.getElementById('editCallDurationInput').value = data.call_duration;
+                        // document.getElementById('editExperienceInput').value = data.experience;
+                    });
+            });
+        });
+
+        // Обработчик кнопки очистки значений
+        document.getElementById('clearValuesButton').addEventListener('click', function () {
+            fetch('/api/clear_values', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }).then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert(data.message);
+                    }
+                });
+        });
+
+        // Обработчик формы загрузки данных
+        document.getElementById('uploadDataForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const formData = new FormData();
+            const fileInput = document.getElementById('avgDealsFile');
+            formData.append('file', fileInput.files[0]);
+
+            fetch('/api/upload_avg_deals', {
+                method: 'POST',
+                body: formData
+            }).then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Произошла ошибка при загрузке файла. Проверьте консоль для деталей.');
+                });
+        });
+
+        // Обновление ∫ рейтинга каждые 30 минут
+        function updateIntegralRating() {
+            fetch('/api/update_integral_rating')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        console.error(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
+        setInterval(updateIntegralRating, 1800000); // 30 минут в миллисекундах</script>
+</body>
+</html>

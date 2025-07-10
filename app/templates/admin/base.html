@@ -11,6 +11,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <!-- Custom CSS -->
     <link href="{{ url_for('static', filename='css/admin.css') }}" rel="stylesheet">
+    <!-- Toast CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/toast.css') }}?v={{ range(1, 100000) | random }}">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -73,6 +75,19 @@
     <!-- JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Toast JS -->
+    <script src="{{ url_for('static', filename='js/toast.js') }}?v={{ range(1, 100000) | random }}"></script>
+    
+    <!-- Передача toast'ов из сессии в JavaScript -->
+    <script>
+    {% set toasts = get_and_clear_toasts() %}
+    {% if toasts %}
+    window.sessionToasts = {{ toasts | tojson }};
+    {% else %}
+    window.sessionToasts = [];
+    {% endif %}
+    </script>
+    
     <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
     {% block extra_js %}{% endblock %}
 </body>

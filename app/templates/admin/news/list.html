@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}Управление новостями{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/personnel_clean.css') }}">
+{% endblock %}
+{% block content %}
+<div class="page-header mb-3 d-flex justify-content-between align-items-center">
+    <h1><i class="fas fa-newspaper me-2"></i>Новости</h1>
+    <a href="{{ url_for('admin_news.create_news') }}" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Создать новость</a>
+</div>
+
+<div class="card">
+ <div class="card-body table-responsive">
+  <table class="table table-striped table-hover align-middle">
+   <thead><tr><th>ID</th><th>Заголовок</th><th>Публикация</th><th>Опубликована</th><th>Реакции</th><th>Действия</th></tr></thead>
+   <tbody>
+   {% for n in news %}
+    <tr>
+      <td>{{ n.id }}</td>
+      <td>{{ n.title }}</td>
+      <td>{{ n.publish_at or '—' }}</td>
+      <td>{% if n.is_published %}<span class="badge bg-success">Да{% else %}<span class="badge bg-secondary">Нет{% endif %}</span></td>
+      <td class="reactions-cell" data-news-id="{{ n.id }}">
+        <div class="d-flex gap-2">
+          <span class="badge bg-success" title="Положительные">
+            <i class="fas fa-thumbs-up"></i> <span class="positive-count">0</span>
+          </span>
+          <span class="badge bg-secondary" title="Нейтральные">
+            <i class="fas fa-meh"></i> <span class="neutral-count">0</span>
+          </span>
+          <span class="badge bg-danger" title="Отрицательные">
+            <i class="fas fa-thumbs-down"></i> <span class="negative-count">0</span>
+          </span>
+        </div>
+      </td>
+      <td>
+        <div class="d-flex gap-1">
+          <a href="{{ url_for('admin_news.edit_news', news_id=n.id) }}" class="btn btn-sm btn-outline-primary" title="Редактировать">
+            <i class="fas fa-edit"></i>
+          </a>
+          <form method="post" action="{{ url_for('admin_news.delete_news', news_id=n.id) }}" style="display:inline-block" onsubmit="return confirm('Удалить новость?');">
+            <button type="submit" class="btn btn-sm btn-outline-danger" title="Удалить">
+              <i class="fas fa-trash"></i>
+            </button>
+          </form>
+        </div>
+      </td>
+    </tr>
+   {% else %}
+    <tr><td colspan="6" class="text-center">Нет новостей</td></tr>
+   {% endfor %}
+   </tbody>
+  </table>
+ </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Загружаем реакции для каждой новости
+    document.querySelectorAll('.reactions-cell').forEach(cell => {
+        const newsId = cell.dataset.newsId;
+        loadReactions(newsId);
+    });
+});
+
+function loadReactions(newsId) {
+    fetch(`/news/reactions/${newsId}`)
+        .then(response => response.json())
+        .then(data => {
+            const cell = document.querySelector(`[data-news-id="${newsId}"]`);
+            if (cell) {
+                cell.querySelector('.positive-count').textContent = data.stats.positive || 0;
+                cell.querySelector('.neutral-count').textContent = data.stats.neutral || 0;
+                cell.querySelector('.negative-count').textContent = data.stats.negative || 0;
+            }
+        })
+        .catch(error => console.error('Error loading reactions:', error));
+}
+</script>
+{% endblock %} 

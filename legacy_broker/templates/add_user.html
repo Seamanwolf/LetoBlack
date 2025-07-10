@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Добавление пользователя</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: calc(100vh - 70px);
+            padding: 0 20px;
+        }
+
+        .form-container {
+            border: none;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: white;
+            box-shadow: 0 2px 3px #ccc;
+            width: 48%;
+        }
+
+        form {
+            width: 100%;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        input[type="text"], input[type="password"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        select {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        .phone-container {
+            display: flex;
+            align-items: center;
+        }
+
+            .phone-container span {
+                padding: 10px;
+                background-color: #ccc;
+                border: 1px solid #ccc;
+                border-radius: 5px 0 0 5px;
+            }
+
+            .phone-container input {
+                flex: 1;
+                border-radius: 0 5px 5px 0;
+            }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            margin: 20px 0;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+            button:hover {
+                background-color: #0056b3;
+            }
+
+        .back-button {
+            display: flex;
+            align-items: center;
+            background-color: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+            .back-button i {
+                margin-right: 8px;
+            }
+
+            .back-button:hover {
+                background-color: #5a6268;
+            }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-container">
+            <h2>Добавить нового пользователя</h2>
+            <form action="{{ url_for('add_user') }}" method="post">
+                <label for="login">Логин:</label>
+                <input type="text" id="login" name="login" required>
+
+                <label for="full_name">Полное имя:</label>
+                <input type="text" id="full_name" name="full_name" required>
+
+                <label for="password">Пароль:</label>
+                <input type="password" id="password" name="password" required>
+
+                <label for="phone">Телефон:</label>
+                <div class="phone-container">
+                    <span>+7</span>
+                    <input type="text" id="phone" name="phone" placeholder="0000000000" pattern="\d{10}" required>
+                </div>
+                <input type="hidden" id="full_phone" name="full_phone">
+
+                {% if role == 'admin' %}
+                <label for="department">Отдел:</label>
+                <input type="text" id="department" name="department" required>
+
+                <label for="role">Роль:</label>
+                <select id="role" name="role">
+                    <option value="user">Пользователь</option>
+                    <option value="leader">Руководитель</option>
+                    <option value="admin">Администратор</option>
+                </select>
+                {% else %}
+                <!-- Для руководителя отдел выбирается автоматически и поле скрыто -->
+                <input type="hidden" name="department" value="{{ department }}">
+                <input type="hidden" name="role" value="user"> <!-- Роль автоматически устанавливается как 'user' -->
+                {% endif %}
+
+                <button type="submit">Добавить пользователя</button>
+            </form>
+            <a href="{{ url_for('show_brokers') }}" class="back-button"><i class="fas fa-arrow-left"></i>Назад к списку пользователей</a>
+        </div>
+    </div>
+    <script>document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('phone').addEventListener('input', function() {
+                const phone = this.value;
+                const fullPhone = '+7' + phone;
+                document.getElementById('full_phone').value = fullPhone;
+            });
+        });</script>
+</body>
+</html>

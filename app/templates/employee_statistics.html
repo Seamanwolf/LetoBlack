@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Статистика сотрудника{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>Статистика сотрудника: {{ employee.full_name }}</h2>
+            <p class="text-muted">{{ employee.role }}</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{{ url_for('leader.my_department') }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> Вернуться к отделу
+            </a>
+        </div>
+    </div>
+
+    <!-- Статистика сотрудника -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Сделки</h5>
+                    <h2 class="card-text">{{ stats.deals }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Показы</h5>
+                    <h2 class="card-text">{{ stats.showings }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Звонки</h5>
+                    <h2 class="card-text">{{ stats.calls }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-warning text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Активность</h5>
+                    <h2 class="card-text">{{ stats.activity }}%</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Графики будут добавлены позже -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Активность по дням</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Графики будут добавлены позже</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // При необходимости здесь можно добавить дополнительный JavaScript
+});
+</script>
+{% endblock %} 

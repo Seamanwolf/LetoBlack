@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+{% block title %}Лента новостей{% endblock %}
+
+{% block page_title %}<i class="fas fa-newspaper me-2"></i>Лента новостей{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/personnel_clean.css') }}">
+<style>
+.swiper-container {
+    width: 100%;
+    height: 80vh; /* Занимает 80% высоты окна просмотра */
+}
+.swiper-slide {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.news-card {
+    width: 100%;
+    max-width: 800px; /* Ограничим максимальную ширину карточки */
+    margin: 0 auto; /* Центрируем карточку */
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    overflow-y: auto; /* Добавляем скролл, если контент не помещается */
+    max-height: 95%;
+}
+#scroll-to-top {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: none;
+    z-index: 1000;
+    width: 50px;
+    height: 50px;
+    padding: 0;
+    font-size: 20px;
+    line-height: 50px;
+    text-align: center;
+}
+.news-card .news-image-container {
+    width: 100%;
+    max-height: 350px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f8f9fa;
+}
+.news-card img{
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+}
+.news-card-content {
+    padding: 1.5rem 2rem;
+}
+.news-meta{font-size:.85rem;color:var(--muted-color);margin-bottom:.5rem;}
+.news-title{font-size:1.5rem;font-weight:600;margin-bottom:1rem;}
+.news-body{white-space:pre-wrap;margin-bottom:1rem;line-height:1.6;}
+.news-reactions{display:flex;gap:1rem;align-items:center;padding-top:1rem;border-top:1px solid #eee;}
+.reaction-btn{background:none;border:none;padding:0.5rem;border-radius:50%;transition:all 0.3s;cursor:pointer;display:flex;align-items:center;gap:0.5rem;}
+.reaction-btn:hover{background:#f8f9fa;}
+.reaction-btn.active{background:#e3f2fd;color:#1976d2;}
+.reaction-btn i{font-size:1.2rem;}
+.reaction-count{font-size:0.9rem;font-weight:500;}
+</style>
+{% endblock %}
+{% block content %}
+<div class="swiper-container">
+    <div class="swiper-wrapper">
+        {% for n in news %}
+        <div class="swiper-slide">
+            <div class="news-card" data-news-id="{{ n.id }}">
+                {% if n.image_path %}
+                <div class="news-image-container">
+                    <img src="{{ url_for('static', filename=n.image_path) }}" alt="{{ n.title }}">
+                </div>
+                {% endif %}
+                <div class="news-card-content">
+                    <div class="news-meta">{{ n.publish_at.strftime('%d.%m.%Y %H:%M') if n.publish_at else n.created_at.strftime('%d.%m.%Y %H:%M') }} — {{ n.created_by_name or 'Система' }}</div>
+                    <div class="news-title">{{ n.title }}</div>
+                    <div class="news-body">{{ n.body|safe }}</div>
+                    <div class="news-reactions">
+                        <button class="reaction-btn" data-reaction="positive" title="Положительная реакция">
+                            <i class="fas fa-thumbs-up"></i>
+                            <span class="reaction-count positive-count">0</span>
+                        </button>
+                        <button class="reaction-btn" data-reaction="neutral" title="Нейтральная реакция">
+                            <i class="fas fa-meh"></i>
+                            <span class="reaction-count neutral-count">0</span>
+                        </button>
+                        <button class="reaction-btn" data-reaction="negative" title="Отрицательная реакция">
+                            <i class="fas fa-thumbs-down"></i>
+                            <span class="reaction-count negative-count">0</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="swiper-slide">
+            <div class="alert alert-info">Пока нет новостей для вас.</div>
+        </div>
+        {% endfor %}
+    </div>
+    <!-- Add Pagination -->
+    <div class="swiper-pagination"></div>
+
+    <!-- Add Navigation -->
+    <div class="swiper-button-prev"></div>
+</div>
+
+<button id="scroll-to-top" class="btn btn-primary btn-lg rounded-circle">
+    <i class="fas fa-arrow-up"></i>
+</button>
+
+{% block extra_js_libs %}
+<script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+{% endblock %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var swiper = new Swiper('.swiper-container', {
+        direction: 'vertical',
+        loop: false,
+        pagination: {
+            el: '.swiper-pagination',
+            clickable: true,
+        },
+        navigation: {
+            nextEl: '.swiper-button-next',
+            prevEl: '.swiper-button-prev',
+        },
+        mousewheel: true,
+    });
+
+    const scrollToTopBtn = document.getElementById('scroll-to-top');
+
+    function updateScrollButtonVisibility() {
+        if (swiper.activeIndex > 0) {
+            scrollToTopBtn.style.display = 'block';
+        } else {
+            scrollToTopBtn.style.display = 'none';
+        }
+    }
+
+    updateScrollButtonVisibility();
+    swiper.on('slideChange', function() {
+        updateScrollButtonVisibility();
+        attachReactionHandlers(); // навешиваем обработчики при смене слайда
+    });
+
+    scrollToTopBtn.addEventListener('click', function() {
+        swiper.slideTo(0, 800);
+    });
+
+    // Загружаем реакции для каждой новости
+    document.querySelectorAll('.news-card').forEach(card => {
+        const newsId = card.dataset.newsId;
+        loadReactions(newsId);
+    });
+    
+    // Навешиваем обработчики кликов на кнопки реакций
+    function attachReactionHandlers() {
+        document.querySelectorAll('.news-card .reaction-btn').forEach(btn => {
+            // Снимаем старый обработчик, если он был
+            btn.replaceWith(btn.cloneNode(true));
+        });
+        document.querySelectorAll('.news-card .reaction-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const newsId = this.closest('.news-card').dataset.newsId;
+            const reactionType = this.dataset.reaction;
+            fetch(`/news/react/${newsId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({reaction_type: reactionType})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateReactionDisplay(newsId, data.stats, data.user_reaction);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    });
+    }
+    attachReactionHandlers(); // первый раз при загрузке
+});
+
+function loadReactions(newsId) {
+    fetch(`/news/reactions/${newsId}`)
+        .then(response => response.json())
+        .then(data => {
+            updateReactionDisplay(newsId, data.stats, data.user_reaction);
+        })
+        .catch(error => console.error('Error loading reactions:', error));
+}
+
+function updateReactionDisplay(newsId, stats, userReaction) {
+    const card = document.querySelector(`[data-news-id="${newsId}"]`);
+    
+    // Обновляем счетчики
+    card.querySelector('.positive-count').textContent = stats.positive || 0;
+    card.querySelector('.neutral-count').textContent = stats.neutral || 0;
+    card.querySelector('.negative-count').textContent = stats.negative || 0;
+    
+    // Убираем активный класс со всех кнопок
+    card.querySelectorAll('.reaction-btn').forEach(btn => btn.classList.remove('active'));
+    
+    // Добавляем активный класс к выбранной реакции
+    if (userReaction) {
+        const activeBtn = card.querySelector(`[data-reaction="${userReaction}"]`);
+        if (activeBtn) {
+            activeBtn.classList.add('active');
+        }
+    }
+}
+</script>
+{% endblock %} 

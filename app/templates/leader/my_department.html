@@ -1,0 +1,677 @@
+
+{% extends 'base.html' %}
+
+{% block page_title %}Мой отдел{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/personnel_clean.css') }}">
+<style>
+/* Дополнительные стили */
+.department-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-light);
+    transition: var(--transition);
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.stat-card-icon {
+    font-size: 2rem;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.stat-card-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--dark-color);
+}
+
+.stat-card-title {
+    color: var(--muted-color);
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: white;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-light);
+}
+
+.data-table th {
+    background: #f8f9fa;
+    color: var(--dark-color);
+    font-weight: 600;
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.data-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--dark-color);
+}
+
+.data-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+.data-table tr:last-child td {
+    border-bottom: none;
+}
+
+.badge {
+    padding: 0.5em 0.75em;
+    font-size: 0.75em;
+    font-weight: 500;
+    border-radius: 0.25rem;
+}
+
+.bg-success {
+    background-color: var(--success-color) !important;
+    color: white;
+}
+
+.bg-secondary {
+    background-color: var(--muted-color) !important;
+    color: white;
+}
+
+.action-icons {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.action-icon {
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+}
+
+.action-icon:hover {
+    transform: scale(1.1);
+}
+
+.action-icon.edit {
+    color: var(--primary-color);
+}
+
+.action-icon.impersonate {
+    color: var(--info-color);
+}
+
+.action-icon.view {
+    color: var(--success-color);
+}
+
+/* Стили для модального окна */
+.modal-content {
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-medium);
+}
+
+.modal-header {
+    background: var(--primary-color);
+    color: white;
+    border-top-left-radius: var(--border-radius);
+    border-top-right-radius: var(--border-radius);
+}
+
+.modal-title {
+    font-weight: 600;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.form-label {
+    font-weight: 500;
+    color: var(--dark-color);
+    margin-bottom: 0.5rem;
+}
+
+.form-control {
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 0.5rem 0.75rem;
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+
+.form-control[readonly] {
+    background-color: #f8f9fa;
+}
+
+/* Стили для модального окна редактирования */
+.modal-lg {
+    max-width: 900px;
+}
+
+.employee-header {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.employee-photo-section {
+    flex-shrink: 0;
+}
+
+.employee-photo-wrapper {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid var(--border-color);
+}
+
+.employee-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.employee-basic-info {
+    flex: 1;
+}
+
+.info-section {
+    margin-bottom: 2rem;
+}
+
+.section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--dark-color);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
+.col-md-6 {
+    flex: 0 0 48%;
+}
+
+.toggle-switch {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: var(--primary-color);
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.toggle-label {
+    font-size: 0.9rem;
+    color: var(--dark-color);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Навигационное меню -->
+    <div class="personnel-nav">
+        <a href="#" class="active">
+            <i class="fas fa-users"></i>
+            Сотрудники
+        </a>
+    </div>
+
+    <!-- Статистика отдела -->
+    <div class="department-stats">
+        <div class="stat-card">
+            <div class="stat-card-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-card-value">{{ employees|length }}</div>
+            <div class="stat-card-title">Всего сотрудников</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-icon">
+                <i class="fas fa-user-check"></i>
+            </div>
+            <div class="stat-card-value">{{ employees|selectattr('status', 'equalto', 'online')|list|length }}</div>
+            <div class="stat-card-title">Онлайн</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="stat-card-value">{{ employees|selectattr('status', 'equalto', 'active')|list|length }}</div>
+            <div class="stat-card-title">Активных</div>
+        </div>
+    </div>
+
+    <!-- Таблица сотрудников -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>№</th>
+                            <th>Роль</th>
+                            <th>ФИО</th>
+                            <th>Должность</th>
+                            <th>Телефон</th>
+                            <th>Email</th>
+                            <th>Статус</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for employee in employees %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>
+                                {% if employee.role == 'leader' %}
+                                    <span class="text-danger">
+                                        <i class="fas fa-crown" title="Руководитель"></i>
+                                    </span>
+                                {% elif employee.role == 'deputy' %}
+                                    <span class="text-warning">
+                                        <i class="fas fa-medal" title="Заместитель"></i>
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">
+                                        <i class="fas fa-user" title="Сотрудник"></i>
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <strong>{{ employee.full_name }}</strong>
+                                    {% if employee.role not in ['leader', 'deputy', 'admin'] %}
+                                    <button class="btn btn-sm btn-outline-primary impersonate-btn" 
+                                            title="Войти как {{ employee.full_name }}" 
+                                            data-employee-id="{{ employee.id }}" 
+                                            data-employee-name="{{ employee.full_name }}">
+                                        <i class="fas fa-sign-in-alt"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>{{ employee.position or '—' }}</td>
+                            <td>{{ employee.Phone or '—' }}</td>
+                            <td>{{ employee.personal_email or '—' }}</td>
+                            <td>
+                                {% if employee.status == 'online' %}
+                                    <span class="badge bg-success">Онлайн</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Офлайн</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="action-icons">
+                                    <i class="fas fa-edit action-icon edit edit-employee-btn" 
+                                       title="Редактировать" 
+                                       data-employee-id="{{ employee.id }}"></i>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Модальное окно редактирования сотрудника #}
+<div class="modal fade" id="editEmployeeModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" style="z-index: 1060;">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Редактировать сотрудника</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editEmployeeForm">
+                    <input type="hidden" name="employee_id">
+                    
+                    <!-- Фотография и основная информация -->
+                    <div class="employee-header">
+                        <div class="employee-photo-section">
+                            <div class="employee-photo-wrapper">
+                                <img id="employeePhoto" src="/static/img/default-avatar.svg" alt="Фото сотрудника" class="employee-photo">
+                            </div>
+                        </div>
+                        <div class="employee-basic-info">
+                            <div class="form-group">
+                                <label class="form-label">ФИО *</label>
+                                <input type="text" class="form-control" name="full_name" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Должность *</label>
+                                <input type="text" class="form-control" name="position" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Контактная информация -->
+                    <div class="info-section">
+                        <h4 class="section-title">
+                            <i class="fas fa-address-card"></i>
+                            Контактная информация
+                        </h4>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label class="form-label">Личный телефон</label>
+                                <input type="tel" class="form-control" name="personal_phone" readonly>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label class="form-label">Корпоративный email</label>
+                                <input type="email" class="form-control" name="corporate_email" readonly>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label class="form-label">Личный email</label>
+                                <input type="email" class="form-control" name="personal_email" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Дополнительная информация -->
+                    <div class="info-section">
+                        <h4 class="section-title">
+                            <i class="fas fa-info-circle"></i>
+                            Дополнительная информация
+                        </h4>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label class="form-label">Дата рождения</label>
+                                <input type="date" class="form-control" name="birth_date" readonly>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label class="form-label">Дата приёма на работу</label>
+                                <input type="date" class="form-control" name="hire_date" readonly>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Комментарии</label>
+                            <textarea class="form-control" name="notes" rows="3" readonly></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Доступы -->
+                    <div class="info-section">
+                        <h4 class="section-title">
+                            <i class="fas fa-key"></i>
+                            Доступы
+                        </h4>
+                        <div class="form-row">
+                            <div class="form-group col-md-4">
+                                <label class="toggle-label">Доступ к RR</label>
+                                <div class="toggle-switch">
+                                    <label class="switch">
+                                        <input type="checkbox" name="rr_access" disabled>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label class="toggle-label">Доступ к сайту</label>
+                                <div class="toggle-switch">
+                                    <label class="switch">
+                                        <input type="checkbox" name="website_access" disabled>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label class="toggle-label">Доступ к документам</label>
+                                <div class="toggle-switch">
+                                    <label class="switch">
+                                        <input type="checkbox" name="documents_access" disabled>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Системная информация -->
+                    <div class="info-section">
+                        <h4 class="section-title">
+                            <i class="fas fa-cogs"></i>
+                            Системная информация
+                        </h4>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label class="form-label">Статус</label>
+                                <input type="text" class="form-control" name="status" readonly>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label class="form-label">Последняя активность</label>
+                                <input type="text" class="form-control" name="last_active" readonly>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label class="form-label">Логин ПК</label>
+                                <input type="text" class="form-control" name="pc_login" readonly>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label class="form-label">Пароль ПК</label>
+                                <input type="password" class="form-control" name="pc_password" readonly>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label class="form-label">CRM ID</label>
+                                <input type="text" class="form-control" name="crm_id" readonly>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label class="form-label">Офис</label>
+                                <input type="text" class="form-control" name="office" readonly>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label class="form-label">Логин в систему</label>
+                                <input type="text" class="form-control" name="login" readonly>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label class="form-label">Дата увольнения</label>
+                                <input type="date" class="form-control" name="fire_date" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CRM доступы -->
+                    <div class="info-section">
+                        <h4 class="section-title">
+                            <i class="fas fa-database"></i>
+                            CRM доступы
+                        </h4>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label class="form-label">CRM Логин</label>
+                                <input type="text" class="form-control" name="crm_login" readonly>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label class="form-label">CRM Пароль</label>
+                                <input type="password" class="form-control" name="crm_password" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="impersonateButton" onclick="impersonateUser()">
+                    <i class="fas fa-user-secret me-1"></i>Войти как сотрудник
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(function(){
+    // Редактирование сотрудника
+    $('.edit-employee-btn').click(function(){
+        var employeeId = $(this).data('employee-id');
+        loadEmployeeDataForEdit(employeeId);
+        new bootstrap.Modal(document.getElementById('editEmployeeModal')).show();
+    });
+
+    // Impersonate функция
+    $('.impersonate-btn').click(function(){
+        var employeeId = $(this).data('employee-id');
+        var employeeName = $(this).data('employee-name');
+        
+        if (confirm('Вы действительно хотите войти как ' + employeeName + '?')) {
+            window.location.href = '/leader/impersonate/' + employeeId;
+        }
+    });
+});
+
+// Функция для загрузки данных сотрудника
+function loadEmployeeDataForEdit(employeeId) {
+    $.get("/leader/get_employee_info/" + employeeId, function(resp){
+        if(resp.success){
+            var employee = resp.employee;
+            var form = document.getElementById('editEmployeeForm');
+            
+            // Основные данные
+            form.querySelector('input[name="employee_id"]').value = employee.id;
+            form.querySelector('input[name="full_name"]').value = employee.full_name || '';
+            form.querySelector('input[name="position"]').value = employee.position || '';
+            
+            // Контактная информация
+            form.querySelector('input[name="personal_phone"]').value = employee.phone || '';
+            form.querySelector('input[name="corporate_email"]').value = employee.corporate_email || '';
+            form.querySelector('input[name="personal_email"]').value = employee.email || '';
+            
+            // Дополнительная информация
+            form.querySelector('input[name="birth_date"]').value = employee.birth_date || '';
+            form.querySelector('input[name="hire_date"]').value = employee.hire_date || '';
+            form.querySelector('textarea[name="notes"]').value = employee.notes || '';
+            
+            // Доступы
+            form.querySelector('input[name="rr_access"]').checked = employee.rr == 1 || employee.rr === true;
+            form.querySelector('input[name="website_access"]').checked = employee.site == 1 || employee.site === true;
+            form.querySelector('input[name="documents_access"]').checked = employee.documents == 1 || employee.documents === true;
+            
+            // Системная информация
+            form.querySelector('input[name="status"]').value = employee.status || 'Офлайн';
+            form.querySelector('input[name="last_active"]').value = employee.last_active || 'Не зарегистрирован';
+            form.querySelector('input[name="pc_login"]').value = employee.pc_login || '';
+            form.querySelector('input[name="pc_password"]').value = employee.pc_password || '';
+            form.querySelector('input[name="crm_id"]').value = employee.crm_id || '';
+            form.querySelector('input[name="office"]').value = employee.office || '';
+            form.querySelector('input[name="login"]').value = employee.login || '';
+            form.querySelector('input[name="fire_date"]').value = employee.fire_date || '';
+            
+            // CRM доступы
+            form.querySelector('input[name="crm_login"]').value = employee.crm_login || '';
+            form.querySelector('input[name="crm_password"]').value = employee.crm_password || '';
+            
+            // Настраиваем кнопку импресонации
+            document.getElementById('impersonateButton').setAttribute('data-employee-id', employee.id);
+            
+        }else{
+            alert(resp.message || 'Ошибка получения данных');
+        }
+    }).fail(function(xhr){
+        alert('Ошибка: '+xhr.responseText);
+    });
+}
+
+function impersonateUser() {
+    const employeeId = document.getElementById('impersonateButton').getAttribute('data-employee-id');
+    if (employeeId) {
+        window.location.href = "/leader/impersonate/" + employeeId;
+    } else {
+        alert('Не удалось получить ID сотрудника');
+    }
+}
+</script>
+{% endblock %} 

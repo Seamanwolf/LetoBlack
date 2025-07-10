@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Изменение пароля пользователя</title>
+</head>
+<body>
+    <h1>Изменение пароля пользователя</h1>
+    <form action="{{ url_for('edit_user_by_leader', id=user_id) }}" method="post">
+        <input type="hidden" name="user_id" value="{{ user_id }}">
+        <div>
+            <label for="new_password">Новый пароль:</label>
+            <input type="password" id="new_password" name="new_password" required>
+        </div>
+        <div>
+            <label for="confirm_password">Подтвердите новый пароль:</label>
+            <input type="password" id="confirm_password" name="confirm_password" required>
+        </div>
+        <button type="submit">Изменить пароль</button>
+    </form>
+</body>
+</html>

@@ -65,7 +65,7 @@ def login():
                 session.permanent = True
                 
                 # Обновляем статус пользователя
-                cursor.execute("UPDATE User SET status = 'Онлайн' WHERE id = %s", (user_data['id'],))
+                cursor.execute("UPDATE User SET status = 'online' WHERE id = %s", (user_data['id'],))
                 connection.commit()
                 
                 # Логируем вход пользователя
@@ -103,10 +103,16 @@ def login():
         logo_exists = True
         logo_url = url_for('static', filename='images/logo.bmp')
     
+    # Проверяем наличие фонового изображения
+    background_path = path.join(current_app.static_folder, 'images/real_estate_bg.jpg')
+    background_exists = path.exists(background_path)
+    background_url = url_for('static', filename='images/real_estate_bg.jpg')
+    
     # Добавляем метку времени для предотвращения кеширования
     now = int(time.time())
     
-    return render_template('auth/login.html', logo_url=logo_url if logo_exists else None, now=now)
+    current_year = datetime.now().year
+    return render_template('auth/login.html', logo_url=logo_url if logo_exists else None, background_url=background_url if background_exists else None, now=now, current_year=current_year)
 
 def redirect_based_on_role(user):
     """Перенаправляет пользователя на соответствующую страницу на основе его роли"""
@@ -121,7 +127,7 @@ def redirect_based_on_role(user):
         # Здесь возможен циклический редирект, перенаправляем на страницу персонала вместо дашборда
         return redirect(url_for('admin_routes_unique.personnel'))
     elif role in ['leader', 'руководитель']:
-        return redirect(url_for('leader.leader_dashboard'))
+        return redirect(url_for('leader.leader_main'))
     elif role in ['backoffice', 'бэк-офис']:
         department = user.department if hasattr(user, 'department') else None
         if department == 'HR':
@@ -131,7 +137,7 @@ def redirect_based_on_role(user):
         else:
             return redirect(url_for('admin_routes_unique.personnel'))
     elif role in ['user', 'пользователь']:
-        return redirect(url_for('admin_routes_unique.personnel'))
+        return redirect(url_for('news.index'))
     else:
         return redirect(url_for('auth.login'))
 
@@ -144,7 +150,7 @@ def logout():
         connection = create_db_connection()
         cursor = connection.cursor()
         try:
-            cursor.execute("UPDATE User SET status = 'Офлайн' WHERE id = %s", (current_user.id,))
+            cursor.execute("UPDATE User SET status = 'offline' WHERE id = %s", (current_user.id,))
             connection.commit()
             
             # Логируем выход пользователя

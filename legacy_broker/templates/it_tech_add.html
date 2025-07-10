@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Добавление объекта IT-Tech</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">Л</div>
+        <div class="menu">
+            <a href="{{ url_for('show_admins') }}" class="button">
+                <i class="fas fa-user-cog icon"></i><span class="text">Администраторы</span>
+            </a>
+            <a href="{{ url_for('show_leaders') }}">
+                <i class="fas fa-users icon"></i><span class="text">Руководители</span>
+            </a>
+            <a href="{{ url_for('show_brokers') }}">
+                <i class="fas fa-briefcase icon"></i><span class="text">Брокеры</span>
+            </a>
+            <a href="{{ url_for('show_backoffice') }}">
+                <i class="fas fa-building icon"></i><span class="text">Сотрудники БЭК</span>
+            </a>
+            <a href="{{ url_for('show_rating') }}">
+                <i class="fas fa-chart-line icon"></i><span class="text">Рейтинг</span>
+            </a>
+            <a href="{{ url_for('add_operator') }}">
+                <i class="fas fa-headset icon"></i><span class="text">Операторы КЦ</span>
+            </a>
+            <a href="{{ url_for('manage_calls') }}">
+                <i class="fas fa-phone icon"></i><span class="text">Управление номерами КЦ</span>
+            </a>
+            <a href="{{ url_for('helpdesk_dashboard') }}">
+                <i class="fas fa-life-ring icon"></i><span class="text">Хелпдеск</span>
+            </a>
+            <a href="{{ url_for('manage_notifications') }}">
+                <i class="fas fa-bell icon"></i><span class="text">Уведомления</span>
+            </a>
+            <a href="{{ url_for('it_tech_dashboard', status='active') }}">
+                <i class="fas fa-desktop icon"></i><span class="text">IT-Tech</span>
+            </a>
+        </div>
+    </div>
+    <div class="topbar">
+        <div class="title">Добавление объекта IT-Tech</div>
+        <div class="right-icons">
+            <div class="profile-icon" tabindex="0">
+                <i class="fas fa-user"></i>
+                <div class="profile-menu">
+                    <div class="profile-info">
+                        <p>Администратор</p>
+                    </div>
+                    <a href="{{ url_for('logout') }}">Выход</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="content">
+        <h1>Добавление нового объекта</h1>
+        <form id="addObjectForm">
+            <label for="type">Тип оборудования:</label>
+            <select id="type" name="type">
+                <!-- Опции будут загружены через JS -->
+            </select><br>
+            <label for="brand">Марка:</label>
+            <select id="brand" name="brand">
+                <!-- Опции будут загружены через JS -->
+            </select><br>
+            <label for="model">Модель:</label>
+            <select id="model" name="model">
+                <!-- Опции будут загружены через JS -->
+            </select><br>
+            <label for="serialNumber">Серийный номер:</label>
+            <input type="text" id="serialNumber" name="serialNumber"><br>
+            <label for="inventoryNumber">Инвентарный номер:</label>
+            <input type="text" id="inventoryNumber" name="inventoryNumber"><br>
+            <label for="purchaseDate">Дата приобретения:</label>
+            <input type="date" id="purchaseDate" name="purchaseDate"><br>
+            <label for="responsiblePerson">ФИО ответственного:</label>
+            <select id="responsiblePerson" name="responsiblePerson">
+                <!-- Опции будут загружены через JS -->
+            </select><br>
+            <label for="status">Статус:</label>
+            <select id="status" name="status">
+                <option value="Активный">Активный</option>
+                <option value="В ремонте">В ремонте</option>
+                <option value="Склад">Склад</option>
+                <option value="Списано">Списано</option>
+            </select><br>
+            <label for="quantity">Количество:</label>
+            <input type="number" id="quantity" name="quantity"><br>
+            <button type="submit">Добавить</button>
+        </form>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            fetch('/api/technic_types')
+                .then(response => response.json())
+                .then(types => {
+                    const typeSelect = document.getElementById('type');
+                    typeSelect.innerHTML = types.map(type =>
+                        `<option value="${type.id}">${type.type}</option>`
+                    ).join('');
+                });
+
+            fetch('/api/technic_brands')
+                .then(response => response.json())
+                .then(brands => {
+                    const brandSelect = document.getElementById('brand');
+                    brandSelect.innerHTML = brands.map(brand =>
+                        `<option value="${brand.id}">${brand.brand}</option>`
+                    ).join('');
+                });
+
+            fetch('/api/users')
+                .then(response => response.json())
+                .then(users => {
+                    const responsiblePersonSelect = document.getElementById('responsiblePerson');
+                    responsiblePersonSelect.innerHTML = users.map(user =>
+                        `<option value="${user.id}">${user.full_name}</option>`
+                    ).join('');
+                });
+
+            document.getElementById('addObjectForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+                const formData = new FormData(event.target);
+
+                fetch('/api/add_technic', {
+                    method: 'POST',
+                    body: JSON.stringify(Object.fromEntries(formData)),
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        alert('Объект добавлен успешно');
+                        location.reload();
+                    } else {
+                        alert('Ошибка при добавлении объекта');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Мой отдел{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>Сотрудники моего отдела</h2>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{{ url_for('leader.display_settings') }}" class="btn btn-outline-primary">
+                <i class="fas fa-cog"></i> Настройки отображения
+            </a>
+        </div>
+    </div>
+
+    <!-- Статистика отдела -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Всего сотрудников</h5>
+                    <h2 class="card-text">{{ stats.total_employees }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Новых сотрудников</h5>
+                    <h2 class="card-text">{{ stats.new_employees }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Выполнено задач</h5>
+                    <h2 class="card-text">{{ stats.completed_tasks }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-warning text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Средняя активность</h5>
+                    <h2 class="card-text">{{ stats.avg_activity }}%</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Таблица сотрудников -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Сотрудники отдела</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Сотрудник</th>
+                            <th>Должность</th>
+                            <th>Статус</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for employee in employees %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar avatar-sm me-2">
+                                        <div class="avatar-initial rounded-circle bg-primary">
+                                            {{ employee.full_name[0] }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <a href="{{ url_for('leader.employee_statistics', employee_id=employee.id) }}">
+                                            {{ employee.full_name }}
+                                        </a>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ employee.role }}</td>
+                            <td>
+                                {% if employee.status == 'online' %}
+                                <span class="badge bg-success">Онлайн</span>
+                                {% elif employee.status == 'offline' %}
+                                <span class="badge bg-secondary">Офлайн</span>
+                                {% else %}
+                                <span class="badge bg-light text-dark">Неизвестно</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-icon" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('leader.employee_statistics', employee_id=employee.id) }}">
+                                                <i class="fas fa-chart-line me-2"></i>Статистика
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('leader.impersonate_employee', employee_id=employee.id) }}">
+                                                <i class="fas fa-user-secret me-2"></i>Действовать от имени
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // При необходимости здесь можно добавить дополнительный JavaScript
+});
+</script>
+{% endblock %} 

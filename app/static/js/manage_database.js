@@ -69,11 +69,11 @@ $(document).ready(function () {
         if (response.success) {
           location.reload();
         } else {
-          alert(response.message || "Ошибка при редактировании объекта");
+          showError(response.message || "Ошибка при редактировании объекта");
         }
       },
       error: function () {
-        alert("Ошибка при выполнении запроса");
+        showError("Ошибка при выполнении запроса");
       },
     });
   });
@@ -92,11 +92,11 @@ $(document).ready(function () {
         if (response.success) {
           location.reload();
         } else {
-          alert(response.message || "Ошибка при редактировании источника");
+          showError(response.message || "Ошибка при редактировании источника");
         }
       },
       error: function () {
-        alert("Ошибка при выполнении запроса");
+        showError("Ошибка при выполнении запроса");
       },
     });
   });
@@ -115,11 +115,11 @@ $(document).ready(function () {
         if (response.success) {
           location.reload();
         } else {
-          alert(response.message || "Ошибка при редактировании группы");
+          showError(response.message || "Ошибка при редактировании группы");
         }
       },
       error: function () {
-        alert("Ошибка при выполнении запроса");
+        showError("Ошибка при выполнении запроса");
       },
     });
   });
@@ -138,11 +138,11 @@ $(document).ready(function () {
           if (response.success) {
             location.reload();
           } else {
-            alert(response.message || "Ошибка при архивировании");
+            showError(response.message || "Ошибка при архивировании");
           }
         },
         error: function () {
-          alert("Ошибка при выполнении запроса");
+          showError("Ошибка при выполнении запроса");
         },
       });
     }
@@ -159,11 +159,11 @@ $(document).ready(function () {
         if (response.success) {
           location.reload();
         } else {
-          alert(response.message || "Ошибка при удалении уведомления");
+          showError(response.message || "Ошибка при удалении уведомления");
         }
       },
       error: function () {
-        alert("Ошибка при выполнении запроса");
+        showError("Ошибка при выполнении запроса");
       },
     });
   });
@@ -180,14 +180,14 @@ $(document).ready(function () {
         type: "POST",
         success: function (response) {
           if (response.success) {
-            alert("Элемент успешно восстановлен");
+            showSuccess("Элемент успешно восстановлен");
             location.reload();
           } else {
-            alert(response.message || "Ошибка при восстановлении");
+            showError(response.message || "Ошибка при восстановлении");
           }
         },
         error: function () {
-          alert("Ошибка при выполнении запроса");
+          showError("Ошибка при выполнении запроса");
         },
       });
     }
@@ -205,14 +205,14 @@ $(document).ready(function () {
         type: "POST",
         success: function (response) {
           if (response.success) {
-            alert("Элемент успешно удален");
+            showSuccess("Элемент успешно удален");
             location.reload();
           } else {
-            alert(response.message || "Ошибка при удалении");
+            showError(response.message || "Ошибка при удалении");
           }
         },
         error: function () {
-          alert("Ошибка при выполнении запроса");
+          showError("Ошибка при выполнении запроса");
         },
       });
     }

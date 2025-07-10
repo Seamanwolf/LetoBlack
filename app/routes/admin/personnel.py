@@ -1,14 +1,15 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session, current_app
-from flask_login import current_user
+from flask_login import current_user, login_user
 from app.utils import create_db_connection, login_required
 import logging
 from datetime import datetime
 from app.routes.admin import admin_routes_bp
 from app.routes.auth import redirect_based_on_role
-import hashlib
 import os
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash
 import time
+from app.models.user import User, normalize_role
 
 # Настройка логирования
 logger = logging.getLogger(__name__)
@@ -32,11 +33,21 @@ console_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 logger.addHandler(console_handler)
 
+def has_admin_or_leader_role(user):
+    """Проверяет, имеет ли пользователь роль admin или leader"""
+    normalized_role = normalize_role(user.role)
+    return normalized_role in ['admin', 'leader']
+
+def has_admin_role(user):
+    """Проверяет, имеет ли пользователь роль admin"""
+    normalized_role = normalize_role(user.role)
+    return normalized_role == 'admin'
+
 @admin_routes_bp.route('/personnel')
 @login_required
 def personnel():
     logger.debug("Начало выполнения функции personnel")
-    if current_user.role != 'admin' and current_user.role != 'leader':
+    if current_user.role not in ['admin', 'leader']:
         logger.warning(f"Отказано в доступе пользователю {current_user.login} с ролью {current_user.role}")
         flash('У вас нет доступа к этой странице', 'error')
         return redirect_based_on_role(current_user)
@@ -69,6 +80,7 @@ def personnel():
                     u.Phone as phone,
                     u.corp_phone as corporate_phone,
                     u.role,
+                    u.role_id,
                     u.status,
                     u.rr,
                     u.site,
@@ -87,7 +99,7 @@ def personnel():
                 WHERE u.department_id = %s AND u.fire_date IS NULL
                 ORDER BY 
                     CASE 
-                        WHEN u.role = 'leader' THEN 1
+                        WHEN u.role = 'leader' OR u.role = '2' OR u.role_id = 2 THEN 1
                         WHEN u.role = 'deputy' THEN 2
                         WHEN u.position LIKE '%%руководитель%%' OR u.position LIKE '%%Руководитель%%' OR u.position LIKE '%%РОП%%' THEN 1
                         WHEN u.position LIKE '%%заместитель%%' OR u.position LIKE '%%Заместитель%%' OR u.position LIKE '%%зам%%' OR u.position LIKE '%%Зам%%' THEN 2
@@ -158,7 +170,7 @@ def get_employee_api():
     """Получение данных сотрудника по ID"""
     logger.debug("Начало выполнения функции get_employee_api")
     
-    if current_user.role != 'admin' and current_user.role != 'leader':
+    if current_user.role not in ['admin', 'leader']:
         logger.warning(f"Отказано в доступе пользователю {current_user.login} с ролью {current_user.role}")
         return jsonify({'success': False, 'message': 'Недостаточно прав для выполнения операции'})
 
@@ -248,7 +260,7 @@ def get_employee_login_api():
     """Получение логина сотрудника по ID"""
     logger.debug("Начало выполнения функции get_employee_login_api")
     
-    if current_user.role != 'admin' and current_user.role != 'leader':
+    if current_user.role not in ['admin', 'leader']:
         logger.warning(f"Отказано в доступе пользователю {current_user.login} с ролью {current_user.role}")
         return jsonify({'success': False, 'message': 'Недостаточно прав для выполнения операции'})
 
@@ -288,7 +300,7 @@ def update_employee_api():
     """Обновление данных сотрудника через API (JSON)"""
     logger.debug("Начало выполнения функции update_employee_api")
     
-    if current_user.role != 'admin' and current_user.role != 'leader':
+    if current_user.role not in ['admin', 'leader']:
         logger.warning(f"Отказано в доступе пользователю {current_user.login} с ролью {current_user.role}")
         return jsonify({'success': False, 'message': 'Недостаточно прав для выполнения операции'})
 
@@ -393,7 +405,7 @@ def block_employee_api():
     """Блокировка сотрудника через API"""
     logger.debug("Начало выполнения функции block_employee_api")
     
-    if current_user.role != 'admin' and current_user.role != 'leader':
+    if current_user.role not in ['admin', 'leader']:
         logger.warning(f"Отказано в доступе пользователю {current_user.login} с ролью {current_user.role}")
         return jsonify({'success': False, 'message': 'Недостаточно прав для выполнения операции'})
 
@@ -467,7 +479,7 @@ def fire_employee_api():
     """Увольнение сотрудника через API"""
     logger.debug("Начало выполнения функции fire_employee_api")
     
-    if current_user.role != 'admin' and current_user.role != 'leader':
+    if current_user.role not in ['admin', 'leader']:
         logger.warning(f"Отказано в доступе пользователю {current_user.login} с ролью {current_user.role}")
         return jsonify({'success': False, 'message': 'Недостаточно прав для выполнения операции'})
 
@@ -540,7 +552,7 @@ def unblock_employee_api():
     """Разблокировка сотрудника через API"""
     logger.debug("Начало выполнения функции unblock_employee_api")
     
-    if current_user.role != 'admin' and current_user.role != 'leader':
+    if current_user.role not in ['admin', 'leader']:
         logger.warning(f"Отказано в доступе пользователю {current_user.login} с ролью {current_user.role}")
         return jsonify({'success': False, 'message': 'Недостаточно прав для выполнения операции'})
 
@@ -611,9 +623,12 @@ def unblock_employee_api():
 @admin_routes_bp.route('/admin/api/get_available_phones', methods=['GET'])
 @login_required
 def get_available_phones_api():
-    """Получение доступных телефонных номеров для отдела"""
+    """Получение списка доступных корпоративных номеров"""
     logger.debug("Начало выполнения функции get_available_phones_api")
-    
+    if current_user.role not in ['admin', 'leader']:
+        logger.warning(f"Отказано в доступе пользователю {current_user.login} с ролью {current_user.role}")
+        return jsonify({'success': False, 'message': 'Недостаточно прав'})
+        
     try:
         department_id = request.args.get('department_id')
         current_employee_id = request.args.get('current_employee_id')  # ID текущего сотрудника
@@ -764,8 +779,8 @@ def change_employee_password_api():
             logger.warning(f"Сотрудник с ID={employee_id} не найден")
             return jsonify({'success': False, 'message': 'Сотрудник не найден'}), 404
         
-        # Хэшируем новый пароль
-        password_hash = hashlib.md5(new_password.encode()).hexdigest()
+        # Хэшируем новый пароль стандартным методом Flask (Werkzeug)
+        password_hash = generate_password_hash(new_password)
         
         # Обновляем пароль сотрудника
         cursor.execute("UPDATE User SET password = %s WHERE id = %s", (password_hash, employee_id))
@@ -816,14 +831,30 @@ def fired_employees():
         cursor.execute('SELECT id, name, display_order FROM Department ORDER BY display_order ASC, name ASC')
         departments = cursor.fetchall()
         
-        # Получаем список уволенных сотрудников
+        # Получаем список уволенных сотрудников с последним корпоративным номером
         cursor.execute("""
-            SELECT u.*, d.name as department_name, 
-                   DATEDIFF(u.fire_date, u.hire_date) as days_worked
+            SELECT 
+                u.*, 
+                d.name as department_name, 
+                DATEDIFF(u.fire_date, u.hire_date) as days_worked,
+                COALESCE(
+                    (SELECT pnh.new_number 
+                     FROM phone_numbers_history pnh 
+                     WHERE pnh.operator_id = u.id 
+                     ORDER BY pnh.changed_at DESC 
+                     LIMIT 1),
+                    '+79998887766'
+                ) as last_corp_number
             FROM User u
             LEFT JOIN Department d ON u.department_id = d.id
             WHERE u.status = 'fired' OR u.fire_date IS NOT NULL
-            ORDER BY u.fire_date DESC
+            ORDER BY 
+                CASE 
+                    WHEN u.role = 'leader' OR u.role = '2' OR u.role_id = 2 THEN 1
+                    WHEN u.role = 'deputy' THEN 2
+                    ELSE 3
+                END,
+                u.fire_date DESC
         """)
         fired_employees_list = cursor.fetchall()
         
@@ -838,6 +869,11 @@ def fired_employees():
                 employee['hire_date_formatted'] = employee['hire_date'].strftime('%d.%m.%Y')
             else:
                 employee['hire_date_formatted'] = ''
+                
+            if employee['birth_date']:
+                employee['birth_date_formatted'] = employee['birth_date'].strftime('%d.%m.%Y')
+            else:
+                employee['birth_date_formatted'] = ''
         
         return render_template('admin/fired_employees.html',
                               total_employees=stats['total_employees'],
@@ -855,62 +891,13 @@ def fired_employees():
         cursor.close()
         connection.close()
 
-@admin_routes_bp.route('/admin/rehire_employee', methods=['POST'])
-@login_required
-def rehire_employee():
-    """Восстановление уволенного сотрудника"""
-    if current_user.role != 'admin':
-        return jsonify({'success': False, 'message': 'У вас нет доступа к этой операции'})
-    
-    try:
-        data = request.json
-        employee_id = data.get('id')
-        
-        if not employee_id:
-            return jsonify({'success': False, 'message': 'ID сотрудника не указан'})
-        
-        connection = create_db_connection()
-        cursor = connection.cursor(dictionary=True)
-        
-        # Проверяем, что сотрудник существует и уволен
-        cursor.execute("SELECT id, full_name, status FROM User WHERE id = %s", (employee_id,))
-        employee = cursor.fetchone()
-        
-        if not employee:
-            return jsonify({'success': False, 'message': 'Сотрудник не найден'})
-        
-        # Обновляем запись сотрудника
-        cursor.execute("""
-            UPDATE User 
-            SET status = 'offline', 
-                fire_date = NULL 
-            WHERE id = %s
-        """, (employee_id,))
-        
-        connection.commit()
-        
-        return jsonify({
-            'success': True, 
-            'message': f"Сотрудник успешно восстановлен"
-        })
-    
-    except Exception as e:
-        logger.error(f"Ошибка при восстановлении сотрудника: {str(e)}")
-        return jsonify({'success': False, 'message': f'Ошибка при восстановлении сотрудника: {str(e)}'})
-    
-    finally:
-        if 'cursor' in locals():
-            cursor.close()
-        if 'connection' in locals():
-            connection.close()
-
 @admin_routes_bp.route('/api/update_department_order', methods=['POST'])
 @login_required
 def update_department_order_api():
     """Обновление порядка отделов через API"""
     logger.debug("Начало выполнения функции update_department_order_api")
     
-    if current_user.role != 'admin' and current_user.role != 'leader':
+    if current_user.role not in ['admin', 'leader']:
         logger.warning(f"Отказано в доступе пользователю {current_user.login} с ролью {current_user.role}")
         return jsonify({'success': False, 'message': 'Недостаточно прав для выполнения операции'})
 
@@ -998,7 +985,7 @@ def add_employee_api():
     """Добавление нового сотрудника через API"""
     logger.debug("Начало выполнения функции add_employee_api")
     
-    if current_user.role != 'admin' and current_user.role != 'leader':
+    if current_user.role not in ['admin', 'leader']:
         logger.warning(f"Отказано в доступе пользователю {current_user.login} с ролью {current_user.role}")
         return jsonify({'success': False, 'message': 'Недостаточно прав для выполнения операции'})
 
@@ -1060,7 +1047,7 @@ def add_employee_api():
             }), 400
         
         # Хешируем пароль перед сохранением
-        hashed_password = hashlib.md5(password.encode()).hexdigest()
+        hashed_password = generate_password_hash(password)
         
         # Создаем нового пользователя
         cursor.execute("""
@@ -1169,7 +1156,7 @@ def update_employee():
     logger.debug("=== Начало функции update_employee ===")
     logger.debug(f"Текущий пользователь: {current_user.login}, роль: {current_user.role}")
     
-    if current_user.role != 'admin' and current_user.role != 'leader':
+    if current_user.role not in ['admin', 'leader']:
         logger.warning(f"Отказано в доступе пользователю {current_user.login} с ролью {current_user.role}")
         return jsonify({'success': False, 'message': 'Недостаточно прав для выполнения операции'})
 
@@ -1415,7 +1402,7 @@ def employee_history(employee_id):
     """Получение истории изменений сотрудника через прямой ID в пути"""
     logger.debug(f"Запрос истории для сотрудника с ID={employee_id} через прямой путь")
     
-    if current_user.role != 'admin' and current_user.role != 'leader':
+    if current_user.role not in ['admin', 'leader']:
         logger.warning(f"Отказано в доступе пользователю {current_user.login} с ролью {current_user.role}")
         return jsonify({'success': False, 'message': 'Недостаточно прав для выполнения операции'})
 
@@ -1484,7 +1471,7 @@ def employee_history(employee_id):
 def phone_numbers():
     """Страница управления корпоративными номерами"""
     logger.debug("Начало выполнения функции phone_numbers")
-    if current_user.role != 'admin' and current_user.role != 'leader':
+    if current_user.role not in ['admin', 'leader']:
         logger.warning(f"Отказано в доступе пользователю {current_user.login} с ролью {current_user.role}")
         flash('У вас нет доступа к этой странице', 'error')
         return redirect_based_on_role(current_user)
@@ -1612,7 +1599,7 @@ def phone_numbers():
 def personnel_dashboard():
     """Страница дашборда персонала с чистыми стилями"""
     logger.debug("Начало выполнения функции personnel_dashboard")
-    if current_user.role != 'admin' and current_user.role != 'leader':
+    if current_user.role not in ['admin', 'leader']:
         logger.warning(f"Отказано в доступе пользователю {current_user.login} с ролью {current_user.role}")
         flash('У вас нет доступа к этой странице', 'error')
         return redirect_based_on_role(current_user)
@@ -1723,19 +1710,13 @@ def test_blueprint_route():
 @admin_routes_bp.route('/admin/api/update_department_positions', methods=['POST'])
 @login_required
 def update_department_positions_api():
-    """Обновление порядка отделов через API с помощью drag-and-drop"""
-    # Расширенное логирование для отладки ошибки 405
-    logger.critical("=================== НАЧАЛО ОБРАБОТКИ ЗАПРОСА ===================")
-    logger.critical(f"ПУТЬ URL: {request.path}")
-    logger.critical(f"ПОЛНЫЙ URL: {request.url}")
-    logger.critical(f"МЕТОД ЗАПРОСА: {request.method}")
-    logger.critical(f"ЗАГОЛОВКИ: {dict(request.headers)}")
-    logger.critical(f"ДАННЫЕ JSON: {request.get_data(as_text=True)}")
-    logger.critical(f"BLUEPRINT: {request.blueprint}")
-    logger.critical(f"ENDPOINT: {request.endpoint}")
+    """Обновление должностей в отделе"""
+    # ... (логика)
+    logger.critical("=================== НАЧАЛО ДАННЫХ ЗАПРОСА ===================")
+    # ... (логика)
     logger.critical("=================== КОНЕЦ ДАННЫХ ЗАПРОСА ===================")
     
-    if current_user.role != 'admin' and current_user.role != 'leader':
+    if current_user.role not in ['admin', 'leader']:
         logger.warning(f"Отказано в доступе пользователю {current_user.login} с ролью {current_user.role}")
         return jsonify({'success': False, 'message': 'Недостаточно прав для выполнения операции'})
 
@@ -1849,7 +1830,7 @@ def update_department_positions_api():
 def delete_number_api():
     """Удаление номера"""
     logger.debug("Начало выполнения функции delete_number_api")
-    if current_user.role != 'admin' and current_user.role != 'leader':
+    if current_user.role not in ['admin', 'leader']:
         logger.warning(f"Отказано в доступе пользователю {current_user.login} с ролью {current_user.role}")
         return jsonify({'success': False, 'message': 'Недостаточно прав для выполнения операции'})
     data = request.get_json()
@@ -1893,7 +1874,7 @@ def delete_number_api():
 def move_number_api():
     """Перемещение номера между отделами"""
     logger.debug("Начало выполнения функции move_number_api")
-    if current_user.role != 'admin' and current_user.role != 'leader':
+    if current_user.role not in ['admin', 'leader']:
         logger.warning(f"Отказано в доступе пользователю {current_user.login} с ролью {current_user.role}")
         return jsonify({'success': False, 'message': 'Недостаточно прав для выполнения операции'})
     data = request.get_json()
@@ -1944,7 +1925,7 @@ def move_number_api():
 @login_required
 def get_free_numbers_api():
     """Получение списка свободных номеров"""
-    if current_user.role != 'admin' and current_user.role != 'leader':
+    if current_user.role not in ['admin', 'leader']:
         return jsonify({'success': False, 'message': 'Недостаточно прав'})
     
     try:
@@ -2076,6 +2057,7 @@ def get_roles_api():
         if 'conn' in locals():
             conn.close()
 
+@admin_routes_bp.route('/admin/impersonate/<int:employee_id>')
 @admin_routes_bp.route('/impersonate/<int:employee_id>')
 @login_required
 def impersonate_employee(employee_id):
@@ -2104,21 +2086,44 @@ def impersonate_employee(employee_id):
             flash('Сотрудник не найден или уволен', 'error')
             return redirect(url_for('admin_routes_unique.personnel'))
         
-        # Сохраняем данные администратора в сессии
+        # Сохраняем данные администратора для возврата
         session['admin_user_id'] = current_user.id
-        session['admin_user_login'] = current_user.login
-        session['admin_user_role'] = current_user.role
-        
-        # Устанавливаем данные сотрудника в сессии
-        session['user_id'] = employee['id']
-        session['user_login'] = employee['login']
-        session['user_role'] = employee['role']
-        
-        logger.info(f"Администратор {current_user.login} вошел под пользователем {employee['login']} ({employee['full_name']})")
-        flash(f'Вы вошли как {employee["full_name"]}', 'success')
-        
-        # Перенаправляем на главную страницу
-        return redirect(url_for('main.index'))
+        session['admin_full_name'] = current_user.full_name
+
+        # Создаём объект User для сотрудника
+        normalized_role = normalize_role(employee['role'])
+        impersonated_user = User(
+            id=employee['id'],
+            login=employee['login'],
+            password='',  # пароль не нужен для login_user
+            full_name=employee['full_name'],
+            role=normalized_role,
+            department=employee.get('department_id')
+        )
+        # Вручную устанавливаем "сырые" данные о роли для свойства roles
+        impersonated_user._roles = [impersonated_user.create_role_object(normalized_role)]
+
+        # Логинимся как сотрудник
+        login_user(impersonated_user, force=True)
+
+        # Сохраняем данные в сессии (как при обычном логине)
+        session['username'] = impersonated_user.login
+        session['id'] = impersonated_user.id
+        session['role'] = impersonated_user.role
+        session['full_name'] = impersonated_user.full_name
+        session['department'] = impersonated_user.department
+        session.permanent = True
+
+        logger.info(f"Администратор {current_user.login} вошел под пользователем {impersonated_user.login} ({impersonated_user.full_name})")
+        flash(f'Вы вошли как {impersonated_user.full_name}', 'success')
+
+        # Перенаправляем в зависимости от роли сотрудника
+        if impersonated_user.role == 'user':
+            return redirect(url_for('broker.broker_dashboard'))
+        elif impersonated_user.role == 'admin':
+            return redirect(url_for('admin_routes_unique.personnel'))
+        else:
+            return redirect(url_for('main.index'))
         
     except Exception as e:
         logger.error(f"Ошибка при входе под пользователем: {str(e)}")
@@ -2130,6 +2135,7 @@ def impersonate_employee(employee_id):
         if 'conn' in locals():
             conn.close()
 
+@admin_routes_bp.route('/admin/stop_impersonation')
 @admin_routes_bp.route('/stop_impersonation')
 @login_required
 def stop_impersonation():
@@ -2141,19 +2147,45 @@ def stop_impersonation():
         return redirect(url_for('main.index'))
     
     try:
-        # Восстанавливаем данные администратора
-        session['user_id'] = session['admin_user_id']
-        session['user_login'] = session['admin_user_login']
-        session['user_role'] = session['admin_user_role']
-        
-        # Удаляем данные администратора из сессии
+        admin_user_id = session.get('admin_user_id')
+        if not admin_user_id:
+            flash('Сессионные данные администратора не найдены', 'error')
+            return redirect(url_for('main.index'))
+
+        conn = create_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT id, login, full_name, role, department_id FROM User WHERE id=%s", (admin_user_id,))
+        admin_data = cursor.fetchone()
+        if not admin_data:
+            flash('Администратор не найден', 'error')
+            return redirect(url_for('main.index'))
+
+        admin_user = User(
+            id=admin_data['id'],
+            login=admin_data['login'],
+            password='',
+            full_name=admin_data['full_name'],
+            role=admin_data['role'],
+            department=admin_data.get('department_id')
+        )
+
+        login_user(admin_user, force=True)
+
+        # Восстанавливаем сессию администратора
+        session['username'] = admin_user.login
+        session['id'] = admin_user.id
+        session['role'] = admin_user.role
+        session['full_name'] = admin_user.full_name
+        session['department'] = admin_user.department
+        session.permanent = True
+
         session.pop('admin_user_id', None)
-        session.pop('admin_user_login', None)
-        session.pop('admin_user_role', None)
-        
+        session.pop('admin_full_name', None)
+
         logger.info("Impersonation остановлен, возврат к администратору")
         flash('Вы вернулись к своему аккаунту', 'success')
-        
+
+        # Возвращаемся к администратору
         return redirect(url_for('admin_routes_unique.personnel'))
         
     except Exception as e:
@@ -2265,7 +2297,7 @@ def move_employee_api():
     """Перемещение сотрудника в другой отдел"""
     logger.debug("Начало выполнения функции move_employee_api")
     
-    if current_user.role != 'admin' and current_user.role != 'leader':
+    if current_user.role not in ['admin', 'leader']:
         logger.warning(f"Отказано в доступе пользователю {current_user.login} с ролью {current_user.role}")
         return jsonify({'success': False, 'message': 'Недостаточно прав для выполнения операции'})
 
@@ -2315,6 +2347,182 @@ def move_employee_api():
         if 'conn' in locals():
             conn.close()
 
-# ==========================================================================
-# НОВЫЕ МАРШРУТЫ ДЛЯ СТРАНИЦ С ЧИСТЫМИ СТИЛЯМИ
-# ==========================================================================
+@admin_routes_bp.route('/api/get_fired_employee', methods=['GET'])
+@admin_routes_bp.route('/admin/api/get_fired_employee', methods=['GET'])
+@login_required
+def get_fired_employee_api():
+    """Получение данных уволенного сотрудника по ID"""
+    logger.debug("Начало выполнения функции get_fired_employee_api")
+    
+    if current_user.role not in ['admin', 'leader']:
+        logger.warning(f"Отказано в доступе пользователю {current_user.login} с ролью {current_user.role}")
+        return jsonify({'success': False, 'message': 'Недостаточно прав для выполнения операции'})
+
+    try:
+        # Получаем ID сотрудника из запроса
+        employee_id = request.args.get('id')
+        if not employee_id:
+            logger.warning("ID сотрудника не указан в запросе")
+            return jsonify({'success': False, 'message': 'ID сотрудника не указан'}), 400
+            
+        conn = create_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        # Получаем данные уволенного сотрудника с дополнительными полями
+        query = """
+            SELECT 
+                u.id, u.full_name, u.login, u.Phone,
+                u.department_id, u.role, u.role_id, u.hire_date, u.fire_date,
+                u.fired, u.personal_email, u.pc_login, u.pc_password,
+                u.birth_date, u.position, u.office, u.corporate_email,
+                u.corp_phone, u.documents, u.rr, u.site, u.crm_id,
+                u.notes, u.status, u.last_active, u.crm_login, u.crm_password,
+                d.name as department_name,
+                ep.photo_url,
+                DATEDIFF(u.fire_date, u.hire_date) as days_worked,
+                COALESCE(
+                    (SELECT pnh.new_number 
+                     FROM phone_numbers_history pnh 
+                     WHERE pnh.operator_id = u.id 
+                     ORDER BY pnh.changed_at DESC 
+                     LIMIT 1),
+                    '+79998887766'
+                ) as last_corp_number
+            FROM User u
+            LEFT JOIN Department d ON u.department_id = d.id
+            LEFT JOIN EmployeePhotos ep ON u.id = ep.employee_id
+            WHERE u.id = %s AND (u.status = 'fired' OR u.fire_date IS NOT NULL)
+        """
+        logger.debug(f"SQL запрос для получения данных уволенного сотрудника: {query}")
+        cursor.execute(query, (employee_id,))
+        employee = cursor.fetchone()
+
+        if not employee:
+            logger.warning(f"Уволенный сотрудник с ID={employee_id} не найден")
+            return jsonify({'success': False, 'message': 'Уволенный сотрудник не найден'}), 404
+            
+        # Логируем полученные данные
+        logger.debug(f"Полученные данные уволенного сотрудника: {employee}")
+
+        # Преобразуем даты в строковый формат для JSON
+        if employee.get('hire_date'):
+            hire_date_obj = employee['hire_date']
+            employee['hire_date'] = hire_date_obj.strftime('%Y-%m-%d')
+            employee['hire_date_formatted'] = hire_date_obj.strftime('%d.%m.%Y')
+        if employee.get('fire_date'):
+            fire_date_obj = employee['fire_date']
+            employee['fire_date'] = fire_date_obj.strftime('%Y-%m-%d')
+            employee['fire_date_formatted'] = fire_date_obj.strftime('%d.%m.%Y')
+        if employee.get('birth_date'):
+            birth_date_obj = employee['birth_date']
+            employee['birth_date_formatted'] = birth_date_obj.strftime('%d.%m.%Y')
+        
+        # Формируем полный URL для фотографии
+        if employee.get('photo_url'):
+            # Если путь уже содержит /static/, используем его как есть
+            if employee['photo_url'].startswith('/static/'):
+                employee['photo_url'] = employee['photo_url']
+            else:
+                # Иначе формируем полный путь
+                employee['photo_url'] = f"/static/uploads/employee_photos/{employee['photo_url']}"
+        else:
+            # Если фото нет, устанавливаем дефолтное
+            employee['photo_url'] = "/static/img/default-avatar.svg"
+        
+        # Преобразуем статус для отображения
+        if employee.get('status'):
+            status_display_mapping = {
+                'online': 'Онлайн',
+                'offline': 'Офлайн',
+                'active': 'Активен',
+                'blocked': 'Заблокирован',
+                'fired': 'Уволен'
+            }
+            employee['status_display'] = status_display_mapping.get(employee['status'], employee['status'])
+        else:
+            employee['status_display'] = 'Уволен'
+            
+        logger.info(f"Данные уволенного сотрудника с ID={employee_id} успешно получены")
+        return jsonify({'success': True, 'employee': employee})
+        
+    except Exception as e:
+        logger.error(f"Ошибка при получении данных уволенного сотрудника: {str(e)}")
+        return jsonify({'success': False, 'message': f'Ошибка при получении данных: {str(e)}'}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
+
+@admin_routes_bp.route('/api/dashboard_data', methods=['GET'])
+@admin_routes_bp.route('/admin/api/dashboard_data', methods=['GET'])
+@login_required
+def dashboard_data_api():
+    """Возвращает данные для дашборда персонала в зависимости от выбранного периода (week, month, year)"""
+    logger.debug("Начало выполнения функции dashboard_data_api")
+    if current_user.role not in ['admin', 'leader']:
+        return jsonify({'success': False, 'message': 'Недостаточно прав'}), 403
+
+    try:
+        period = request.args.get('period', 'week')
+        # Определяем количество дней для периода
+        days_map = {
+            'week': 7,
+            'month': 30,
+            'year': 365
+        }
+        days = days_map.get(period, 30)
+
+        conn = create_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Динамика численности персонала (наймы за период)
+        cursor.execute(
+            """
+            SELECT DATE(hire_date) as date, COUNT(*) as count
+            FROM User
+            WHERE hire_date >= DATE_SUB(CURDATE(), INTERVAL %s DAY)
+              AND fire_date IS NULL
+            GROUP BY DATE(hire_date)
+            ORDER BY date
+            """,
+            (days,)
+        )
+        staff_dynamics = cursor.fetchall()
+        dates = []
+        staff_counts = []
+        for item in staff_dynamics:
+            if item['date']:
+                dates.append(item['date'].strftime('%d.%m'))
+                staff_counts.append(item['count'])
+
+        # Распределение по отделам (активные сотрудники)
+        cursor.execute(
+            """
+            SELECT d.name, COUNT(u.id) as count
+            FROM Department d
+            LEFT JOIN User u ON d.id = u.department_id AND u.fire_date IS NULL
+            GROUP BY d.id, d.name
+            ORDER BY count DESC
+            """
+        )
+        department_distribution = cursor.fetchall()
+        department_names = [d['name'] for d in department_distribution]
+        department_counts = [d['count'] for d in department_distribution]
+
+        return jsonify({
+            'success': True,
+            'dates': dates,
+            'staff_counts': staff_counts,
+            'department_names': department_names,
+            'department_counts': department_counts
+        })
+
+    except Exception as e:
+        logger.error(f"Ошибка в dashboard_data_api: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()

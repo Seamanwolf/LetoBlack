@@ -4,6 +4,46 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/personnel_clean.css') }}">
+<style>
+/* Счетчик сотрудников */
+.employees-counter {
+    margin-top: 2rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: var(--border-radius);
+    text-align: center;
+    border: 1px solid #e9ecef;
+}
+
+.counter-info {
+    font-size: 1.1rem;
+    color: #495057;
+    font-weight: 500;
+}
+
+.counter-info span {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+#filteredCount {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-left: 0.5rem;
+}
+
+/* Адаптивность для счетчика */
+@media (max-width: 768px) {
+    .employees-counter {
+        margin-top: 1rem;
+        padding: 0.75rem;
+    }
+    
+    .counter-info {
+        font-size: 1rem;
+    }
+}
+</style>
 {% endblock %}
 
 {% block content %}
@@ -128,10 +168,10 @@
                     <tbody>
                         {% if department.employees %}
                         {% for employee in department.employees %}
-                        <tr class="{% if employee.role == 'leader' %}manager-row{% elif employee.role == 'deputy' %}deputy-row{% endif %}" data-employee="{{ employee.full_name|lower }}">
+                        <tr class="{% if employee.role == 'leader' or employee.role == '2' or employee.role_id == 2 %}manager-row{% elif employee.role == 'deputy' %}deputy-row{% endif %}" data-employee="{{ employee.full_name|lower }}">
                             <td>{{ loop.index }}</td>
                             <td>
-                                {% if employee.role == 'leader' %}
+                                {% if employee.role == 'leader' or employee.role == '2' or employee.role_id == 2 %}
                                     <span class="text-danger">
                                         <i class="fas fa-crown" title="Руководитель"></i>
                                     </span>
@@ -230,6 +270,14 @@
             </div>
         </div>
         {% endfor %}
+    </div>
+    
+    <!-- Счетчик сотрудников -->
+    <div class="employees-counter">
+        <div class="counter-info">
+            <span id="employeesCount">{{ active_employees }}</span> активных сотрудников
+            <span id="filteredCount" style="display: none;"></span>
+        </div>
     </div>
 </div>
 
@@ -673,9 +721,8 @@
                     <label>
                         <input type="checkbox" name="department_filter" value="{{ department.id }}"> {{ department.name }}
                     </label>
-                    {% endfor %}
-                </div>
-            </div>
+                            {% endfor %}
+    </div>
             
             <div class="form-group">
                 <label class="form-label">Фильтр по статусу</label>
@@ -995,8 +1042,9 @@ document.getElementById('searchInput').addEventListener('input', function() {
         }
     });
     
-    // Обновляем счетчики отделов
+    // Обновляем счетчики отделов и общий счетчик
     updateDepartmentCounts();
+    updateEmployeesCounter();
 });
 
 // Фильтрация
@@ -1020,6 +1068,10 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
                     employee.style.display = 'none';
                 }
             });
+            
+            // Обновляем счетчики отделов и общий счетчик
+            updateDepartmentCounts();
+            updateEmployeesCounter();
         }
     });
 });
@@ -1044,11 +1096,17 @@ document.querySelectorAll('.department-toggle').forEach(toggle => {
 
 // Модальные окна
 function openModal(modalId) {
-    document.getElementById(modalId).classList.add('show');
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+    modal.classList.add('show');
+    modal.style.display = 'block'; // делаем видимым
 }
 
 function closeModal(modalId) {
-    document.getElementById(modalId).classList.remove('show');
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+    modal.classList.remove('show');
+    modal.style.display = 'none'; // скрываем
 }
 
 // Обработчики кнопок действий
@@ -1457,7 +1515,7 @@ function showBlockEmployeeFromModal() {
         document.getElementById('unblockReason').value = '';
         
         openModal('unblockEmployeeModal');
-    } else {
+                } else {
         // Показываем модальное окно блокировки
         document.getElementById('blockEmployeeModal').dataset.employeeId = employeeId;
         document.getElementById('blockEmployeeName').textContent = employeeName;
@@ -1956,6 +2014,7 @@ function applyFilters() {
     
     // Обновляем счетчики отделов
     updateDepartmentCounts();
+    updateEmployeesCounter();
     
     closeModal('filtersModal');
 }
@@ -1980,6 +2039,7 @@ function resetFilters() {
     
     // Обновляем счетчики отделов
     updateDepartmentCounts();
+    updateEmployeesCounter();
     
     closeModal('filtersModal');
 }
@@ -2096,12 +2156,44 @@ function applyAccessRestrictions() {
     }
 }
 
+// Функция обновления счетчика сотрудников
+function updateEmployeesCounter() {
+    // Считаем только видимых сотрудников
+    let totalVisible = 0;
+    document.querySelectorAll('.department-card').forEach(dept => {
+        if (dept.style.display === 'none') return;
+        const visibleEmployees = dept.querySelectorAll('tbody tr:not([style*="display: none"])');
+        visibleEmployees.forEach(row => {
+            if (!row.textContent.includes('Сотрудники не найдены')) {
+                totalVisible++;
+            }
+        });
+    });
+    
+    const totalCount = parseInt('{{ active_employees }}');
+    const countElement = document.getElementById('employeesCount');
+    const filteredElement = document.getElementById('filteredCount');
+    
+    if (countElement && filteredElement) {
+        if (totalVisible === totalCount) {
+            countElement.textContent = totalCount;
+            filteredElement.style.display = 'none';
+        } else {
+            countElement.textContent = totalVisible;
+            filteredElement.textContent = `из ${totalCount}`;
+            filteredElement.style.display = 'inline';
+        }
+    }
+}
+
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
     loadPositions();
     loadRoles();
     applyAccessRestrictions();
+    updateEmployeesCounter(); // Инициализируем счетчик при загрузке
 });
 
+// ... существующий код ...
 </script>
 {% endblock %} 

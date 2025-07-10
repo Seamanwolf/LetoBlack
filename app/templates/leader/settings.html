@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+
+{% block title %}Настройки{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/personnel_clean.css') }}">
+<style>
+.settings-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.settings-section {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-light);
+}
+
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #eee;
+}
+
+.settings-header h3 {
+    margin: 0;
+    color: var(--text-color);
+}
+
+.btn-save-settings {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.6rem 1.5rem;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: var(--transition);
+    font-weight: 500;
+}
+
+.btn-save-settings:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+}
+
+.btn-save-settings:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.fields-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.field-group {
+    background: #f8f9fa;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+}
+
+.field-group h4 {
+    margin: 0 0 1rem 0;
+    color: var(--text-color);
+    font-size: 1.1rem;
+}
+
+.field-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.field-toggle:last-child {
+    border-bottom: none;
+}
+
+.field-toggle label {
+    margin: 0;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.field-mandatory {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.field-optional {
+    color: #6c757d;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.4s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: var(--primary-color);
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+input:disabled + .slider {
+    background-color: #ddd;
+    cursor: not-allowed;
+}
+
+.alert {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: var(--border-radius);
+    border: 1px solid transparent;
+}
+
+.alert-success {
+    color: #155724;
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+}
+
+.alert-danger {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+}
+
+.alert-info {
+    color: #0c5460;
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+}
+
+.description {
+    color: var(--muted-color);
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+}
+
+.mandatory-note {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    color: #856404;
+}
+
+.mandatory-note i {
+    color: #f39c12;
+    margin-right: 0.5rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+    <h1><i class="fas fa-cog me-2"></i>Настройки</h1>
+    
+    <!-- Настройки отображения полей -->
+    <div class="settings-section">
+        <div class="settings-header">
+            <h3><i class="fas fa-eye me-2"></i>Настройки отображения полей</h3>
+            <button type="button" class="btn-save-settings" onclick="saveFieldSettings()">
+                <i class="fas fa-save me-1"></i>Сохранить
+            </button>
+        </div>
+        
+        <div class="description">
+            Настройте, какие поля будут отображаться в таблице отчетов. Обязательные поля всегда видны,
+            а дополнительные поля можно скрывать или показывать по необходимости.
+        </div>
+        
+        <div class="mandatory-note">
+            <i class="fas fa-info-circle"></i>
+            <strong>Важно:</strong> Обязательные поля нельзя скрыть, так как они являются ключевыми показателями работы.
+        </div>
+        
+        <div class="fields-grid">
+            <div class="field-group">
+                <h4><i class="fas fa-star text-danger me-2"></i>Обязательные поля</h4>
+                {% for field in mandatory_fields %}
+                <div class="field-toggle">
+                    <label class="field-mandatory">{{ field_names[field] }}</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" data-field="{{ field }}" checked disabled>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="field-group">
+                <h4><i class="fas fa-list text-muted me-2"></i>Дополнительные поля</h4>
+                {% for field in optional_fields %}
+                <div class="field-toggle">
+                    <label class="field-optional">{{ field_names[field] }}</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" class="field-checkbox" 
+                               data-field="{{ field }}" 
+                               {% if not hidden_fields.get(field, False) %}checked{% endif %}>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Дополнительные настройки -->
+    <div class="settings-section">
+        <div class="settings-header">
+            <h3><i class="fas fa-sliders-h me-2"></i>Дополнительные настройки</h3>
+        </div>
+        
+        <div class="description">
+            Дополнительные настройки для персонализации интерфейса.
+        </div>
+        
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            Дополнительные настройки будут добавлены в следующих обновлениях.
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function saveFieldSettings() {
+    const button = document.querySelector('.btn-save-settings');
+    const originalText = button.innerHTML;
+    
+    // Показываем индикатор загрузки
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Сохранение...';
+    
+    const settings = {};
+    
+    // Собираем настройки полей
+    document.querySelectorAll('.field-checkbox').forEach(checkbox => {
+        const field = checkbox.dataset.field;
+        settings[field] = !checkbox.checked; // Инвертируем, т.к. сохраняем скрытые поля
+    });
+    
+    // Отправляем на сервер
+    fetch('{{ url_for("leader.manage_fields") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: Object.keys(settings).map(key => 
+            `${key}=${settings[key] ? 'off' : 'on'}`
+        ).join('&')
+    })
+    .then(response => {
+        if (response.ok) {
+            showNotification('Настройки полей успешно сохранены', 'success');
+        } else {
+            showNotification('Ошибка при сохранении настроек', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Ошибка при сохранении настроек', 'danger');
+    })
+    .finally(() => {
+        // Восстанавливаем кнопку
+        button.disabled = false;
+        button.innerHTML = originalText;
+    });
+}
+
+function showNotification(message, type) {
+    // Удаляем предыдущие уведомления
+    const existingAlerts = document.querySelectorAll('.alert');
+    existingAlerts.forEach(alert => {
+        if (alert.classList.contains('alert-success') || alert.classList.contains('alert-danger')) {
+            alert.remove();
+        }
+    });
+    
+    // Создаем новое уведомление
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const alertHtml = `
+        <div class="alert ${alertClass}" role="alert">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+            ${message}
+        </div>
+    `;
+    
+    // Добавляем уведомление в начало контейнера
+    const container = document.querySelector('.settings-container');
+    container.insertAdjacentHTML('afterbegin', alertHtml);
+    
+    // Автоматически скрываем через 5 секунд
+    setTimeout(() => {
+        const alert = container.querySelector('.alert');
+        if (alert && (alert.classList.contains('alert-success') || alert.classList.contains('alert-danger'))) {
+            alert.remove();
+        }
+    }, 5000);
+}
+
+// Добавляем обработчики для переключателей
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.field-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            // Можно добавить дополнительную логику при изменении настроек
+        });
+    });
+});
+</script>
+{% endblock %} 

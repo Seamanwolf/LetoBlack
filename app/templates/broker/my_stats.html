@@ -1,0 +1,321 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Моя статистика{% endblock %}
+
+{% block content %}
+<h2>Моя статистика</h2>
+
+<!-- Быстрые кнопки периода -->
+<div class="btn-group mb-4" role="group">
+  <button class="btn btn-outline-primary period-btn" data-period="week">Неделя</button>
+  <button class="btn btn-outline-primary period-btn" data-period="month">Месяц</button>
+  <button class="btn btn-outline-primary period-btn" data-period="year">Год</button>
+  <button class="btn btn-outline-secondary" id="customRangeBtn">Произвольный</button>
+</div>
+
+<!-- Таблица -->
+<div class="table-responsive">
+  <table class="table table-bordered table-hover custom-table" id="statsTable">
+    <thead>
+      <tr>
+        <th>Дата</th>
+        {% for field in mandatory_fields %}
+        <th>{{ field_names.get(field, field) }}</th>
+        {% endfor %}
+        {% for field in optional_fields %}
+        {% if not hidden_fields.get(field, False) %}
+        <th data-field="{{ field }}">{{ field_names.get(field, field) }}</th>
+        {% endif %}
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody id="statsBody">
+      {# первоначальный рендер, потом заменится JS #}
+      {% for row in rows %}
+      <tr>
+        <td>{{ row.date.strftime('%d.%m.%Y') if row.date else '' }}</td>
+        {% for field in mandatory_fields %}
+        <td>{{ row.get(field, 0) or 0 }}</td>
+        {% endfor %}
+        {% for field in optional_fields %}
+        {% if not hidden_fields.get(field, False) %}
+        <td>{{ row.get(field, 0) or 0 }}</td>
+        {% endif %}
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Диаграммы -->
+<div class="row mt-5">
+  <div class="col-md-4">
+    <div class="chart-card">
+      <h4 class="chart-title">Распределение показателей</h4>
+      <canvas id="pieDeals"></canvas>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="chart-card">
+      <h4 class="chart-title">Типы звонков</h4>
+      <canvas id="pieCalls"></canvas>
+    </div>
+  </div>
+  <div class="col-md-12 mt-4">
+    <div class="chart-card">
+      <h4 class="chart-title">Динамика сделок</h4>
+      <canvas id="lineChart"></canvas>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Стили для таблицы */
+.custom-table {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+    margin-bottom: 2rem;
+    border: 1px solid #e0e0e0;
+}
+
+.custom-table thead th {
+    background: #f8f9fa;
+    color: #2c3e50;
+    font-weight: 600;
+    padding: 1rem;
+    border-bottom: 2px solid #e0e0e0;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+}
+
+.custom-table tbody tr:hover {
+    background-color: #f8f9fa;
+    transition: all 0.2s ease;
+}
+
+.custom-table td {
+    padding: 1rem;
+    border: 1px solid #e0e0e0;
+    color: #333;
+}
+
+.custom-table tr:last-child td:first-child {
+    border-bottom-left-radius: 8px;
+}
+
+.custom-table tr:last-child td:last-child {
+    border-bottom-right-radius: 8px;
+}
+
+.custom-table thead th:first-child {
+    border-top-left-radius: 8px;
+    width: 15%;
+}
+
+.custom-table thead th:last-child {
+    border-top-right-radius: 8px;
+}
+
+/* Стили для графиков */
+.chart-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    margin-bottom: 1.5rem;
+}
+
+.chart-title {
+    color: #2c3e50;
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    font-weight: 500;
+}
+
+/* Стили для кнопок периода */
+.btn-group {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.btn-group .btn {
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-group .btn:hover {
+    transform: translateY(-1px);
+}
+
+.btn-group .btn.active {
+    background-color: #3498db;
+    color: white;
+}
+
+.btn-outline-primary {
+    color: #3498db;
+    border-color: #3498db;
+}
+
+.btn-outline-primary:hover {
+    background-color: #3498db;
+    color: white;
+}
+
+.btn-outline-secondary {
+    color: #6c757d;
+    border-color: #6c757d;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #6c757d;
+    color: white;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const fieldNames = JSON.parse('{{ field_names|tojson }}');
+const mandatory = {{ mandatory_fields|tojson }};
+const optional = {{ optional_fields|tojson }};
+const hidden = {{ hidden_fields|tojson }};
+
+let lineChart, pieDeals, pieCalls;
+
+function renderCharts(data){
+  const labels = data.rows.map(r=>r.date);
+  const dealsArr = data.rows.map(r=>parseInt(r.deals||0));
+  const callsArr = data.rows.map(r=>parseInt(r.cold_calls||0));
+
+  // Line chart (сделки)
+  if(lineChart) lineChart.destroy();
+  lineChart = new Chart(document.getElementById('lineChart'),{
+    type:'line',
+    data:{ 
+      labels:labels, 
+      datasets:[{ 
+        label:'Сделки', 
+        data:dealsArr, 
+        borderColor:'#3498db',
+        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+        tension:0.3, 
+        fill:true 
+      }] 
+    },
+    options:{ 
+      responsive:true,
+      plugins: {
+        legend: {
+          position: 'top',
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+
+  // Pie chart сделки vs брони vs показы
+  if(pieDeals) pieDeals.destroy();
+  pieDeals = new Chart(document.getElementById('pieDeals'),{
+    type:'pie',
+    data:{
+      labels:['Сделки','Брони','Показы офлайн'],
+      datasets:[{ 
+        data:[data.totals.deals||0,data.totals.reservations||0,data.totals.offline_showings||0], 
+        backgroundColor:['#27ae60','#f1c40f','#3498db'] 
+      }]
+    },
+    options:{
+      plugins:{
+        legend:{
+          position:'bottom',
+          labels: {
+            padding: 20
+          }
+        }
+      }
+    }
+  });
+
+  // Pie chart звонки
+  if(pieCalls) pieCalls.destroy();
+  pieCalls = new Chart(document.getElementById('pieCalls'),{
+    type:'doughnut',
+    data:{ 
+      labels:['Холодные','Входящие','Стационар'], 
+      datasets:[{ 
+        data:[data.totals.cold_calls||0,data.totals.incoming_cold_calls||0,data.totals.stationary_calls||0], 
+        backgroundColor:['#e74c3c','#9b59b6','#e67e22'] 
+      }] 
+    },
+    options:{
+      plugins:{
+        legend:{
+          position:'bottom',
+          labels: {
+            padding: 20
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderTable(rows){
+  const tbody = document.getElementById('statsBody');
+  tbody.innerHTML = rows.map(r=>{
+    let t=`<tr><td>${r.date}</td>`;
+    mandatory.forEach(f=>{ t+=`<td>${r[f]||0}</td>`; });
+    optional.forEach(f=>{ if(!hidden[f]) t+=`<td>${r[f]||0}</td>`; });
+    t+='</tr>';return t;}).join('');
+}
+
+function loadPeriod(period, start=null, end=null){
+  let url = `/broker/stats_data?period=${period}`;
+  if(period==='custom') url+=`&start=${start}&end=${end}`;
+  
+  // Добавляем индикатор загрузки
+  const table = document.getElementById('statsTable');
+  table.style.opacity = '0.5';
+  
+  $.getJSON(url, function(resp){ 
+    if(resp.success){ 
+      renderTable(resp.rows); 
+      renderCharts(resp); 
+    }
+    table.style.opacity = '1';
+  });
+}
+
+$(function(){
+  $('.period-btn').click(function(){
+    $('.period-btn').removeClass('active');
+    $(this).addClass('active');
+    loadPeriod($(this).data('period'));
+  });
+
+  // Активируем кнопку "Месяц" по умолчанию
+  $('.period-btn[data-period="month"]').addClass('active');
+  
+  // initial load month default
+  loadPeriod('month');
+});
+</script>
+{% endblock %} 

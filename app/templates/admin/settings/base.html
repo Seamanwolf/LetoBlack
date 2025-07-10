@@ -3,100 +3,24 @@
 {% block title %}Настройки системы{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
-<style>
-    .btn-sm {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.75rem;
-    }
-    .btn-xs {
-        padding: 0.2rem 0.4rem;
-        font-size: 0.7rem;
-    }
-    .btn i {
-        font-size: 0.8rem;
-        margin-right: 3px;
-    }
-    
-    /* Стили для input[type="file"] */
-    .custom-file-input {
-        position: relative;
-        display: inline-block;
-        width: 100%;
-    }
-    
-    .custom-file-input input[type="file"] {
-        position: absolute;
-        left: 0;
-        top: 0;
-        opacity: 0;
-        width: 100%;
-        height: 100%;
-        cursor: pointer;
-    }
-    
-    .custom-file-label {
-        display: block;
-        padding: 0.375rem 0.75rem;
-        font-size: 0.875rem;
-        font-weight: 400;
-        line-height: 1.5;
-        color: #495057;
-        background-color: #fff;
-        border: 1px solid #ced4da;
-        border-radius: 0.25rem;
-        text-align: center;
-        cursor: pointer;
-    }
-    
-    .custom-file-label:hover {
-        background-color: #f8f9fa;
-    }
-    
-    .custom-file-label i {
-        margin-right: 5px;
-    }
-
-    /* Стили для табов настроек */
-    .settings-content {
-        background-color: #fff;
-        border-radius: 0.25rem;
-        padding: 20px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    
-    .card {
-        border: 1px solid rgba(0,0,0,.125);
-        border-radius: 0.25rem;
-        margin-bottom: 1rem;
-    }
-    
-    .card-header {
-        background-color: rgba(0,0,0,.03);
-        border-bottom: 1px solid rgba(0,0,0,.125);
-        padding: 0.75rem 1.25rem;
-    }
-    
-    .card-body {
-        padding: 1.25rem;
-    }
-    
-    .card-title {
-        margin-bottom: 0.75rem;
-    }
-</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/settings_clean.css') }}">
 {% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>Настройки системы</h2>
-    
-    <!-- Меню настроек -->
-    {% include 'admin/settings/_menu.html' %}
-    
-    <!-- Содержимое выбранного таба -->
-    <div class="settings-content">
-        {% block settings_content %}{% endblock %}
-    </div>
+<!-- Заголовок страницы -->
+<div class="page-header">
+    <h1 class="page-title">
+        <i class="fas fa-cog"></i>
+        Настройки системы
+    </h1>
+    <p class="page-subtitle">Управление конфигурацией и внешним видом системы</p>
+</div>
+
+<!-- Навигационное меню -->
+{% include 'admin/settings/_menu.html' %}
+
+<!-- Контент активной вкладки -->
+<div class="settings-content">
+    {% block settings_content %}{% endblock %}
 </div>
 {% endblock %} 

@@ -247,7 +247,7 @@ def user_add():
             sql = """
             INSERT INTO User (
                 login, password, full_name, department_id, role_id, position, 
-                Phone, personal_email, pc_login, office, corp_phone, hired_date, created_at
+                Phone, personal_email, pc_login, office, corp_phone, hire_date, created_at
             ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
             """
             

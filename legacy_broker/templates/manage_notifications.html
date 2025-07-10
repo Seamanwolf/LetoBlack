@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Управление уведомлениями</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        textarea {
+            width: 100%;
+            height: 100px;
+            margin-bottom: 10px;
+        }
+
+        table {
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Управление уведомлениями</h1>
+        <form method="post">
+            <label for="message">Сообщение:</label>
+            <textarea id="message" name="message" required></textarea>
+
+            <div>
+                <input type="checkbox" id="is_for_admin" name="is_for_admin">
+                <label for="is_for_admin">Для администраторов</label>
+            </div>
+            <div>
+                <input type="checkbox" id="is_for_leader" name="is_for_leader">
+                <label for="is_for_leader">Для руководителей</label>
+            </div>
+            <div>
+                <input type="checkbox" id="is_for_user" name="is_for_user">
+                <label for="is_for_user">Для пользователей</label>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Отправить уведомление</button>
+        </form>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Сообщение</th>
+                    <th>Целевая аудитория</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for notification in notifications %}
+                <tr>
+                    <td>{{ notification.message }}</td>
+                    <td>
+                        {% if notification.is_for_admin %}Администраторы{% endif %}
+                        {% if notification.is_for_leader %}Руководители{% endif %}
+                        {% if notification.is_for_user %}Пользователи{% endif %}
+                    </td>
+                    <td>
+                        <form action="{{ url_for('userlist.delete_notification', notification_id=notification.id) }}" method="post">
+                            <button type="submit">Удалить</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-link">Вернуться на главную</a>
+</body>
+</html>

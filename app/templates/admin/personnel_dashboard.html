@@ -437,7 +437,7 @@
 
     // График топ отделов
     const topDepartmentsChart = new Chart(topDepartmentsCtx, {
-        type: 'horizontalBar',
+        type: 'bar',
         data: {
             labels: departmentData.names.slice(0, 5),
             datasets: [{
@@ -461,6 +461,7 @@
             }]
         },
         options: {
+            indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
@@ -491,19 +492,38 @@
             this.classList.add('active');
             
             const period = this.dataset.period;
-            // Здесь можно добавить логику загрузки данных для выбранного периода
-            console.log('Выбран период:', period);
-            
-            // Обновление графиков с новыми данными
-            updateChartsForPeriod(period);
+            // Здесь должна быть логика загрузки данных с сервера
+            // и обновления графиков
+            fetch(`/admin/api/dashboard_data?period=${period}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Обновление данных графиков
+                    staffDynamicsChart.data.labels = data.dates;
+                    staffDynamicsChart.data.datasets[0].data = data.staff_counts;
+                    staffDynamicsChart.update();
+                    
+                    // Обновляем распределение по отделам
+                    departmentDistributionChart.data.labels = data.department_names;
+                    departmentDistributionChart.data.datasets[0].data = data.department_counts;
+                    departmentDistributionChart.update();
+
+                    // Обновляем топ отделов (топ-5)
+                    topDepartmentsChart.data.labels = data.department_names.slice(0, 5);
+                    topDepartmentsChart.data.datasets[0].data = data.department_counts.slice(0, 5);
+                    topDepartmentsChart.update();
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка загрузки данных:', error);
+            });
         });
     });
 
-    // Функция обновления графиков для выбранного периода
-    function updateChartsForPeriod(period) {
-        // Здесь должна быть логика загрузки данных с сервера
-        // и обновления графиков
-        fetch(`/api/dashboard_data?period=${period}`)
+    // Автообновление данных каждые 5 минут
+    setInterval(() => {
+        const activePeriod = document.querySelector('.period-btn.active').dataset.period;
+        fetch(`/admin/api/dashboard_data?period=${activePeriod}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -512,18 +532,20 @@
                 staffDynamicsChart.data.datasets[0].data = data.staff_counts;
                 staffDynamicsChart.update();
                 
-                // Аналогично для других графиков
+                // Обновляем распределение по отделам
+                departmentDistributionChart.data.labels = data.department_names;
+                departmentDistributionChart.data.datasets[0].data = data.department_counts;
+                departmentDistributionChart.update();
+
+                // Обновляем топ отделов (топ-5)
+                topDepartmentsChart.data.labels = data.department_names.slice(0, 5);
+                topDepartmentsChart.data.datasets[0].data = data.department_counts.slice(0, 5);
+                topDepartmentsChart.update();
             }
         })
         .catch(error => {
             console.error('Ошибка загрузки данных:', error);
         });
-    }
-
-    // Автообновление данных каждые 5 минут
-    setInterval(() => {
-        const activePeriod = document.querySelector('.period-btn.active').dataset.period;
-        updateChartsForPeriod(activePeriod);
     }, 300000); // 5 минут
 
 })();

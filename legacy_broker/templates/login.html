@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>ЛЕТО НЕДВИЖИМОСТЬ - Вход</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        body {
+            font-family: 'Open Sans', sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.5)), url("/static/real_estate_bg.jpg");
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+
+        .container {
+            background-color: rgba(255, 255, 255, 0.75);
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            position: relative;
+        }
+
+        #logo {
+            display: none;
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 20px;
+            width: 100%; /* Ширина логотипа равна ширине контейнера */
+            border-radius: 5px; /* Делаем логотип по стилю контейнера */
+        }
+
+        h1, h2 {
+            text-align: center;
+            font-weight: 300;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        label {
+            margin-top: 10px;
+            width: 100%;
+            text-align: left;
+            font-weight: 300;
+        }
+
+        input {
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            width: calc(100% - 20px);
+            box-sizing: border-box;
+        }
+
+        .password-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #888;
+        }
+
+        button {
+            padding: 10px;
+            margin-top: 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .alert {
+            width: calc(100% - 10px);
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            text-align: center;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                height: 100vh;
+                padding: 0;
+                background: none;
+            }
+
+            .container {
+                width: 100%;
+                max-width: 400px;
+                box-shadow: none;
+                border-radius: 0;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="{{ url_for('static', filename='logo.bmp') }}" alt="Логотип" id="logo">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+        <form action="{{ url_for('auth.login') }}" method="post">
+            <label for="username">Логин:</label>
+            <input type="text" id="username" name="username" required>
+            <label for="password">Пароль:</label>
+            <div class="password-container">
+                <input type="password" id="password" name="password" required>
+                <span class="toggle-password" title="Показать пароль">👁️</span>
+            </div>
+            <button type="submit">Войти</button>
+        </form>
+    </div>
+    <script>
+        const togglePassword = document.querySelector('.toggle-password');
+        const passwordInput = document.querySelector('#password');
+
+        togglePassword.addEventListener('click', function () {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            this.textContent = type === 'password' ? '👁️' : '🙈';
+            this.setAttribute('title', type === 'password' ? '️Показать пароль' : 'Скрыть пароль');
+        });
+
+        const logo = document.getElementById('logo');
+        fetch('{{ url_for('static', filename='logo.bmp') }}', { method: 'HEAD' })
+            .then(response => {
+                if (response.ok) {
+                    logo.style.display = 'block';
+                }
+            });
+    </script>
+</body>
+</html>

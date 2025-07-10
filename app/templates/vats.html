@@ -1,16 +1,393 @@
-{% extends "base.html" %}
-
-{% block title %}VATS{% endblock %}
-
-{% block extra_css %}
+<!-- templates/vats.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>VATS</title>
+    <!-- Подключение стилей -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <!-- Подключение Font Awesome для иконок -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <!-- Подключение Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Подключение шрифта -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Trajan+Pro+3&display=swap">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/vats.css') }}">
-{% endblock %}
 
-{% block content %}
+    <!-- Ваши стили -->
+    <style>
+        /* Общие стили */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        /* Контент */
+        .content {
+            margin-left: 50px; /* Отступ соответствует ширине боковой панели */
+            padding: 70px 20px 20px 20px; /* Добавлен отступ сверху для верхней панели */
+            overflow-x: auto;
+        }
+
+        /* Таблица */
+        .table-container {
+            width: 100%;
+            margin: 0; /* Прикрепляем к левой стороне */
+            background-color: white; /* Добавлено для растяжения фона */
+            padding: 20px 20px 20px 0; /* Изменён отступ слева */
+            box-sizing: border-box;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background-color: white;
+            border: 2px solid #007bff;
+        }
+
+            .table th, .table td {
+                text-align: center;
+                padding: 8px 10px;
+                border: 1px solid #dee2e6;
+                vertical-align: middle;
+            }
+
+            .table th {
+                background-color: #cccccc;
+                color: black;
+                position: sticky;
+                top: 50px; /* Отступ соответствует высоте верхней панели */
+                z-index: 1;
+            }
+
+            .table tr:hover {
+                background-color: #f5f5f5;
+            }
+
+        /* Стили для имени оператора с иконкой */
+        .operator-name {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            /* Стили для иконок в .operator-name */
+            .operator-name .edit-icon {
+                margin-left: 5px;
+                cursor: pointer;
+                color: black;
+                opacity: 0; /* Изначально невидима */
+                transition: opacity 0.2s;
+            }
+
+        .table tr:hover .operator-name .edit-icon {
+            opacity: 1; /* Показываем иконку редактирования при наведении на строку */
+        }
+
+
+
+        .operator-name i:hover {
+            color: #007bff;
+        }
+
+        /* Стили для иконок назначения */
+        .assigned-icon {
+            margin-right: 5px;
+            font-size: 16px;
+            cursor: default;
+        }
+
+        /* Стили для статуса */
+        .status-ok {
+            color: green;
+        }
+
+        .status-error {
+            color: red;
+        }
+
+        /* Стили для спиннера */
+        .spinner-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.7);
+            display: none; /* Изначально скрыт */
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+
+        /* Стили для уведомлений */
+        .notification-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1050;
+        }
+
+        .notification {
+            background-color: #007bff;
+            color: #fff;
+            padding: 15px 20px;
+            margin-top: 10px;
+            border-radius: 4px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            display: none;
+            min-width: 200px;
+        }
+
+            .notification.success {
+                background-color: #007bff;
+                color: #fff;
+            }
+
+            .notification.error {
+                background-color: #dc3545;
+                color: #fff;
+            }
+
+            .notification.slide-in {
+                animation: slideIn 0.5s forwards;
+            }
+
+            .notification.slide-out {
+                animation: slideOut 0.5s forwards;
+            }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
+
+        /* Стили для модального окна назначения номеров */
+        .assign-numbers-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .assign-numbers-table {
+            width: 45%;
+            max-height: 400px; /* Ограничиваем высоту таблицы */
+            overflow-y: auto;
+        }
+
+            .assign-numbers-table table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            /* Закрепляем заголовки таблиц */
+            .assign-numbers-table thead th {
+                position: sticky;
+                top: 0;
+                background-color: #cccccc;
+                z-index: 2;
+            }
+
+            .assign-numbers-table tbody {
+                display: block;
+                max-height: 350px; /* Высота для прокрутки */
+                overflow-y: auto;
+            }
+
+                .assign-numbers-table thead, .assign-numbers-table tbody tr {
+                    display: table;
+                    width: 100%;
+                    table-layout: fixed;
+                }
+
+            /* Устанавливаем ширину столбца с галочками */
+            .assign-numbers-table th:first-child, .assign-numbers-table td:first-child {
+                width: 30px;
+            }
+
+        /* Изменяем стили для стрелочек */
+        .assign-numbers-arrows {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start; /* Изменено с center на flex-start */
+            margin: 20px 10px 0 10px; /* Добавлен верхний отступ */
+        }
+
+            .assign-numbers-arrows button {
+                margin: 5px;
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 60px; /* Уменьшаем ширину боковой панели */
+            }
+
+                .sidebar .logo {
+                    font-size: 24px;
+                    margin-bottom: 20px;
+                }
+
+                .sidebar .menu a {
+                    justify-content: center;
+                }
+
+                    .sidebar .menu a .text {
+                        display: none;
+                    }
+
+            .topbar {
+                left: 60px; /* Соответствует ширине боковой панели */
+            }
+
+            .content {
+                margin-left: 80px; /* Соответствует ширине боковой панели */
+            }
+        }
+
+        /* Верхняя панель */
+        .topbar {
+            position: absolute;
+            top: 0;
+            left: 0px; /* Соответствует ширине боковой панели */
+            right: 0;
+            height: 50px;
+            background-color: #cccccc;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            color: #000;
+            z-index: 999;
+        }
+
+            .topbar .title {
+                font-size: 20px;
+                font-weight: bold;
+            }
+
+            .topbar .right-icons {
+                margin-left: auto;
+                display: flex;
+                align-items: center;
+            }
+
+            .topbar .profile-icon {
+                position: relative;
+                cursor: pointer;
+                margin-left: 20px;
+            }
+
+                .topbar .profile-icon i {
+                    font-size: 24px;
+                }
+
+            .topbar .profile-menu {
+                position: absolute;
+                top: 40px;
+                right: 0;
+                background-color: #fff;
+                color: #000;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                display: none;
+                flex-direction: column;
+                min-width: 150px;
+            }
+
+            .topbar .profile-icon:focus .profile-menu,
+            .topbar .profile-icon:hover .profile-menu {
+                display: flex;
+            }
+
+            .topbar .profile-menu a {
+                padding: 10px;
+                color: #000;
+                text-decoration: none;
+            }
+
+                .topbar .profile-menu a:hover {
+                    background-color: #f0f0f0;
+                }
+    </style>
+</head>
+<body>
+    <!-- Боковая панель -->
+    <div class="sidebar">
+        <div class="logo">ВАТС</div>
+        <div class="menu">
+            <a href="{{ url_for('vats.history') }}">
+                <i class="fas fa-history icon"></i><span class="text">История</span>
+            </a>
+            <a href="{{ url_for('vats.edit_numbers') }}">
+                <i class="fas fa-phone icon"></i><span class="text">Редактировать номера</span>
+            </a>
+            <a href="#" onclick="changeAllNumbers(); return false;">
+                <i class="fas fa-exchange-alt icon"></i><span class="text">Сменить номера</span>
+            </a>
+            <a href="#" onclick="showAddOperatorModal(); return false;">
+                <i class="fas fa-user-plus icon"></i><span class="text">Добавить оператора</span>
+            </a>
+            <a href="{{ url_for('admin_dashboard.admin_dashboard') }}">
+                <i class="fas fa-arrow-left icon"></i><span class="text">Назад</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Верхняя панель -->
+    <div class="topbar">
+        <div class="title">Автоподмена номеров</div>
+        <div class="right-icons">
+            <div class="profile-icon" tabindex="0">
+                <i class="fas fa-user"></i>
+                <div class="profile-menu">
+                    <div class="profile-info">
+                        <p>Администратор</p>
+                    </div>
+                    <a href="{{ url_for('userlist.logout') }}">Выход</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Контент -->
+    <div class="content">
         <div class="table-container">
             <h1>Управление операторами</h1>
 
+            <!-- Таблица операторов -->
             <table class="table" id="operators-table">
                 <thead>
                     <tr>
@@ -31,8 +408,10 @@
                     <!-- Данные будут загружены с помощью JavaScript -->
                 </tbody>
             </table>
+        </div>
     </div>
 
+    <!-- Модальное окно для добавления оператора -->
     <div class="modal fade" id="addOperatorModal" tabindex="-1" aria-labelledby="addOperatorModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <form id="addOperatorForm">
@@ -76,6 +455,7 @@
         </div>
     </div>
 
+    <!-- Модальное окно для назначения номеров -->
     <div class="modal fade" id="assignNumbersModal" tabindex="-1" aria-labelledby="assignNumbersModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <form id="assignNumbersForm">
@@ -86,8 +466,10 @@
                     </div>
                     <div class="modal-body">
                         <div class="assign-numbers-container">
+                            <!-- Таблица назначенных номеров -->
                             <div class="assign-numbers-table">
                                 <h6>Назначенные номера</h6>
+                                <button type="button" class="btn btn-secondary mb-2" onclick="selectAllAssigned()">Выбрать все</button>
                                 <table class="table">
                                     <thead>
                                         <tr>
@@ -101,6 +483,7 @@
                                 </table>
                             </div>
 
+                            <!-- Кнопки перемещения -->
                             <div class="assign-numbers-arrows">
                                 <button type="button" class="btn btn-secondary" onclick="moveNumbers('toAvailable')">
                                     <i class="fas fa-arrow-right"></i>
@@ -110,8 +493,13 @@
                                 </button>
                             </div>
 
+                            <!-- Таблица доступных номеров -->
                             <div class="assign-numbers-table">
                                 <h6>Доступные номера</h6>
+                                <div class="d-flex align-items-center mb-2">
+                                    <input type="number" min="1" id="selectCountInput" style="width: 60px; margin-right: 8px;" placeholder="Кол-во">
+                                    <button type="button" class="btn btn-secondary" onclick="moveSelectedCount()">Переместить N</button>
+                                </div>
                                 <table class="table">
                                     <thead>
                                         <tr>
@@ -127,6 +515,7 @@
                         </div>
                     </div>
                     <div class="modal-footer">
+                        <!-- Кнопка удаления оператора -->
                         <button type="submit" class="btn btn-primary">Сохранить</button>
                         <button type="button" class="btn btn-danger" onclick="deleteOperator()">Удалить оператора</button>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
@@ -137,6 +526,7 @@
         </div>
     </div>
 
+    <!-- Модальное окно подтверждения удаления оператора -->
     <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -155,6 +545,7 @@
         </div>
     </div>
 
+    <!-- Модальное окно подтверждения смены номеров -->
     <div class="modal fade" id="confirmChangeNumbersModal" tabindex="-1" aria-labelledby="confirmChangeNumbersModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -173,38 +564,46 @@
         </div>
     </div>
 
+    <!-- Спиннер загрузки -->
     <div class="spinner-overlay" id="spinnerOverlay">
         <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Загрузка...</span>
         </div>
     </div>
 
+    <!-- Контейнер для уведомлений -->
     <div id="notificationContainer" class="notification-container"></div>
 
+    <!-- Подключение скриптов -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Подключение Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Ваш JavaScript -->
     <script>
         var currentOperatorId = null;
         var currentOperatorName = '';
-    var operatorsList = [];
+        var operatorsList = []; // Глобальный массив операторов
 
         $(document).ready(function() {
             loadOperators();
         });
 
         function loadOperators() {
-        showSpinner();
+            showSpinner(); // Показываем спиннер перед загрузкой
             $.ajax({
                 url: "{{ url_for('vats.get_operators_json') }}",
                 method: "GET",
                 success: function(response) {
-                hideSpinner();
+                    hideSpinner(); // Скрываем спиннер после загрузки
                     if (response.success) {
                         var operators = response.operators;
-                    operatorsList = operators;
+                        operatorsList = operators; // Сохраняем список операторов
                         var tbody = $("#operators-table tbody");
                         tbody.empty();
                         operators.forEach(function(op) {
                             var isActiveChecked = op.is_active ? 'checked' : '';
 
+                            // Определение статуса
                             var statusText = '';
                             var statusClass = '';
                             if (op.current_number === op.crm_number && op.current_number === op.ats_number) {
@@ -215,6 +614,7 @@
                                 statusClass = 'status-error';
                             }
 
+                            // Иконка назначения номеров
                             var assignedIcon = '';
                             if (op.has_assigned_numbers) {
                                 assignedIcon = `<i class="fas fa-check-circle assigned-icon" style="color: green;" title="Есть назначенные номера"></i>`;
@@ -250,7 +650,7 @@
                     }
                 },
                 error: function() {
-                hideSpinner();
+                    hideSpinner(); // Скрываем спиннер в случае ошибки
                     alert("Ошибка при загрузке операторов.");
                 }
             });
@@ -426,6 +826,7 @@
         }
 
         function changeAllNumbers() {
+            // Проверка наличия активных операторов
             var activeOperators = operatorsList.filter(function(op) {
                 return op.is_active;
             });
@@ -446,7 +847,7 @@
                 success: function(response) {
                     hideSpinner();
                     if (response.success) {
-                    showNotification(response.message);
+                        showNotification(response.message); // Вместо alert
                         loadOperators();
                     } else {
                         alert(response.message);
@@ -481,6 +882,7 @@
             });
         }
 
+        // Функции для управления спиннером
         function showSpinner() {
             $('#spinnerOverlay').css('display', 'flex');
         }
@@ -489,9 +891,10 @@
             $('#spinnerOverlay').css('display', 'none');
         }
 
+        // Функция для отображения уведомлений
         function showNotification(message, type = 'success') {
             var notification = $('<div class="notification"></div>').text(message);
-        notification.addClass(type);
+            notification.addClass(type); // Добавляем класс 'success' или 'error'
             $('#notificationContainer').append(notification);
             notification.addClass('slide-in').show();
 
@@ -499,8 +902,24 @@
                 notification.removeClass('slide-in').addClass('slide-out');
                 setTimeout(function() {
                     notification.remove();
-            }, 500);
-        }, 3000);
+                }, 500); // Duration of slide-out animation
+            }, 3000); // Show notification for 3 seconds
+        }
+
+        function moveSelectedCount() {
+            var count = parseInt(document.getElementById('selectCountInput').value);
+            if (isNaN(count) || count <= 0) return;
+            var checkboxes = $('#availableNumbers input.number-checkbox:visible:not(:checked)');
+            checkboxes.slice(0, count).each(function() {
+                $(this).prop('checked', true);
+            });
+            // Используем уже существующую функцию для перемещения
+            moveNumbers('toAssigned');
+        }
+
+        function selectAllAssigned() {
+            $('#assignedNumbers input.number-checkbox').prop('checked', true);
         }
     </script>
-{% endblock %}
+</body>
+</html>

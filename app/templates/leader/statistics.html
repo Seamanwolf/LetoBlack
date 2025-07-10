@@ -1,0 +1,435 @@
+{% extends "base.html" %}
+
+{% block title %}Статистика{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/personnel_clean.css') }}">
+<style>
+.statistics-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.filters-section {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-light);
+}
+
+.filters-row {
+    display: flex;
+    gap: 1rem;
+    align-items: end;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 150px;
+}
+
+.filter-group label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+}
+
+.filter-group select,
+.filter-group input {
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: var(--border-radius);
+    font-size: 0.9rem;
+}
+
+.btn-filter {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.6rem 1.5rem;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: var(--transition);
+    height: fit-content;
+}
+
+.btn-filter:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+}
+
+.statistics-table {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-light);
+}
+
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.table-header h3 {
+    margin: 0;
+    color: var(--text-color);
+}
+
+.export-btn {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.export-btn:hover {
+    background: #218838;
+}
+
+.table-responsive {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    border-top: none;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.employee-name {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.date-cell {
+    white-space: nowrap;
+}
+
+.number-cell {
+    text-align: center;
+    font-weight: 500;
+}
+
+.total-row {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+.loading {
+    text-align: center;
+    padding: 2rem;
+    color: var(--muted-color);
+}
+
+.no-data {
+    text-align: center;
+    padding: 2rem;
+    color: var(--muted-color);
+}
+
+.summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.summary-card {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-light);
+    text-align: center;
+}
+
+.summary-card h4 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-color);
+    font-size: 1.1rem;
+}
+
+.summary-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.summary-label {
+    font-size: 0.9rem;
+    color: var(--muted-color);
+    margin-top: 0.5rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="statistics-container">
+    <h1><i class="fas fa-chart-line me-2"></i>Статистика</h1>
+    
+    <!-- Фильтры -->
+    <div class="filters-section">
+        <div class="filters-row">
+            <div class="filter-group">
+                <label for="periodSelect">Период:</label>
+                <select id="periodSelect">
+                    <option value="1">За день</option>
+                    <option value="7" selected>За неделю</option>
+                    <option value="30">За месяц</option>
+                    <option value="365">За год</option>
+                    <option value="all">За все время</option>
+                    <option value="custom">Произвольный период</option>
+                </select>
+            </div>
+            
+            <div class="filter-group" id="customDateGroup" style="display: none;">
+                <label for="startDate">Начальная дата:</label>
+                <input type="date" id="startDate">
+            </div>
+            
+            <div class="filter-group" id="customDateGroup2" style="display: none;">
+                <label for="endDate">Конечная дата:</label>
+                <input type="date" id="endDate">
+            </div>
+            
+            <div class="filter-group">
+                <label for="employeeSelect">Сотрудник:</label>
+                <select id="employeeSelect">
+                    <option value="">Все сотрудники</option>
+                    {% for employee in employees %}
+                    <option value="{{ employee.id }}">{{ employee.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <button class="btn-filter" onclick="applyFilters()">
+                <i class="fas fa-filter me-1"></i>Применить
+            </button>
+        </div>
+    </div>
+    
+    <!-- Сводные карточки -->
+    <div class="summary-cards" id="summaryCards">
+        <div class="summary-card">
+            <h4>Всего сделок</h4>
+            <div class="summary-value" id="totalDeals">0</div>
+            <div class="summary-label">за выбранный период</div>
+        </div>
+        
+        <div class="summary-card">
+            <h4>Всего показов</h4>
+            <div class="summary-value" id="totalShowings">0</div>
+            <div class="summary-label">за выбранный период</div>
+        </div>
+        
+        <div class="summary-card">
+            <h4>Всего звонков</h4>
+            <div class="summary-value" id="totalCalls">0</div>
+            <div class="summary-label">за выбранный период</div>
+        </div>
+        
+        <div class="summary-card">
+            <h4>Новых клиентов</h4>
+            <div class="summary-value" id="totalClients">0</div>
+            <div class="summary-label">за выбранный период</div>
+        </div>
+    </div>
+    
+    <!-- Таблица статистики -->
+    <div class="statistics-table">
+        <div class="table-header">
+            <h3>Детальная статистика</h3>
+            <button class="export-btn" onclick="exportToExcel()">
+                <i class="fas fa-file-excel me-1"></i>Экспорт в Excel
+            </button>
+        </div>
+        
+        <div class="table-responsive" id="statisticsTableContainer">
+            <div class="loading">
+                <i class="fas fa-spinner fa-spin"></i> Загрузка данных...
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Обработчик изменения периода
+    document.getElementById('periodSelect').addEventListener('change', function() {
+        const customGroups = document.querySelectorAll('#customDateGroup, #customDateGroup2');
+        if (this.value === 'custom') {
+            customGroups.forEach(group => group.style.display = 'block');
+        } else {
+            customGroups.forEach(group => group.style.display = 'none');
+        }
+    });
+    
+    // Загружаем данные по умолчанию
+    applyFilters();
+});
+
+function applyFilters() {
+    const period = document.getElementById('periodSelect').value;
+    const employeeId = document.getElementById('employeeSelect').value;
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    
+    // Показываем индикатор загрузки
+    document.getElementById('statisticsTableContainer').innerHTML = 
+        '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Загрузка данных...</div>';
+    
+    // Подготавливаем параметры запроса
+    const params = new URLSearchParams();
+    params.append('period', period);
+    if (employeeId) params.append('employee_id', employeeId);
+    if (period === 'custom' && startDate && endDate) {
+        params.append('start_date', startDate);
+        params.append('end_date', endDate);
+    }
+    
+    // Загружаем данные
+    fetch(`{{ url_for('leader.get_statistics_data') }}?${params.toString()}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateSummaryCards(data.summary);
+                updateStatisticsTable(data.statistics);
+            } else {
+                showError(data.message || 'Ошибка загрузки данных');
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            showError('Ошибка загрузки данных');
+        });
+}
+
+function updateSummaryCards(summary) {
+    document.getElementById('totalDeals').textContent = summary.totalDeals || 0;
+    document.getElementById('totalShowings').textContent = summary.totalShowings || 0;
+    document.getElementById('totalCalls').textContent = summary.totalCalls || 0;
+    document.getElementById('totalClients').textContent = summary.totalClients || 0;
+}
+
+function updateStatisticsTable(statistics) {
+    const container = document.getElementById('statisticsTableContainer');
+    
+    if (!statistics || statistics.length === 0) {
+        container.innerHTML = '<div class="no-data">Нет данных за выбранный период</div>';
+        return;
+    }
+    
+    let tableHtml = `
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Сотрудник</th>
+                    <th>Дата</th>
+                    <th>Сделки</th>
+                    <th>Брони</th>
+                    <th>Показы онлайн</th>
+                    <th>Показы офлайн</th>
+                    <th>Повторные показы</th>
+                    <th>Новые клиенты</th>
+                    <th>Холодные звонки</th>
+                    <th>Реклама Циан</th>
+                    <th>Реклама Авито</th>
+                    <th>Рассылки</th>
+                    <th>Вторички</th>
+                    <th>Баннеры</th>
+                    <th>Сработки</th>
+                    <th>Эксклюзивы</th>
+                    <th>Сторис</th>
+                    <th>Реклама Авито (общ.)</th>
+                    <th>Реклама Циан (общ.)</th>
+                    <th>Входящие</th>
+                    <th>Стационар</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    
+    statistics.forEach(row => {
+        tableHtml += `
+            <tr>
+                <td class="employee-name">${row.full_name}</td>
+                <td class="date-cell">${formatDate(row.date)}</td>
+                <td class="number-cell">${row.deals || 0}</td>
+                <td class="number-cell">${row.reservations || 0}</td>
+                <td class="number-cell">${row.online_showings || 0}</td>
+                <td class="number-cell">${row.offline_showings || 0}</td>
+                <td class="number-cell">${row.repeat_showings || 0}</td>
+                <td class="number-cell">${row.new_clients || 0}</td>
+                <td class="number-cell">${row.cold_calls || 0}</td>
+                <td class="number-cell">${row.adscian || 0}</td>
+                <td class="number-cell">${row.adsavito || 0}</td>
+                <td class="number-cell">${row.mailouts || 0}</td>
+                <td class="number-cell">${row.resales || 0}</td>
+                <td class="number-cell">${row.banners || 0}</td>
+                <td class="number-cell">${row.results || 0}</td>
+                <td class="number-cell">${row.exclusives || 0}</td>
+                <td class="number-cell">${row.stories || 0}</td>
+                <td class="number-cell">${row.total_ads_avito || 0}</td>
+                <td class="number-cell">${row.total_ads_cian || 0}</td>
+                <td class="number-cell">${row.incoming_cold_calls || 0}</td>
+                <td class="number-cell">${row.stationary_calls || 0}</td>
+            </tr>
+        `;
+    });
+    
+    tableHtml += `
+            </tbody>
+        </table>
+    `;
+    
+    container.innerHTML = tableHtml;
+}
+
+function formatDate(dateStr) {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('ru-RU');
+}
+
+function showError(message) {
+    document.getElementById('statisticsTableContainer').innerHTML = 
+        `<div class="no-data text-danger"><i class="fas fa-exclamation-triangle me-2"></i>${message}</div>`;
+}
+
+function exportToExcel() {
+    const period = document.getElementById('periodSelect').value;
+    const employeeId = document.getElementById('employeeSelect').value;
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    
+    // Подготавливаем параметры запроса
+    const params = new URLSearchParams();
+    params.append('period', period);
+    if (employeeId) params.append('employee_id', employeeId);
+    if (period === 'custom' && startDate && endDate) {
+        params.append('start_date', startDate);
+        params.append('end_date', endDate);
+    }
+    
+    // Открываем ссылку для скачивания
+    window.open(`{{ url_for('leader.export_statistics') }}?${params.toString()}`, '_blank');
+}
+</script>
+{% endblock %} 

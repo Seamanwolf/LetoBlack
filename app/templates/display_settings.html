@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Настройки отображения{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>Настройки отображения</h2>
+            <p class="text-muted">Настройте отображение информации о сотрудниках в таблице "Мой отдел"</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{{ url_for('leader.my_department') }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> Вернуться к отделу
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form id="displaySettingsForm">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4>Основные поля</h4>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="show_role" name="show_role" {{ display_settings.show_role and 'checked' }} disabled>
+                            <label class="form-check-label" for="show_role">Роль (всегда отображается)</label>
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="show_name" name="show_name" {{ display_settings.show_name and 'checked' }} disabled>
+                            <label class="form-check-label" for="show_name">ФИО (всегда отображается)</label>
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="show_position" name="show_position" {{ display_settings.show_position and 'checked' }}>
+                            <label class="form-check-label" for="show_position">Должность</label>
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="show_phone" name="show_phone" {{ display_settings.show_phone and 'checked' }}>
+                            <label class="form-check-label" for="show_phone">Телефон</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h4>Дополнительные поля</h4>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="show_email" name="show_email" {{ display_settings.show_email and 'checked' }}>
+                            <label class="form-check-label" for="show_email">Email</label>
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="show_status" name="show_status" {{ display_settings.show_status and 'checked' }}>
+                            <label class="form-check-label" for="show_status">Статус</label>
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="show_office" name="show_office" {{ display_settings.show_office and 'checked' }}>
+                            <label class="form-check-label" for="show_office">Офис</label>
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="show_last_active" name="show_last_active" {{ display_settings.show_last_active and 'checked' }}>
+                            <label class="form-check-label" for="show_last_active">Последняя активность</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Сохранить настройки
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    $('#displaySettingsForm').submit(function(e) {
+        e.preventDefault();
+        
+        let settings = {
+            show_role: true, // Всегда отображается
+            show_name: true, // Всегда отображается
+            show_position: $('#show_position').is(':checked'),
+            show_phone: $('#show_phone').is(':checked'),
+            show_email: $('#show_email').is(':checked'),
+            show_status: $('#show_status').is(':checked'),
+            show_office: $('#show_office').is(':checked'),
+            show_last_active: $('#show_last_active').is(':checked')
+        };
+        
+        // Отправляем настройки на сервер
+        $.ajax({
+            url: '{{ url_for("leader.save_display_settings") }}',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(settings),
+            success: function(response) {
+                if (response.success) {
+                    alert('Настройки успешно сохранены');
+                    window.location.href = '{{ url_for("leader.my_department") }}';
+                } else {
+                    alert('Ошибка при сохранении настроек');
+                }
+            },
+            error: function() {
+                alert('Произошла ошибка при сохранении настроек');
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

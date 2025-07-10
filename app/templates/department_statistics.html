@@ -1,545 +1,738 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Статистика по моему отделу</title>
-    <!-- Подключение Bootstrap CSS -->
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Подключение Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-    <!-- Подключение вашего файла стилей -->
-    <link rel="stylesheet" href="{{ url_for(\'static\', filename=\'css/common.css\') }}?v={{ range(1, 100000) | random }}">
+{% extends "base.html" %}
+
+{% block title %}Статистика отдела{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/personnel_clean.css') }}">
     <style>
-        /* Дополнительные стили */
-        .period-buttons {
-            margin-bottom: 20px;
-        }
+.department-nav {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background: #fff;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+}
 
-            .period-buttons .btn {
-                margin-right: 10px;
-                margin-bottom: 10px;
-            }
+.department-nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    color: var(--text-color);
+    text-decoration: none;
+    border-radius: var(--border-radius);
+    transition: all 0.3s ease;
+}
 
-        .search-box {
-            margin-bottom: 10px;
-        }
+.department-nav a:hover {
+    background: var(--hover-color);
+}
 
-        #period-label {
-            margin-bottom: 20px;
-            font-weight: bold;
-            font-size: 18px;
-        }
+.department-nav a.active {
+    background: var(--primary-color);
+    color: #fff;
+}
 
-        .back-button {
-            margin-top: 20px;
-        }
+.stats-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
 
-        /* Таблица с идентификатором statistics-table */
-        #statistics-table {
-            border: 2px solid #007bff; /* Синяя обводка для таблицы */
-            background-color: white; /* Белый фон таблицы */
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            cursor: pointer; /* Указатель курсора для столбцов */
-        }
+.stats-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
 
-            #statistics-table th, #statistics-table td {
-                text-align: left;
-                padding: 6px 8px; /* Уменьшение высоты строк */
-                border: 1px solid #d9d9d9; /* Обводка ячеек */
-                vertical-align: middle;
-                background-color: white; /* Белый фон для ячеек */
-                color: #343a40;
-            }
+.period-selector {
+    display: flex;
+    gap: 0.5rem;
+}
 
-            #statistics-table th {
-                background-color: #d3d3d3; /* Светло-серый фон для заголовков */
-                color: #333; /* Тёмный цвет текста */
-                position: sticky;
-                top: 0;
-                cursor: pointer; /* Указатель курсора для столбцов */
-            }
+.period-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
 
-            #statistics-table tr:hover {
-                background-color: #f5f5f5; /* Фон при наведении */
-            }
+.period-btn:hover {
+    background: var(--hover-color);
+}
 
-            /* Стиль для выделенной строки */
-            #statistics-table tr.highlighted {
-                background-color: #e0f0ff !important; /* Светло-голубой фон */
-            }
+.period-btn.active {
+    background: var(--primary-color);
+    color: #fff;
+    border-color: var(--primary-color);
+}
 
-            /* Дополнительные стили для стрелок сортировки */
-            #statistics-table th .sort-arrow {
-                display: inline-block;
-                width: 0;
-                height: 0;
-                margin-left: 5px;
-                vertical-align: middle;
-                border-left: 5px solid transparent;
-                border-right: 5px solid transparent;
-            }
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
 
-                #statistics-table th .sort-arrow.asc {
-                    border-bottom: 5px solid #333; /* Треугольник вверх */
-                }
+.stat-card {
+    padding: 1.5rem;
+    background: #fff;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+}
 
-                #statistics-table th .sort-arrow.desc {
-                    border-top: 5px solid #333; /* Треугольник вниз */
-                }
+.stat-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
 
-        /* Стили для кнопок редактирования */
-        .edit-icon {
-            font-size: 16px; /* Уменьшенный размер иконки */
-            color: #007bff; /* Цвет иконки (синий) */
-        }
+.stat-card-icon {
+    font-size: 1.25rem;
+    color: var(--primary-color);
+}
 
-            .edit-icon:hover {
-                color: #0056b3; /* Темно-синий при наведении */
-            }
+.stat-card-title {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
 
-        /* Показать кнопку редактирования только при наведении на ячейку */
-        td:hover .edit-icon {
-            visibility: visible;
-        }
+.stat-card-value {
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
 
-        /* Дополнительные стили для кнопок */
-        .action-btn {
-            background-color: #000;
-            color: white;
-            padding: 6px 10px;
-            margin: 2px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
+.stat-card-footer {
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
 
-            .action-btn:hover {
-                background-color: #333;
-            }
+.chart-container {
+    background: #fff;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
 
-        .delete-button {
-            background-color: #dc3545;
-            color: white;
-        }
+.chart-header {
+    margin-bottom: 1rem;
+}
 
-            .delete-button:hover {
-                background-color: #c82333;
-            }
+.chart-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
 
-        .fire-button {
-            background-color: #ffcc00;
-            color: black;
-        }
+.chart {
+    height: 300px;
+    width: 100%;
+}
 
-            .fire-button:hover {
-                background-color: #ff9900;
-            }
+.ranking-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 2rem;
+    background: #fff;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    overflow: hidden;
+}
 
-        .save-button {
-            background-color: #000;
-            color: white;
-        }
+.ranking-table th,
+.ranking-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
 
-            .save-button:hover {
-                background-color: #333;
-            }
+.ranking-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: var(--text-color);
+}
 
-        .button {
-            padding: 10px 5px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            color: white;
-            margin: 10px 5px;
-            cursor: pointer;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
-        }
+.ranking-table tr:hover {
+    background: var(--hover-color);
+}
 
-            .button:hover {
-                background-color: #45a049;
-            }
+.ranking-table .rank {
+    width: 60px;
+    text-align: center;
+    font-weight: 600;
+}
 
-        .back-button {
-            display: flex;
-            align-items: center;
-            background-color: #6c757d;
-            color: white;
-            padding: 10px 20px;
-            text-decoration: none;
-            border-radius: 5px;
-            margin-top: 20px;
-        }
+.ranking-table .rank-1 {
+    color: gold;
+}
 
-            .back-button i {
-                margin-right: 8px;
-            }
+.ranking-table .rank-2 {
+    color: silver;
+}
 
-            .back-button:hover {
-                background-color: #5a6268;
-            }
+.ranking-table .rank-3 {
+    color: #cd7f32; /* bronze */
+}
 
-        /* Адаптивность для мобильных устройств */
-        @media (max-width: 768px) {
-            .sidebar {
-                display: none;
-            }
+.ranking-table .employee-name {
+    font-weight: 500;
+}
 
-            .topbar {
-                width: 100%;
-                left: 0;
-            }
+.ranking-table .score {
+    font-weight: 600;
+    text-align: right;
+}
 
-            .content {
-                margin-left: 0;
-                margin-top: 80px;
-                padding: 20px 10px;
-            }
+.ranking-table .progress-bar-container {
+    width: 100%;
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+}
 
-            #statistics-table {
-                font-size: 12px;
-            }
-
-            .edit-icon {
-                font-size: 14px;
-            }
-
-            /* Дополнительные стили для мобильных */
-            #statistics-table th, #statistics-table td {
-                padding: 4px;
-            }
+.ranking-table .progress-bar {
+    height: 100%;
+    background: var(--primary-color);
+    border-radius: 4px;
         }
     </style>
-</head>
-<body>
-    <!-- Боковая панель -->
-    <div class="sidebar">
-        <div class="logo">Л</div>
-        <div class="menu">
-            <a href="{{ url_for('leader.leader_dashboard') }}">
-                <i class="fas fa-arrow-left icon"></i><span class="text">Назад</span>
-            </a>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Навигация отдела -->
+    <div class="department-nav">
+        <a href="{{ url_for('leader.my_department') }}">
+            <i class="fas fa-users"></i>
+            Сотрудники
+        </a>
+        <a href="{{ url_for('leader.department_statistics') }}" class="active">
+            <i class="fas fa-chart-line"></i>
+            Статистика отдела
+        </a>
+        <a href="{{ url_for('leader.display_settings') }}">
+            <i class="fas fa-cog"></i>
+            Настройки отображения
+        </a>
+    </div>
+
+    <!-- Заголовок статистики -->
+    <div class="stats-header">
+        <div class="stats-title">Статистика отдела "{{ department_name }}"</div>
+        <div class="period-selector">
+            <button class="period-btn" data-period="week">Неделя</button>
+            <button class="period-btn active" data-period="month">Месяц</button>
+            <button class="period-btn" data-period="quarter">Квартал</button>
         </div>
     </div>
 
-    <!-- Верхняя панель -->
-    <div class="topbar">
-        <div class="title">Статистика по моему отделу</div>
-        <div class="right-icons">
-            <div class="notification-icon">
-                <i class="fas fa-bell"></i>
-                {% if notifications_count > 0 %}
-                <span class="notification-badge">{{ notifications_count }}</span>
-                {% endif %}
-            </div>
-            <div class="profile-icon" tabindex="0">
-                <i class="fas fa-user"></i>
-                <div class="profile-menu">
-                    <div class="profile-info">
-                        <p>{{ session.get('full_name', 'Гость') }}</p>
-                        <p>{{ session.get('department', '') }} отдел</p>
-                    </div>
-                    <a href="#">Мой профиль</a>
-                    <a href="{{ url_for('userlist.logout') }}">Выйти</a>
+    <!-- Статистические карточки -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <div class="stat-card-icon">
+                    <i class="fas fa-users"></i>
                 </div>
+                <div class="stat-card-title">Сотрудников</div>
+            </div>
+            <div class="stat-card-value">{{ stats.total_employees }}</div>
+            <div class="stat-card-footer">
+                <span class="text-success">
+                    <i class="fas fa-arrow-up"></i> {{ stats.new_employees }}
+                </span>
+                новых за период
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <div class="stat-card-icon">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <div class="stat-card-title">Выполнено задач</div>
+            </div>
+            <div class="stat-card-value">{{ stats.completed_tasks }}</div>
+            <div class="stat-card-footer">
+                В среднем {{ stats.avg_tasks_per_employee }} на сотрудника
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <div class="stat-card-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="stat-card-title">Средняя активность</div>
+            </div>
+            <div class="stat-card-value">{{ stats.avg_activity }}%</div>
+            <div class="stat-card-footer">
+                {% if stats.activity_trend > 0 %}
+                <span class="text-success">
+                    <i class="fas fa-arrow-up"></i> {{ stats.activity_trend }}%
+                </span>
+                {% elif stats.activity_trend < 0 %}
+                <span class="text-danger">
+                    <i class="fas fa-arrow-down"></i> {{ stats.activity_trend|abs }}%
+                </span>
+                {% else %}
+                <span class="text-muted">
+                    <i class="fas fa-equals"></i> Без изменений
+                </span>
+                {% endif %}
+                по сравнению с прошлым периодом
+            </div>
+                    </div>
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <div class="stat-card-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-card-title">Общее время в системе</div>
+            </div>
+            <div class="stat-card-value">{{ stats.total_hours }} ч</div>
+            <div class="stat-card-footer">
+                В среднем {{ stats.avg_hours_per_employee }} ч на сотрудника
             </div>
         </div>
     </div>
 
-    <!-- Основной контент -->
-    <div class="content">
-        <!-- Кнопки выбора периода -->
-        <div class="period-buttons">
-            <button class="btn btn-primary" id="daily-btn">Статистика за день</button>
-            <button class="btn btn-primary" id="weekly-btn">Статистика за неделю</button>
-            <button class="btn btn-primary" id="monthly-btn">Статистика за месяц</button>
-            <button class="btn btn-primary" id="yearly-btn">Статистика за год</button>
-            <button class="btn btn-primary" id="custom-period-btn">Выбрать период</button>
+    <!-- График активности отдела -->
+    <div class="chart-container">
+        <div class="chart-header">
+            <div class="chart-title">Динамика активности отдела</div>
+        </div>
+        <div class="chart" id="activityChart"></div>
         </div>
 
-        <!-- Поисковое поле -->
-        <div class="search-box">
-            <input type="text" id="search-input" class="form-control" placeholder="Поиск по сотруднику...">
+    <!-- График выполнения задач -->
+    <div class="chart-container">
+        <div class="chart-header">
+            <div class="chart-title">Динамика выполнения задач</div>
+        </div>
+        <div class="chart" id="tasksChart"></div>
         </div>
 
-        <!-- Подпись для отображения выбранного периода -->
-        <div id="period-label" class="mb-3">
-            <!-- Здесь будет отображаться выбранный период -->
+    <!-- Рейтинг сотрудников по активности -->
+    <div class="chart-container">
+        <div class="chart-header">
+            <div class="chart-title">Рейтинг сотрудников по активности</div>
         </div>
-
-        <!-- Таблица статистики -->
-        <div class="table-responsive">
-            <table id="statistics-table" class="table table-hover table-bordered">
+        <div class="ranking-table-container">
+            <table class="ranking-table">
                 <thead>
                     <tr>
-                        <th>Сотрудник <span class="sort-arrow"></span></th>
-                        {% for field in fields_to_display %}
-                        <th>{{ field_names.get(field, field) }} <span class="sort-arrow"></span></th>
+                        <th>Сотрудник</th>
+                        {% for field in all_fields %}
+                            <th {% if hidden_fields.get(field) %}style="display: none;"{% endif %}>
+                                {{ field_names.get(field, field) }}
+                            </th>
                         {% endfor %}
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Данные будут загружаться через AJAX -->
-                </tbody>
-                <tfoot>
+                    {% for score in stats.scores %}
                     <tr>
-                        <th>Итого</th>
-                        {% for field in fields_to_display %}
-                        <th id="total-{{ field }}">0</th>
+                        <td>{{ score.full_name }}</td>
+                        {% for field in all_fields %}
+                            <td {% if hidden_fields.get(field) %}style="display: none;"{% endif %}>
+                                {{ score.get(field, 0) }}
+                            </td>
                         {% endfor %}
                     </tr>
-                </tfoot>
+                    {% else %}
+                    <tr>
+                        <td colspan="{{ all_fields|length + 1 }}" class="text-center">Нет данных за выбранный период.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
             </table>
         </div>
-    <!-- Модальное окно для выбора месяца -->
-    <div class="modal fade" id="monthModal" tabindex="-1" role="dialog" aria-labelledby="monthModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <form id="monthForm">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Выберите месяц</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <input type="month" class="form-control" id="selected-month" name="selected_month" required>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
-                        <button type="submit" class="btn btn-primary">Показать</button>
-                    </div>
-                </div>
-            </form>
-        </div>
     </div>
 
-    <!-- Модальное окно для выбора года -->
-    <div class="modal fade" id="yearModal" tabindex="-1" role="dialog" aria-labelledby="yearModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <form id="yearForm">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Выберите год</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <input type="number" class="form-control" id="selected-year" name="selected_year" min="2000" max="2100" required placeholder="Введите год">
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
-                        <button type="submit" class="btn btn-primary">Показать</button>
-                    </div>
+<!-- Таблица сотрудников отдела с их показателями -->
+<div class="chart-container">
+    <div class="chart-header">
+        <div class="chart-title">Сотрудники отдела</div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Сотрудник</th>
+                    <th>Должность</th>
+                    <th>Сделки</th>
+                    <th>Показы</th>
+                    <th>Звонки</th>
+                    <th>Активность</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody id="employeesTableBody">
+                <!-- Данные будут заполняться через JavaScript -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Добавьте модальное окно для выбора произвольного периода -->
+<div class="modal fade" id="customRangeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Выбор произвольного периода</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="startDate" class="form-label">Начало периода</label>
+                    <input type="date" class="form-control" id="startDate">
                 </div>
-            </form>
+                <div class="mb-3">
+                    <label for="endDate" class="form-label">Конец периода</label>
+                    <input type="date" class="form-control" id="endDate">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="applyCustomRange">Применить</button>
+            </div>
         </div>
     </div>
+</div>
 
-    <!-- Модальное окно для выбора периода -->
-    <div class="modal fade" id="customPeriodModal" tabindex="-1" role="dialog" aria-labelledby="customPeriodModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <form id="customPeriodForm">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Выберите период</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <label for="start-date">С:</label>
-                        <input type="date" class="form-control" id="start-date" name="start_date" required>
-                        <label for="end-date">По:</label>
-                        <input type="date" class="form-control" id="end-date" name="end_date" required>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
-                        <button type="submit" class="btn btn-primary">Показать</button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Функция для создания графика
+function createChart(canvasId, data, options) {
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    return new Chart(ctx, {
+        type: 'line',
+        data: data,
+        options: options
+    });
+}
+
+// Загрузка данных для графиков
+function loadChartData(period) {
+    fetch(`/leader/api/department_statistics?period=${period}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateCharts(data);
+                updateStats(data.stats);
+                updateRanking(data.ranking);
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка загрузки данных:', error);
+        });
+}
+
+// Обновление графиков
+function updateCharts(data) {
+    // Обновляем график активности
+    activityChart.data.labels = data.activity.labels;
+    activityChart.data.datasets[0].data = data.activity.data;
+    activityChart.update();
+    
+    // Обновляем график задач
+    tasksChart.data.labels = data.tasks.labels;
+    tasksChart.data.datasets[0].data = data.tasks.data;
+    tasksChart.update();
+}
+
+// Обновление статистики
+function updateStats(stats) {
+    document.querySelector('.stat-card:nth-child(1) .stat-card-value').textContent = stats.total_employees;
+    document.querySelector('.stat-card:nth-child(1) .stat-card-footer').innerHTML = `
+        <span class="text-success">
+            <i class="fas fa-arrow-up"></i> ${stats.new_employees}
+        </span>
+        новых за период
+    `;
+    
+    document.querySelector('.stat-card:nth-child(2) .stat-card-value').textContent = stats.completed_tasks;
+    document.querySelector('.stat-card:nth-child(2) .stat-card-footer').textContent = 
+        `В среднем ${stats.avg_tasks_per_employee} на сотрудника`;
+    
+    document.querySelector('.stat-card:nth-child(3) .stat-card-value').textContent = `${stats.avg_activity}%`;
+    
+    let trendHTML = '';
+    if (stats.activity_trend > 0) {
+        trendHTML = `
+            <span class="text-success">
+                <i class="fas fa-arrow-up"></i> ${stats.activity_trend}%
+            </span>
+            по сравнению с прошлым периодом
+        `;
+    } else if (stats.activity_trend < 0) {
+        trendHTML = `
+            <span class="text-danger">
+                <i class="fas fa-arrow-down"></i> ${Math.abs(stats.activity_trend)}%
+            </span>
+            по сравнению с прошлым периодом
+        `;
+    } else {
+        trendHTML = `
+            <span class="text-muted">
+                <i class="fas fa-equals"></i> Без изменений
+            </span>
+            по сравнению с прошлым периодом
+        `;
+    }
+    document.querySelector('.stat-card:nth-child(3) .stat-card-footer').innerHTML = trendHTML;
+    
+    document.querySelector('.stat-card:nth-child(4) .stat-card-value').textContent = `${stats.total_hours} ч`;
+    document.querySelector('.stat-card:nth-child(4) .stat-card-footer').textContent = 
+        `В среднем ${stats.avg_hours_per_employee} ч на сотрудника`;
+}
+
+// Обновление рейтинга
+function updateRanking(ranking) {
+    const tbody = document.querySelector('.ranking-table tbody');
+    tbody.innerHTML = '';
+    
+    ranking.forEach((employee, index) => {
+        const rank = index + 1;
+        const rankClass = rank === 1 ? 'rank-1' : (rank === 2 ? 'rank-2' : (rank === 3 ? 'rank-3' : ''));
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td class="rank ${rankClass}">
+                ${rank}
+            </td>
+            <td class="employee-name">
+                <a href="/leader/employee_statistics/${employee.id}">
+                    ${employee.full_name}
+                </a>
+            </td>
+            <td>${employee.position}</td>
+            <td>
+                <div class="d-flex align-items-center">
+                    <span class="me-2">${employee.activity}%</span>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" style="width: ${employee.activity}%"></div>
                     </div>
                 </div>
-            </form>
-        </div>
-    </div>
+            </td>
+            <td class="score">${employee.tasks}</td>
+            <td class="score">${employee.hours} ч</td>
+        `;
+        
+        tbody.appendChild(row);
+    });
+}
 
-    <!-- Подключение JavaScript -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script> <!-- jQuery -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script> <!-- Popper.js -->
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script> <!-- Bootstrap JS -->
+// Функция для обновления таблицы сотрудников
+function updateEmployeesTable(employees) {
+    const tbody = document.getElementById('employeesTableBody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    if (!employees || !Array.isArray(employees)) {
+        console.error('Неверный формат данных о сотрудниках:', employees);
+        return;
+    }
+    
+    employees.forEach((employee, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>
+                <a href="/leader/employee_statistics/${employee.id}">
+                    ${employee.full_name}
+                </a>
+            </td>
+            <td>${employee.position || employee.role || '-'}</td>
+            <td>${employee.deals || 0}</td>
+            <td>${(employee.online_showings || 0) + (employee.offline_showings || 0)}</td>
+            <td>${employee.cold_calls || 0}</td>
+            <td>
+                <div class="progress" style="height: 5px;">
+                    <div class="progress-bar" style="width: ${employee.activity || 0}%"></div>
+                </div>
+                ${employee.activity || 0}%
+            </td>
+            <td>
+                <a href="/leader/employee_statistics/${employee.id}" class="btn btn-sm btn-info" title="Статистика">
+                    <i class="fas fa-chart-bar"></i>
+                </a>
+                <a href="/leader/impersonate/${employee.id}" class="btn btn-sm btn-secondary" title="Действовать от имени">
+                    <i class="fas fa-user-secret"></i>
+                </a>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
 
-    <script>
-        $(document).ready(function () {
-            var fieldsToDisplay = {{ fields_to_display | tojson }};
-            var fieldNames = {{ field_names | tojson }};
+// Инициализация графиков
+let activityChart, tasksChart;
 
-            // При загрузке страницы загружаем статистику за текущий день
-            $('#daily-btn').click();
-
-            // Обработчики кнопок
-            $('#daily-btn').click(function () {
-                var today = new Date().toISOString().slice(0, 10);
-                fetchStatistics('daily', { selected_date: today });
-            });
-
-            $('#weekly-btn').click(function () {
-                fetchStatistics('weekly', {});
-            });
-
-            $('#monthly-btn').click(function () {
-                $('#monthModal').modal('show');
-            });
-
-            $('#yearly-btn').click(function () {
-                $('#yearModal').modal('show');
-            });
-
-            $('#custom-period-btn').click(function () {
-                $('#customPeriodModal').modal('show');
-            });
-
-            // Обработчики форм
-            $('#monthForm').submit(function (event) {
-                event.preventDefault();
-                var selectedMonth = $('#selected-month').val();
-                fetchStatistics('monthly', { selected_month: selectedMonth });
-                $('#monthModal').modal('hide');
-            });
-
-            $('#yearForm').submit(function (event) {
-                event.preventDefault();
-                var selectedYear = $('#selected-year').val();
-                fetchStatistics('yearly', { selected_year: selectedYear });
-                $('#yearModal').modal('hide');
-            });
-
-            $('#customPeriodForm').submit(function (event) {
-                event.preventDefault();
-                var startDate = $('#start-date').val();
-                var endDate = $('#end-date').val();
-                fetchStatistics('custom', { start_date: startDate, end_date: endDate });
-                $('#customPeriodModal').modal('hide');
-            });
-
-            // Функция для получения статистики
-            function fetchStatistics(periodType, data) {
-                var url = '';
-                var periodLabel = '';
-                if (periodType === 'daily') {
-                    url = '{{ url_for("leader.department_daily_statistics") }}';
-                    periodLabel = 'Отчет за сегодня';
-                } else if (periodType === 'weekly') {
-                    url = '{{ url_for("leader.department_weekly_statistics") }}';
-                    periodLabel = 'Отчет за прошлую неделю';
-                } else if (periodType === 'monthly') {
-                    url = '{{ url_for("leader.department_monthly_statistics") }}';
-                    periodLabel = 'Отчет за ' + getMonthYearLabel(data.selected_month);
-                } else if (periodType === 'yearly') {
-                    url = '{{ url_for("leader.department_yearly_statistics") }}';
-                    periodLabel = 'Отчет за ' + data.selected_year + ' год';
-                } else if (periodType === 'custom') {
-                    url = '{{ url_for("leader.department_custom_statistics") }}';
-                    periodLabel = 'Отчет за период с ' + formatDate(data.start_date) + ' по ' + formatDate(data.end_date);
+document.addEventListener('DOMContentLoaded', function() {
+    // График активности
+    const activityData = {
+        labels: {{ activity_labels|tojson }},
+        datasets: [{
+            label: 'Активность отдела',
+            data: {{ activity_data|tojson }},
+            borderColor: '#4CAF50',
+            backgroundColor: 'rgba(76, 175, 80, 0.1)',
+            tension: 0.4
+        }]
+    };
+    
+    const activityOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100,
+                ticks: {
+                    callback: value => value + '%'
                 }
-
-                $.ajax({
-                    type: 'POST',
-                    url: url,
-                    data: data,
-                    success: function (response) {
-                        if (response.error) {
-                            alert(response.error);
-                            return;
-                        }
-                        // Обновляем подпись периода
-                        $('#period-label').text(periodLabel);
-
-                        // Заполняем таблицу данными
-                        $('#statistics-table tbody').html(response.table_rows);
-                        // Обновляем итоговую строку
-                        updateTotals();
-                    },
-                    error: function (xhr, status, error) {
-                        console.error('Ошибка при получении статистики:', error);
-                    }
-                });
             }
-
-            // Вспомогательные функции
-            function formatDate(dateString) {
-                var options = { year: 'numeric', month: '2-digit', day: '2-digit' };
-                var date = new Date(dateString);
-                return date.toLocaleDateString('ru-RU', options);
+        }
+    };
+    
+    activityChart = createChart('activityChart', activityData, activityOptions);
+    
+    // График задач
+    const tasksData = {
+        labels: {{ tasks_labels|tojson }},
+        datasets: [{
+            label: 'Выполненные задачи',
+            data: {{ tasks_data|tojson }},
+            borderColor: '#2196F3',
+            backgroundColor: 'rgba(33, 150, 243, 0.1)',
+            tension: 0.4
+        }]
+    };
+    
+    const tasksOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
             }
-
-            function getMonthYearLabel(monthYearString) {
-                var [year, month] = monthYearString.split('-');
-                var monthNames = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
-                    'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
-                return monthNames[parseInt(month, 10) - 1] + ' ' + year;
-            }
-
-            // Функция для обновления итоговой строки
-            function updateTotals() {
-                var totals = {};
-                fieldsToDisplay.forEach(function (field) {
-                    totals[field] = 0;
-                });
-
-                $('#statistics-table tbody tr:visible').each(function () {
-                    var row = $(this);
-                    fieldsToDisplay.forEach(function (field, index) {
-                        var cellValue = parseFloat(row.find('td').eq(index + 1).text()) || 0;
-                        totals[field] += cellValue;
-                    });
-                });
-
-                fieldsToDisplay.forEach(function (field) {
-                    $('#total-' + field).text(totals[field]);
-                });
-            }
-
-            // Обработчик для поиска
-            $('#search-input').on('keyup', function () {
-                var value = $(this).val().toLowerCase();
-                $('#statistics-table tbody tr').filter(function () {
-                    $(this).toggle($(this).find('td:first').text().toLowerCase().indexOf(value) > -1);
-                });
-                // Обновляем итоговую строку после фильтрации
-                updateTotals();
-            });
-
-            // Сортировка таблицы
-            $('#statistics-table th').click(function() {
-                var table = $(this).parents('table').eq(0);
-                var rows = table.find('tbody tr').toArray().sort(comparer($(this).index()));
-                this.asc = !this.asc;
-                updateSortArrows(this, this.asc);
-                if (!this.asc) { rows = rows.reverse(); }
-                for (var i = 0; i < rows.length; i++) { table.find('tbody').append(rows[i]); }
-                updateTotals(); // Обновляем итоговую строку после сортировки
-            });
-
-            function comparer(index) {
-                return function(a, b) {
-                    var valA = getCellValue(a, index), valB = getCellValue(b, index);
-                    return $.isNumeric(valA) && $.isNumeric(valB) ? valA - valB : valA.localeCompare(valB);
-                };
-            }
-
-            function getCellValue(row, index) {
-                return $(row).children('td').eq(index).text();
-            }
-
-            function updateSortArrows(header, asc) {
-                $('.sort-arrow').removeClass('asc').removeClass('desc');
-                $(header).find('.sort-arrow').addClass(asc ? 'asc' : 'desc');
+        }
+    };
+    
+    tasksChart = createChart('tasksChart', tasksData, tasksOptions);
+    
+    // Обработчики периодов
+    document.querySelectorAll('.period-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const period = this.dataset.period;
+            
+            // Обновляем активную кнопку
+            document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Загружаем новые данные
+            loadChartData(period);
+        });
+    });
+    
+    // Добавляем обработчик для модального окна с произвольным периодом
+    const customRangeBtn = document.getElementById('customRangeBtn');
+    if (customRangeBtn) {
+        customRangeBtn.addEventListener('click', function() {
+            const modalElement = document.getElementById('customRangeModal');
+            if (modalElement) {
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
             }
         });
-    </script>
-</body>
-</html>
+    }
+    
+    const applyCustomRange = document.getElementById('applyCustomRange');
+    if (applyCustomRange) {
+        applyCustomRange.addEventListener('click', function() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            if (!startDate || !endDate) {
+                alert('Пожалуйста, выберите начальную и конечную дату');
+                return;
+            }
+            
+            // Закрываем модальное окно
+            const modalElement = document.getElementById('customRangeModal');
+            if (modalElement) {
+                const modal = bootstrap.Modal.getInstance(modalElement);
+                if (modal) modal.hide();
+            }
+            
+            // Загружаем данные за выбранный период
+            fetch(`/leader/api/department_statistics?start_date=${startDate}&end_date=${endDate}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateCharts(data);
+                        updateStats(data.stats);
+                        updateRanking(data.ranking);
+                        if (data.employees) {
+                            updateEmployeesTable(data.employees);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка загрузки данных:', error);
+                });
+        });
+    }
+    
+    // Загружаем начальные данные для таблицы сотрудников
+    fetch('/leader/api/department_employees')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateEmployeesTable(data.employees);
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка загрузки данных сотрудников:', error);
+        });
+    
+    // Добавляем обработку клика по периоду для обновления таблицы
+    document.querySelectorAll('.period-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const period = this.dataset.period;
+            
+            // Загружаем данные о сотрудниках за выбранный период
+            fetch(`/leader/api/department_employees?period=${period}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateEmployeesTable(data.employees);
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка загрузки данных сотрудников:', error);
+                });
+        });
+    });
+});
+</script>
+{% endblock %}

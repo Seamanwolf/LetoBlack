@@ -39,3 +39,12 @@ CREATE TABLE IF NOT EXISTS Employee (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_employee_department FOREIGN KEY (department_id) REFERENCES Department(id) ON DELETE SET NULL
 );
+
+CREATE TABLE IF NOT EXISTS user_activity (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    activity_type VARCHAR(50) NOT NULL,
+    activity_date DATETIME NOT NULL,
+    activity_value INT DEFAULT 1,
+    FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE
+);

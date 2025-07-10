@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Настройки</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        .settings-container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #ffffff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        h1 {
+            text-align: center;
+            font-weight: 300;
+        }
+
+        .setting-item {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        input[type="file"], input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .alert {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="settings-container">
+        <h1>Настройки</h1>
+        
+        <!-- Отображение сообщений об успехе или ошибке -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="alert">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        {% endwith %}
+        
+        <!-- Форма для загрузки логотипа -->
+        <form action="{{ url_for('admin.upload_logo') }}" method="post" enctype="multipart/form-data">
+            <div class="setting-item">
+                <label for="logo-upload">Загрузка логотипа:</label>
+                <input type="file" id="logo-upload" name="logo" accept=".bmp">
+                <button type="submit">Загрузить</button>
+            </div>
+        </form>
+
+        <!-- Форма для настройки LDAP -->
+        <form action="{{ url_for('admin.save_ldap') }}" method="post">
+            <div class="setting-item">
+                <label for="ldap-domain">Домен:</label>
+                <input type="text" id="ldap-domain" name="ldap-domain" placeholder="example.com" required>
+            </div>
+            <div class="setting-item">
+                <label for="ldap-controller">Адрес контроллера:</label>
+                <input type="text" id="ldap-controller" name="ldap-controller" placeholder="192.168.1.1" required>
+            </div>
+            <div class="setting-item">
+                <label for="ldap-username">Логин:</label>
+                <input type="text" id="ldap-username" name="ldap-username" placeholder="admin" required>
+            </div>
+            <div class="setting-item">
+                <label for="ldap-password">Пароль:</label>
+                <input type="password" id="ldap-password" name="ldap-password" required>
+            </div>
+            <button type="submit">Сохранить</button>
+        </form>
+    </div>
+</body>
+</html>

@@ -2,21 +2,49 @@ from datetime import datetime
 from app.utils import create_db_connection
 from flask_login import UserMixin
 
+def normalize_role(role):
+    """Преобразует числовую или строковую роль в стандартизированную строковую роль в нижнем регистре."""
+    if isinstance(role, int):
+        role_mapping = {
+            1: 'admin',
+            2: 'leader',
+            3: 'operator',
+            4: 'user',
+            5: 'backoffice'
+        }
+        return role_mapping.get(role, 'user')
+        
+    if isinstance(role, str):
+        role_lower = role.lower()
+        # Если роль — это числовая строка, преобразуем в int и мапим
+        if role_lower.isdigit():
+            return normalize_role(int(role_lower))
+        # Обработка русских названий ролей
+        role_translations = {
+            'администратор': 'admin',
+            'руководитель': 'leader',
+            'оператор': 'operator',
+            'пользователь': 'user',
+            'бэк-офис': 'backoffice',
+        }
+        return role_translations.get(role_lower, role_lower)
+        
+    return 'user' # Значение по умолчанию для None или других типов
+
 class User(UserMixin):
-    def __init__(self, id=None, login=None, full_name=None, role=None, department=None, ukc_kc=None, **kwargs):
+    def __init__(self, id=None, login=None, full_name=None, role=None, role_id=None, department=None, ukc_kc=None, **kwargs):
         self.id = id
         self.login = login
         self.full_name = full_name
-        self.role = role
+        self.role = normalize_role(role)
+        self._role_id = role_id  # Сохраняем role_id во внутреннем атрибуте
         self.department = department
         self.ukc_kc = ukc_kc
-        self.status = kwargs.get('status', 'Офлайн')  # Добавляем атрибут status со значением по умолчанию
+        self.status = kwargs.get('status', 'Офлайн')
         
-        # Добавляем все оставшиеся атрибуты из kwargs
         for key, value in kwargs.items():
             setattr(self, key, value)
             
-        # Кешированный список ролей пользователя
         self._roles = None
     
     def get_id(self):
@@ -25,59 +53,61 @@ class User(UserMixin):
     @property
     def roles(self):
         """
-        Свойство для доступа к ролям пользователя
+        Возвращает список ролей пользователя.
+        Для обратной совместимости, если у пользователя есть только атрибут `role`,
+        то будет возвращен список с одним объектом роли.
         """
-        if self._roles is None:
-            self._roles = self.get_roles()
-        return self._roles
+        # Если роли уже были установлены вручную (например, при impersonate), возвращаем их
+        if getattr(self, '_roles', None) is not None:
+            return self._roles
+
+        # Если роли уже были загружены, возвращаем их
+        if getattr(self, '_cached_roles', None) is not None:
+            return self._cached_roles
         
-    def get_roles(self):
-        """
-        Получает список ролей пользователя из таблицы UserRole
-        
-        Returns:
-            list: Список ролей пользователя
-        """
-        # Для обратной совместимости, если используется старая система ролей
-        if hasattr(self, 'role') and self.role:
-            # Создаем простой объект с атрибутом name для совместимости
-            class SimpleRole:
-                def __init__(self, name):
-                    self.name = name
-                    
-            if self.role == 'admin':
-                return [SimpleRole('admin')]
-            return [SimpleRole(self.role)]
-            
-        # Для новой системы ролей
-        connection = create_db_connection()
-        if not connection:
+        # Если у пользователя нет ID, возвращаем пустой список
+        if not self.id:
             return []
             
-        cursor = connection.cursor(dictionary=True)
-        
+        connection = None
+        cursor = None
         try:
-            # Проверяем существование таблицы UserRole
-            cursor.execute("SHOW TABLES LIKE 'UserRole'")
-            if cursor.fetchone() is None:
-                # Если таблица не существует, используем старую систему ролей
-                if hasattr(self, 'role') and self.role:
-                    class SimpleRole:
-                        def __init__(self, name):
-                            self.name = name
-                    return [SimpleRole(self.role)]
+            connection = create_db_connection()
+            if not connection:
                 return []
                 
-            # Получаем роли пользователя
-            cursor.execute("""
+            cursor = connection.cursor(dictionary=True)
+            
+            # Для обратной совместимости, если используется старая система ролей
+            if hasattr(self, 'role') and self.role:
+                # Создаем простой объект с атрибутом name для совместимости
+                class SimpleRole:
+                    def __init__(self, name):
+                        self.name = name
+                    
+                if self.role == 'admin':
+                    return [SimpleRole('admin')]
+                return [SimpleRole(self.role)]
+            
+            # Для новой системы ролей
+            # Получаем роли пользователя из таблицы UserRole
+            query = """
             SELECT r.id, r.name, r.display_name, r.description, r.role_type, r.is_system
-            FROM Role r
+            FROM Roles r
             JOIN UserRole ur ON r.id = ur.role_id
             WHERE ur.user_id = %s
-            """, (self.id,))
-            
+            """
+            cursor.execute(query, (self.id,))
             roles_data = cursor.fetchall()
-            
+
+            # Для старых пользователей, у которых есть только `role`
+            if not roles_data and hasattr(self, 'role') and self.role:
+                class SimpleRole:
+                    def __init__(self, name):
+                        self.name = name
+                self._cached_roles = [SimpleRole(self.role)]
+                return self._cached_roles
+
             # Создаем простые объекты ролей с необходимыми атрибутами
             class Role:
                 def __init__(self, id, name, display_name, description, role_type, is_system):
@@ -128,7 +158,8 @@ class User(UserMixin):
                         curs.close()
                         conn.close()
             
-            return [Role(**role) for role in roles_data]
+            self._cached_roles = [Role(**role) for role in roles_data]
+            return self._cached_roles
         except Exception as e:
             print(f"Ошибка при получении ролей пользователя: {e}")
             # В случае ошибки возвращаем роль из атрибута пользователя, если она есть
@@ -139,8 +170,10 @@ class User(UserMixin):
                 return [SimpleRole(self.role)]
             return []
         finally:
-            cursor.close()
-            connection.close()
+            if cursor:
+                cursor.close()
+            if connection:
+                connection.close()
             
     def has_role(self, role_name):
         """
@@ -159,7 +192,54 @@ class User(UserMixin):
         """
         Проверяет, является ли пользователь администратором
         """
-        return self.has_role('admin')
+        return self.role == 'admin'
+
+    # --- Методы проверки ролей (используются в utils.get_user_accessible_modules) ---
+    def is_hr(self):
+        return self.role == 'hr' or (hasattr(self, 'department') and self.department == 'HR')
+
+    def is_leader(self):
+        return self.role == 'leader'
+
+    def is_callcenter(self):
+        return self.role == 'operator'
+
+    def is_helpdesk(self):
+        return self.role == 'helpdesk'
+
+    def is_itinvent(self):
+        return self.role == 'itinvent'
+
+    def is_avito(self):
+        return self.role == 'avito'
+
+    def is_reception(self):
+        return self.role == 'reception' or (hasattr(self, 'department') and self.department == 'Ресепшн')
+
+    def is_backoffice(self):
+        return self.role == 'backoffice'
+
+    def is_vats(self):
+        return self.role == 'vats'
+
+    def create_role_object(self, role_name):
+        """Создает простой объект роли для совместимости"""
+        class SimpleRole:
+            def __init__(self, name):
+                self.name = name
+        return SimpleRole(role_name)
+
+    @property
+    def role_id(self):
+        """Возвращает ID роли. Сначала проверяет прямой атрибут, потом вычисляет."""
+        if hasattr(self, '_role_id') and self._role_id is not None:
+            return self._role_id
+        
+        # Логика для обратной совместимости, если _role_id не был загружен
+        if self.roles:
+            r = self.roles[0]
+            return getattr(r, 'id', None)
+        return None
 
     @staticmethod
     def get_by_id(user_id):
@@ -174,7 +254,7 @@ class User(UserMixin):
         
         try:
             cursor.execute("""
-            SELECT u.id, u.login, u.full_name, u.role, u.department, u.fired, ua.status
+            SELECT u.id, u.login, u.full_name, u.role, u.role_id, u.department, u.fired, ua.status
             FROM User u
             LEFT JOIN UserActivity ua ON u.id = ua.user_id
             WHERE u.id = %s
@@ -182,31 +262,26 @@ class User(UserMixin):
             
             user_data = cursor.fetchone()
             if user_data:
+                # Если в user_data нет строки роли, но есть role_id, пытаемся загрузить имя роли
+                if (not user_data.get('role')) and user_data.get('role_id'):
+                    try:
+                        cursor.execute("SELECT name FROM Roles WHERE id = %s", (user_data['role_id'],))
+                        role_row = cursor.fetchone()
+                        if role_row:
+                            user_data['role'] = role_row['name']
+                    except Exception:
+                        pass
                 # Получаем ukc_kc для пользователя, если он есть
-                ukc_kc = User.get_ukc_kc(user_id)
-                if ukc_kc:
-                    user_data['ukc_kc'] = ukc_kc
-                
-                # Преобразуем статус в русский формат
-                if user_data.get('status') == 'online':
-                    user_data['status'] = 'Онлайн'
-                elif user_data.get('status') == 'offline':
-                    user_data['status'] = 'Офлайн'
-                elif user_data.get('status') == 'away':
-                    user_data['status'] = 'Отошел'
-                elif user_data.get('status') == 'busy':
-                    user_data['status'] = 'Занят'
-                else:
-                    user_data['status'] = 'Офлайн'
-                
+                ukc_kc_data = User.get_ukc_kc(user_id)
+                user_data['ukc_kc'] = ukc_kc_data
                 return User(**user_data)
-            return None
         except Exception as e:
-            print(f"Ошибка при получении пользователя по ID: {e}")
-            return None
+            print(f"Ошибка при загрузке пользователя по ID: {e}")
         finally:
             cursor.close()
             connection.close()
+            
+        return None
 
     @staticmethod
     def migrate_ukc_kc_to_new_table():

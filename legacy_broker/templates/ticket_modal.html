@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Обработка заявок</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <style>
+        .attachment-preview {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            cursor: pointer;
+        }
+
+        .attachment-modal img {
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="modal fade" id="ticketModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Детали заявки</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>От:</strong> <span id="ticketFrom"></span></p>
+                    <p><strong>Сервис:</strong> <span id="ticketService"></span></p>
+                    <p><strong>Подсервис:</strong> <span id="ticketSubservice"></span></p>
+                    <p><strong>Сообщения:</strong></p>
+                    <ul id="ticketMessages"></ul>
+                    <p><strong>Вложения:</strong></p>
+                    <ul id="ticketAttachments" class="list-unstyled d-flex flex-wrap"></ul>
+                    <p><strong>Ответственный:</strong> <span id="ticketResponsible"></span></p>
+                    <form id="replyForm">
+                        <div class="form-group">
+                            <label for="replyMessage">Ответить:</label>
+                            <textarea class="form-control" id="replyMessage" rows="3"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-secondary">Ответить</button>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    <button type="button" class="btn btn-success" id="workButton" style="display:none;">Взять в работу</button>
+                    <button type="button" class="btn btn-warning" id="closeButton" style="display:none;">Завершить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal attachment-modal" id="attachmentModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Предпросмотр вложения</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <img id="attachmentPreview" src="" alt="Attachment Preview">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>$(document).ready(function () {
+            $('.ticket-row').on('click', function () {
+                var ticketId = $(this).data('ticket-id');
+                console.log("Ticket row clicked, ID: " + ticketId);
+
+                $.get('/api/get_ticket_details', { ticket_id: ticketId }, function (data) {
+                    console.log("Ticket details fetched:", data);
+
+                    $('#ticketFrom').text(data.ticket_details.full_name);
+                    $('#ticketService').text(data.ticket_details.service);
+                    $('#ticketSubservice').text(data.ticket_details.subservice);
+                    $('#ticketMessages').empty();
+                    $('#ticketAttachments').empty();
+
+                    data.messages.forEach(function (message) {
+                        $('#ticketMessages').append('<li>' + message.message_text + '</li>');
+                    });
+
+                    data.attachments.forEach(function (attachment) {
+                        if (['jpg', 'jpeg', 'png', 'gif'].includes(attachment.file_type.toLowerCase())) {
+                            var attachmentUrl = '/uploads/' + attachment.file_path.split('/').pop();
+                            console.log("Generated full URL for attachment: " + attachmentUrl);
+                            $('#ticketAttachments').append('<li><img src="' + attachmentUrl + '" class="attachment-preview" data-full-src="' + attachmentUrl + '"></li>');
+                        } else {
+                            $('#ticketAttachments').append('<li><a href="/uploads/' + attachment.file_path.split('/').pop() + '">' + attachment.file_path.split('/').pop() + '</a></li>');
+                        }
+                    });
+
+                    if (data.ticket_details.status === 'new') {
+                        $('#workButton').show();
+                        $('#closeButton').hide();
+                    } else if (data.ticket_details.status === 'open') {
+                        $('#workButton').hide();
+                        $('#closeButton').show();
+                    } else {
+                        $('#workButton').hide();
+                        $('#closeButton').hide();
+                    }
+
+                    $('#ticketModal').modal('show');
+
+                    $('#replyForm').on('submit', function (e) {
+                        e.preventDefault();
+                        var replyMessage = $('#replyMessage').val();
+                        console.log("Reply message:", replyMessage);
+
+                        $.ajax({
+                            url: '/api/reply_ticket',
+                            type: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify({
+                                ticket_id: ticketId,
+                                comment_text: replyMessage
+                            }),
+                            success: function (response) {
+                                console.log("Reply sent:", response);
+                                $('#ticketMessages').append('<li>' + replyMessage + '</li>');
+                                $('#replyMessage').val('');
+                            },
+                            error: function (jqXHR, textStatus, errorThrown) {
+                                console.log("Error sending reply:", textStatus, errorThrown);
+                            }
+                        });
+                    });
+
+                    $('#workButton').on('click', function () {
+                        $.post('/api/start_work', { ticket_id: ticketId }, function (response) {
+                            console.log("Ticket taken into work:", response);
+                            $('#ticketModal').modal('hide');
+                            location.reload();  // Reload the page to update the ticket status
+                        }).fail(function (jqXHR, textStatus, errorThrown) {
+                            console.log("Error starting work on ticket:", textStatus, errorThrown);
+                        });
+                    });
+
+                    $('#closeButton').on('click', function () {
+                        $.post('/api/close_ticket', { ticket_id: ticketId }, function (response) {
+                            console.log("Ticket closed:", response);
+                            $('#ticketModal').modal('hide');
+                            location.reload();  // Reload the page to update the ticket status
+                        }).fail(function (jqXHR, textStatus, errorThrown) {
+                            console.log("Error closing ticket:", textStatus, errorThrown);
+                        });
+                    });
+                }).fail(function (jqXHR, textStatus, errorThrown) {
+                    console.log("Error fetching ticket details:", textStatus, errorThrown);
+                });
+            });
+
+            $('#ticketAttachments').on('click', '.attachment-preview', function () {
+                var fullSrc = $(this).data('full-src');
+                $('#attachmentPreview').attr('src', fullSrc);
+                $('#attachmentModal').modal('show');
+            });
+
+            $('.ticket-row').on('click', function () {
+                $(this).removeClass('new-ticket');
+            });
+        });</script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}{% if news %}Редактировать{% else %}Создать{% endif %} новость{% endblock %}
+{% block extra_css %}
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/personnel_clean.css') }}">
+{% endblock %}
+{% block content %}
+<div class="container-xl">
+ <h2 class="mb-3">{% if news %}Редактировать{% else %}Создать{% endif %} новость</h2>
+ <form method="post" enctype="multipart/form-data">
+  <div class="mb-3">
+   <label class="form-label">Заголовок</label>
+   <input type="text" class="form-control" name="title" value="{{ news.title if news else '' }}" required>
+  </div>
+  <div class="mb-3">
+   <label class="form-label">Текст</label>
+   <div id="editor" style="height:300px;">{{ news.body|safe if news else '' }}</div>
+   <input type="hidden" name="body" id="bodyInput">
+  </div>
+  <div class="mb-3">
+   <label class="form-label">Изображение</label>
+   <input type="file" name="image" class="form-control">
+   {% if news and news.image_path %}
+    <img src="/static/{{ news.image_path }}" alt="prev" style="max-width:200px;" class="mt-2">
+   {% endif %}
+  </div>
+  <div class="mb-3">
+   <label class="form-label">Дата и время публикации (опционально)</label>
+   <input type="datetime-local" class="form-control" name="publish_at" value="{{ news.publish_at.strftime('%Y-%m-%dT%H:%M') if news and news.publish_at else '' }}">
+  </div>
+  <div class="form-check form-switch mb-3">
+   <input class="form-check-input" type="checkbox" id="publishNow" name="publish_now" {% if news and news.is_published %}checked{% endif %}>
+   <label class="form-check-label" for="publishNow">Опубликовать сразу</label>
+  </div>
+  <button class="btn btn-success"><i class="fas fa-save me-1"></i>Сохранить</button>
+  <a href="{{ url_for('admin_news.list_news') }}" class="btn btn-secondary ms-2">Отмена</a>
+ </form>
+</div>
+
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+<script>
+var quill = new Quill('#editor', { theme: 'snow' });
+const form = document.querySelector('form');
+form.addEventListener('submit', ()=>{
+ document.getElementById('bodyInput').value = quill.root.innerHTML;
+});
+</script>
+{% endblock %} 

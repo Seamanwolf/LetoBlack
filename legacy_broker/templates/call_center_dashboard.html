@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Колл-центр</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Боковая панель -->
+    <div class="sidebar">
+        <div class="logo">КЦ</div>
+        <div class="menu">
+            <a href="{{ url_for('callcenter.add_operator') }}" class="button">
+                <i class="fas fa-user-plus icon"></i><span class="text">Операторы КЦ</span>
+            </a>
+            <a href="{{ url_for('callcenter.manage_calls') }}" class="button">
+                <i class="fas fa-phone icon"></i><span class="text">Управление номерами КЦ</span>
+            </a>
+            <a href="{{ url_for('callcenter.manage_objects_sources') }}" class="button">
+                <i class="fas fa-list icon"></i><span class="text">Редактирование базы</span>
+            </a>
+            <a href="{{ url_for('callcenter.report_dashboard') }}" class="button">
+                <i class="fas fa-chart-bar icon"></i><span class="text">Отчет КЦ</span>
+            </a>
+            <a href="{{ url_for('callcenter.integrations') }}" class="button">
+                <i class="fas fa-link icon"></i><span class="text">Интеграции</span>
+            </a>
+            <a href="{{ url_for('admin.admin_dashboard') }}">
+                <i class="fas fa-arrow-left icon"></i><span class="text">Назад</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Верхняя панель -->
+    <div class="topbar">
+        <div class="title">Колл-центр</div>
+        <div class="right-icons">
+            <div class="profile-icon" tabindex="0">
+                <i class="fas fa-user"></i>
+                <div class="profile-menu">
+                    <div class="profile-info">
+                        <p>Администратор</p>
+                    </div>
+                    <a href="{{ url_for('userlist.logout') }}">Выход</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Контент -->
+    <div class="content">
+        <h1>Добро пожаловать в раздел Колл-центра</h1>
+        <div class="dashboard d-flex justify-content-around">
+            <div class="chart-container" style="width: 45%; height: 300px;">
+                <h3>Лиды за месяц</h3>
+                <canvas id="leadChart" width="400" height="200"></canvas>
+            </div>
+            <div class="chart-container" style="width: 45%; height: 300px;">
+                <h3>Лиды за день</h3>
+                <canvas id="dailyLeadChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+        <div class="chart-container mt-4" style="width: 90%; height: 300px;">
+            <h3>Лиды за год</h3>
+            <canvas id="yearlyLeadChart" width="800" height="200"></canvas>
+        </div>
+    </div>
+
+    <!-- Скрипт для графиков -->
+    <script>document.addEventListener('DOMContentLoaded', function () {
+            // Функция для получения данных из API
+            async function fetchData(url) {
+                try {
+                    const response = await fetch(url);
+                    const data = await response.json();
+                    return data;
+                } catch (error) {
+                    console.error('Ошибка при получении данных:', error);
+                    return [];
+                }
+            }
+
+            // Лиды за месяц
+            fetchData('/api/leads/monthly').then(data => {
+                const ctx = document.getElementById('leadChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            label: 'Количество лидов',
+                            data: data.values,
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.4,
+                            pointBackgroundColor: 'rgba(75, 192, 192, 1)'
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 80
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true
+                            }
+                        }
+                    }
+                });
+            });
+
+            // Лиды за день с интервалом в 5 минут
+            fetchData('/api/leads/daily').then(data => {
+                const ctxDaily = document.getElementById('dailyLeadChart').getContext('2d');
+                new Chart(ctxDaily, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            label: 'Количество лидов',
+                            data: data.values,
+                            borderColor: 'rgba(153, 102, 255, 1)',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.4,
+                            pointBackgroundColor: 'rgba(153, 102, 255, 1)'
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 35
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true
+                            }
+                        }
+                    }
+                });
+            });
+
+            // Лиды за год с интервалом в 1 день
+            fetchData('/api/leads/yearly').then(data => {
+                const ctxYearly = document.getElementById('yearlyLeadChart').getContext('2d');
+                new Chart(ctxYearly, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            label: 'Количество лидов',
+                            data: data.values,
+                            borderColor: 'rgba(255, 159, 64, 1)',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.4,
+                            pointBackgroundColor: 'rgba(255, 159, 64, 1)'
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true
+                            }
+                        }
+                    }
+                });
+            });
+        });</script>
+
+</body>
+</html>

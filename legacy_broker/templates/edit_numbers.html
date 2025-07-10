@@ -1,0 +1,408 @@
+<!-- templates/edit_numbers.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Редактирование базы номеров</title>
+    <!-- Подключение стилей -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <!-- Подключение Font Awesome для иконок -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <!-- Подключение Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Подключение шрифта -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Trajan+Pro+3&display=swap">
+
+    <!-- Ваши стили -->
+    <style>
+        /* Общие стили */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        /* Стили для боковой панели, верхней панели и т.д. */
+        /* ... используйте те же стили, что и в предыдущих страницах ... */
+
+        /* Контент */
+        .content {
+            margin-left: 50px;
+            padding: 70px 20px 20px 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            overflow-x: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Центрируем содержимое */
+        }
+
+        /* Строка поиска */
+        #search-input {
+            width: 100%;
+            max-width: 800px; /* Устанавливаем максимальную ширину */
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border: 1px solid #ced4da;
+            font-size: 14px;
+        }
+
+        /* Таблица с номерами */
+        .table {
+            width: 100%;
+            max-width: 800px; /* Уменьшаем ширину таблицы */
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background-color: white;
+            border: 2px solid #007bff;
+        }
+
+            .table th, .table td {
+                text-align: center;
+                padding: 8px 10px;
+                border: 1px solid #dee2e6;
+                vertical-align: middle;
+                height: 30px;
+            }
+
+            .table th {
+                background-color: #cccccc;
+                color: black;
+                position: sticky;
+                top: 0;
+                cursor: pointer;
+            }
+
+            .table tr {
+                background-color: white;
+            }
+
+                .table tr:hover {
+                    background-color: #f5f5f5;
+                }
+
+        /* Стили для кнопок */
+        .button {
+            padding: 8px 12px;
+            background-color: #e74c3c;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 4px;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+            .button:hover {
+                background-color: #c0392b;
+                text-decoration: none;
+                color: #fff;
+            }
+
+        /* Сообщения */
+        #message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+            max-width: 800px; /* Соответствует ширине таблицы */
+            text-align: center;
+        }
+
+            #message.success {
+                background-color: #27ae60;
+                color: #fff;
+            }
+
+            #message.error {
+                background-color: #c0392b;
+                color: #fff;
+            }
+
+        /* Кнопка "Удалить выбранные номера" */
+        #delete-selected-btn {
+            display: none;
+            background-color: #e67e22;
+            margin-bottom: 20px; /* Добавляем отступ снизу */
+        }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            #search-input, .table {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Боковая панель -->
+    <div class="sidebar">
+        <div class="logo">КЦ</div>
+        <div class="menu">
+            <a href="{{ url_for('vats.index') }}">
+                <i class="fas fa-arrow-left icon"></i><span class="text">Назад</span>
+            </a>
+            <!-- Кнопка для загрузки Excel-файла -->
+            <a href="#" onclick="document.getElementById('excel_file').click(); return false;">
+                <i class="fas fa-file-upload icon"></i><span class="text">Загрузить Excel-файл</span>
+            </a>
+            <!-- Скрытая форма для загрузки файла -->
+            <form id="upload-form" enctype="multipart/form-data" method="post" action="{{ url_for('vats.upload_numbers') }}" style="display:none;">
+                <input type="file" id="excel_file" name="excel_file" accept=".xlsx, .xls" onchange="submitUpload()">
+            </form>
+            <!-- Кнопка для скачивания шаблона -->
+            <a href="{{ url_for('vats.download_template') }}">
+                <i class="fas fa-file-download icon"></i><span class="text">Скачать шаблон Excel</span>
+            </a>
+            <!-- Кнопка для добавления номера вручную -->
+            <a href="#" onclick="addNumberManually(); return false;">
+                <i class="fas fa-plus icon"></i><span class="text">Добавить номер вручную</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Верхняя панель -->
+    <div class="topbar">
+        <div class="title">Редактирование базы номеров</div>
+        <div class="right-icons">
+            <div class="profile-icon" tabindex="0">
+                <i class="fas fa-user"></i>
+                <div class="profile-menu">
+                    <div class="profile-info">
+                        <p>Администратор</p>
+                    </div>
+                    <a href="{{ url_for('userlist.logout') }}">Выход</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Контент -->
+    <div class="content">
+        <h1>Редактирование базы номеров</h1>
+
+        <!-- Строка поиска -->
+        <input type="text" id="search-input" class="form-control" placeholder="Поиск...">
+
+        <!-- Кнопка для удаления выбранных номеров -->
+        <button type="button" class="button" id="delete-selected-btn" onclick="deleteSelectedNumbers()">Удалить выбранные номера</button>
+
+        <!-- Таблица всех номеров -->
+        <table id="all-numbers-table" class="table table-striped">
+            <thead>
+                <tr>
+                    <th><input type="checkbox" id="select-all" onclick="toggleSelectAll(this)"> Все</th>
+                    <th>Номер телефона</th>
+                    <th>Назначен оператору</th>
+                </tr>
+            </thead>
+            <tbody id="numbers-entries">
+                {% for number in numbers %}
+                <tr>
+                    <td><input type="checkbox" class="number-checkbox" value="{{ number.id }}"></td>
+                    <td>{{ number.phone_number }}</td>
+                    <td>
+                        {% if number.operator_name %}
+                        {{ number.operator_name }}
+                        {% else %}
+                        Не назначен
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Отображение количества записей -->
+        <div class="entry-count">
+            Всего номеров: {{ numbers|length }}
+        </div>
+
+        <div id="message"></div>
+    </div>
+
+    <!-- Модальное окно для добавления номера вручную -->
+    <div class="modal fade" id="addNumberModal" tabindex="-1" aria-labelledby="addNumberModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Добавить номер вручную</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addNumberForm">
+                        <div class="mb-3">
+                            <label for="phoneNumberInput" class="form-label">Номер телефона</label>
+                            <input type="text" class="form-control" id="phoneNumberInput" name="phone_number" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Добавить</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Подключение скриптов -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Подключение Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Ваш JavaScript -->
+    <script>
+        // Функции прокрутки
+        function scrollToTop() {
+            $('html, body').animate({ scrollTop: 0 }, 'slow');
+        }
+
+        function scrollToBottom() {
+            $('html, body').animate({ scrollTop: $(document).height() }, 'slow');
+        }
+
+        $(document).ready(function () {
+            // Сквозной поиск
+            $('#search-input').on('input', function () {
+                var searchTerm = $(this).val().toLowerCase();
+                $('#numbers-entries tr').each(function () {
+                    var text = $(this).text().toLowerCase();
+                    $(this).toggle(text.includes(searchTerm));
+                });
+
+                // Обновление счетчика записей
+                var visibleCount = $('#numbers-entries tr:visible').length;
+                $('.entry-count').text('Всего номеров: ' + visibleCount);
+            });
+
+            // Инициализация счетчика при загрузке страницы
+            var initialCount = $('#numbers-entries tr:visible').length;
+            $('.entry-count').text('Всего номеров: ' + initialCount);
+
+            // Привязка событий прокрутки
+            $('#scrollTopBtn').on('click', scrollToTop);
+            $('#scrollBottomBtn').on('click', scrollToBottom);
+
+            // Обновление видимости кнопки удаления при изменении чекбоксов
+            function updateDeleteButtonVisibility() {
+                const selectedCheckboxes = document.querySelectorAll('.number-checkbox:checked');
+                const deleteButton = document.getElementById('delete-selected-btn');
+                if (selectedCheckboxes.length > 0) {
+                    deleteButton.style.display = 'inline-block';
+                } else {
+                    deleteButton.style.display = 'none';
+                }
+            }
+
+            // Добавление обработчиков событий для чекбоксов
+            const numberCheckboxes = document.querySelectorAll('.number-checkbox');
+            numberCheckboxes.forEach(function (checkbox) {
+                checkbox.addEventListener('change', updateDeleteButtonVisibility);
+            });
+
+            // Обработчик для чекбокса "Выбрать все"
+            const selectAllCheckbox = document.getElementById('select-all');
+            selectAllCheckbox.addEventListener('change', function () {
+                const isChecked = this.checked;
+                numberCheckboxes.forEach(function (checkbox) {
+                    checkbox.checked = isChecked;
+                });
+                updateDeleteButtonVisibility();
+            });
+        });
+
+        async function deleteSelectedNumbers() {
+            const selectedCheckboxes = document.querySelectorAll('.number-checkbox:checked');
+            const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+            if (selectedIds.length === 0) {
+                showMessage('Не выбраны номера для удаления.', 'error');
+                return;
+            }
+
+            if (!confirm(`Вы уверены, что хотите удалить выбранные номера (${selectedIds.length})?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('{{ url_for("vats.edit_numbers") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ delete_number_ids: selectedIds })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showMessage(result.message, 'success');
+                    location.reload();  // Перезагрузить страницу после удаления
+                } else {
+                    showMessage(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Ошибка при удалении выбранных номеров:', error);
+                showMessage('Произошла ошибка при удалении выбранных номеров.', 'error');
+            }
+        }
+
+        function showMessage(message, type) {
+            const msgDiv = document.getElementById('message');
+            msgDiv.textContent = message;
+            msgDiv.className = type;
+            msgDiv.style.display = 'block';
+            setTimeout(() => {
+                msgDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        // Функция для загрузки Excel-файла
+        function submitUpload() {
+            document.getElementById('upload-form').submit();
+        }
+
+        // Функция для открытия модального окна добавления номера
+        function addNumberManually() {
+            var addNumberModal = new bootstrap.Modal(document.getElementById('addNumberModal'));
+            addNumberModal.show();
+        }
+
+        // Обработка отправки формы добавления номера
+        document.getElementById('addNumberForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            var phoneNumber = document.getElementById('phoneNumberInput').value;
+
+            // Здесь можно добавить валидацию номера телефона
+
+            // Отправляем запрос на сервер для добавления номера
+            fetch('{{ url_for("vats.add_number") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ phone_number: phoneNumber })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    showMessage(result.message, 'success');
+                    location.reload(); // Перезагрузить страницу после добавления
+                } else {
+                    showMessage(result.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при добавлении номера:', error);
+                showMessage('Произошла ошибка при добавлении номера.', 'error');
+            });
+
+            // Закрываем модальное окно
+            var addNumberModal = bootstrap.Modal.getInstance(document.getElementById('addNumberModal'));
+            addNumberModal.hide();
+        });
+    </script>
+</body>
+</html>

@@ -582,48 +582,7 @@ def rehire_leader():
 
 
 
-@admin_bp.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-
-        connection = create_db_connection()
-        cursor = connection.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM User WHERE login = %s", (username,))
-        user = cursor.fetchone()
-        cursor.close()
-        connection.close()
-
-        if user and check_password_hash(user['password'], password):
-            session['logged_in'] = True
-            session['username'] = user['login']
-            session['id'] = user['id']
-            session['role'] = user['role']
-            session['full_name'] = user['full_name']
-            session['department'] = user.get('department')
-            session['admin_id'] = user['id']  # Сохраняем admin_id в сессии
-            
-            # Добавляем ukc_kc в сессию
-            session['ukc_kc'] = user.get('ukc_kc')
-            logger.debug(f"Пользователь 'ukc_kc': {user.get('ukc_kc')}")
-
-            if user['role'] == 'operator':
-                # Записываем время входа оператора в сессию
-                session['login_time'] = datetime.now()
-                # Устанавливаем статус оператора как "Онлайн"
-                update_operator_status(user['id'], 'Онлайн')
-                return redirect(url_for('callcenter.operator_dashboard'))
-            elif user['role'] == 'admin':
-                return redirect(url_for('admin_dashboard'))
-            elif user['role'] == 'leader':
-                return redirect(url_for('leader_dashboard'))
-            else:
-                return redirect(url_for('dashboard'))
-        else:
-            flash("Неверный логин или пароль", "danger")
-
-    return render_template('login.html')
+# Маршрут /login удален - используется auth_bp.login
 
 
 
@@ -681,7 +640,7 @@ def show_brokers():
     brokers = cursor.fetchall()
     cursor.close()
     connection.close()
-    return render_template('brokers.html', brokers=brokers)
+    return render_template('admin/brokers.html', brokers=brokers)
 
 @admin_bp.route('/api/update_broker', methods=['POST'])
 @login_required

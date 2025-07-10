@@ -15,250 +15,48 @@ def allowed_file(filename):
     """Проверка допустимости формата файла"""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-@news_bp.route('/')
+@news_bp.route('/news')
 @login_required
 def index():
-    """Отображает страницу с новостями"""
-    # Получаем список всех новостей
+    """Отображает страницу с новостями с учетом ролей"""
     conn = create_db_connection()
     cursor = conn.cursor(dictionary=True)
     
-    # Получаем новости, доступные текущему пользователю
-    query = """
-    SELECT n.*, u.full_name as author_name 
-    FROM News n 
-    LEFT JOIN User u ON n.author_id = u.id
-    LEFT JOIN NewsRoles nr ON n.id = nr.news_id
-    WHERE nr.role_id = %s OR nr.role_id = 0
-    GROUP BY n.id
-    ORDER BY n.created_at DESC
-    """
-    cursor.execute(query, (current_user.role_id,))
-    news = cursor.fetchall()
+    current_user_role_id = getattr(current_user, 'role_id', None)
+    if current_user_role_id is None:
+        # Если по какой-то причине role_id не загружен, не показываем новости
+        news = []
+    else:
+        # Этот запрос выбирает новости, если:
+        # 1. Новость опубликована и ее время публикации уже наступило.
+        # 2. Роль текущего пользователя есть в списке ролей для этой новости (или новость для всех).
+        # "Для всех" ролей - это когда в NewsRoles есть записи для всех существующих ролей.
+        query = """
+        SELECT n.*, u.full_name as created_by_name
+        FROM News n
+        LEFT JOIN User u ON n.created_by = u.id
+        WHERE n.is_published = 1
+          AND (n.publish_at IS NULL OR n.publish_at <= NOW())
+          AND EXISTS (
+            SELECT 1
+            FROM NewsRoles nr
+            WHERE nr.news_id = n.id AND nr.role_id = %s
+        )
+        ORDER BY n.publish_at DESC, n.created_at DESC;
+        """
+        cursor.execute(query, (current_user_role_id,))
+        news = cursor.fetchall()
     
-    # Получаем роли для формы создания новостей
-    cursor.execute("SELECT id, name FROM Role WHERE id > 0")
-    roles = cursor.fetchall()
+    # Получаем роли для формы создания новостей (только для админов)
+    roles = []
+    if current_user.has_role('admin'):
+        cursor.execute("SELECT id, name FROM Role")
+        roles = cursor.fetchall()
     
     cursor.close()
     conn.close()
     
     return render_template('news/index.html', news=news, roles=roles)
-
-@news_bp.route('/create', methods=['POST'])
-@login_required
-@admin_required
-def create_news():
-    """Создать новую новость"""
-    # Получаем данные из формы
-    title = request.form.get('newsTitle')
-    content = request.form.get('newsContent')
-    category = request.form.get('newsCategory')
-    selected_roles = request.form.getlist('newsRoles')
-    
-    # Для всех ролей используем id = 0
-    if 'all_roles' in request.form:
-        selected_roles = ['0']  # 0 означает "все роли"
-    
-    # Проверяем обязательные поля
-    if not title or not content:
-        flash('Заполните все обязательные поля', 'danger')
-        return redirect(url_for('news.index'))
-    
-    # Получаем файл изображения, если есть
-    image_filename = None
-    if 'newsImage' in request.files:
-        image_file = request.files['newsImage']
-        if image_file and image_file.filename and allowed_file(image_file.filename):
-            # Генерируем уникальное имя файла
-            original_filename = secure_filename(image_file.filename)
-            extension = original_filename.rsplit('.', 1)[1].lower()
-            unique_filename = f"{int(time.time())}_{uuid.uuid4().hex}.{extension}"
-            
-            # Создаем папку для изображений новостей, если не существует
-            news_images_folder = os.path.join('app', 'static', 'images', 'news')
-            os.makedirs(news_images_folder, exist_ok=True)
-            
-            # Сохраняем файл
-            image_path = os.path.join(news_images_folder, unique_filename)
-            image_file.save(image_path)
-            image_filename = unique_filename
-    
-    # Сохраняем новость в базу данных
-    conn = create_db_connection()
-    cursor = conn.cursor()
-    
-    try:
-        # Вставляем новость
-        query = """
-        INSERT INTO News (title, content, category, image, author_id, created_at) 
-        VALUES (%s, %s, %s, %s, %s, %s)
-        """
-        now = datetime.datetime.now()
-        cursor.execute(query, (title, content, category, image_filename, current_user.id, now))
-        news_id = cursor.lastrowid
-        
-        # Вставляем связи с ролями
-        if selected_roles:
-            for role_id in selected_roles:
-                cursor.execute(
-                    "INSERT INTO NewsRoles (news_id, role_id) VALUES (%s, %s)",
-                    (news_id, role_id)
-                )
-        
-        conn.commit()
-        flash('Новость успешно опубликована', 'success')
-    except Exception as e:
-        conn.rollback()
-        flash(f'Ошибка при сохранении новости: {str(e)}', 'danger')
-    finally:
-        cursor.close()
-        conn.close()
-    
-    return redirect(url_for('news.index'))
-
-@news_bp.route('/edit/<int:news_id>', methods=['GET', 'POST'])
-@login_required
-@admin_required
-def edit_news(news_id):
-    """Редактировать новость"""
-    conn = create_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    
-    if request.method == 'POST':
-        # Получаем данные из формы
-        title = request.form.get('newsTitle')
-        content = request.form.get('newsContent')
-        category = request.form.get('newsCategory')
-        selected_roles = request.form.getlist('newsRoles')
-        
-        # Для всех ролей используем id = 0
-        if 'all_roles' in request.form:
-            selected_roles = ['0']  # 0 означает "все роли"
-        
-        # Проверяем обязательные поля
-        if not title or not content:
-            flash('Заполните все обязательные поля', 'danger')
-            return redirect(url_for('news.edit_news', news_id=news_id))
-        
-        # Получаем текущую информацию о новости
-        cursor.execute("SELECT image FROM News WHERE id = %s", (news_id,))
-        current_news = cursor.fetchone()
-        current_image = current_news['image'] if current_news else None
-        
-        # Обработка изображения, если оно изменилось
-        image_filename = current_image
-        if 'newsImage' in request.files:
-            image_file = request.files['newsImage']
-            if image_file and image_file.filename and allowed_file(image_file.filename):
-                # Генерируем уникальное имя файла
-                original_filename = secure_filename(image_file.filename)
-                extension = original_filename.rsplit('.', 1)[1].lower()
-                unique_filename = f"{int(time.time())}_{uuid.uuid4().hex}.{extension}"
-                
-                # Создаем папку для изображений новостей, если не существует
-                news_images_folder = os.path.join('app', 'static', 'images', 'news')
-                os.makedirs(news_images_folder, exist_ok=True)
-                
-                # Сохраняем файл
-                image_path = os.path.join(news_images_folder, unique_filename)
-                image_file.save(image_path)
-                image_filename = unique_filename
-                
-                # Удаляем старое изображение, если оно есть
-                if current_image:
-                    old_image_path = os.path.join(news_images_folder, current_image)
-                    if os.path.exists(old_image_path):
-                        os.remove(old_image_path)
-        
-        try:
-            # Обновляем новость
-            query = """
-            UPDATE News SET title = %s, content = %s, category = %s, image = %s, updated_at = %s
-            WHERE id = %s
-            """
-            now = datetime.datetime.now()
-            cursor.execute(query, (title, content, category, image_filename, now, news_id))
-            
-            # Удаляем старые связи с ролями и добавляем новые
-            cursor.execute("DELETE FROM NewsRoles WHERE news_id = %s", (news_id,))
-            
-            if selected_roles:
-                for role_id in selected_roles:
-                    cursor.execute(
-                        "INSERT INTO NewsRoles (news_id, role_id) VALUES (%s, %s)",
-                        (news_id, role_id)
-                    )
-            
-            conn.commit()
-            flash('Новость успешно обновлена', 'success')
-        except Exception as e:
-            conn.rollback()
-            flash(f'Ошибка при обновлении новости: {str(e)}', 'danger')
-        finally:
-            cursor.close()
-            conn.close()
-        
-        return redirect(url_for('news.index'))
-    
-    # Получаем информацию о новости для редактирования
-    cursor.execute("SELECT * FROM News WHERE id = %s", (news_id,))
-    news = cursor.fetchone()
-    
-    if not news:
-        cursor.close()
-        conn.close()
-        flash('Новость не найдена', 'danger')
-        return redirect(url_for('news.index'))
-    
-    # Получаем связанные роли
-    cursor.execute("SELECT role_id FROM NewsRoles WHERE news_id = %s", (news_id,))
-    news_roles = [row['role_id'] for row in cursor.fetchall()]
-    
-    # Получаем все роли для формы
-    cursor.execute("SELECT id, name FROM Role WHERE id > 0")
-    roles = cursor.fetchall()
-    
-    cursor.close()
-    conn.close()
-    
-    return render_template('news/edit.html', news=news, roles=roles, news_roles=news_roles)
-
-@news_bp.route('/delete/<int:news_id>', methods=['POST'])
-@login_required
-@admin_required
-def delete_news(news_id):
-    """Удалить новость"""
-    conn = create_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    
-    # Получаем информацию о новости для удаления изображения
-    cursor.execute("SELECT image FROM News WHERE id = %s", (news_id,))
-    news = cursor.fetchone()
-    
-    try:
-        # Удаляем связи с ролями
-        cursor.execute("DELETE FROM NewsRoles WHERE news_id = %s", (news_id,))
-        
-        # Удаляем новость
-        cursor.execute("DELETE FROM News WHERE id = %s", (news_id,))
-        
-        # Удаляем изображение, если оно есть
-        if news and news['image']:
-            image_path = os.path.join('app', 'static', 'images', 'news', news['image'])
-            if os.path.exists(image_path):
-                os.remove(image_path)
-        
-        conn.commit()
-        flash('Новость успешно удалена', 'success')
-    except Exception as e:
-        conn.rollback()
-        flash(f'Ошибка при удалении новости: {str(e)}', 'danger')
-    finally:
-        cursor.close()
-        conn.close()
-    
-    return redirect(url_for('news.index'))
 
 @news_bp.route('/api/news', methods=['GET'])
 @login_required
@@ -273,13 +71,12 @@ def api_get_news():
     
     # Базовый запрос
     query = """
-    SELECT n.*, u.full_name as author_name 
+    SELECT n.*, u.full_name as created_by_name
     FROM News n 
-    LEFT JOIN User u ON n.author_id = u.id
-    LEFT JOIN NewsRoles nr ON n.id = nr.news_id
-    WHERE (nr.role_id = %s OR nr.role_id = 0)
+    LEFT JOIN User u ON n.created_by = u.id
+    WHERE 1=1
     """
-    params = [current_user.role_id]
+    params = []
     
     # Добавляем фильтры
     if category != 'all':
@@ -318,13 +115,12 @@ def view_news(news_id):
     
     # Получаем информацию о новости
     query = """
-    SELECT n.*, u.full_name as author_name 
+    SELECT n.*, u.full_name as created_by_name
     FROM News n 
-    LEFT JOIN User u ON n.author_id = u.id
-    LEFT JOIN NewsRoles nr ON n.id = nr.news_id
-    WHERE n.id = %s AND (nr.role_id = %s OR nr.role_id = 0)
+    LEFT JOIN User u ON n.created_by = u.id
+    WHERE n.id = %s
     """
-    cursor.execute(query, (news_id, current_user.role_id))
+    cursor.execute(query, (news_id,))
     news = cursor.fetchone()
     
     cursor.close()
@@ -334,4 +130,106 @@ def view_news(news_id):
         flash('Новость не найдена или у вас нет прав для ее просмотра', 'danger')
         return redirect(url_for('news.index'))
     
-    return render_template('news/view.html', news=news) 
+    return render_template('news/view.html', news=news)
+
+@news_bp.route('/news/react/<int:news_id>', methods=['POST'])
+@news_bp.route('/react/<int:news_id>', methods=['POST'])
+@login_required
+def react_to_news(news_id):
+    """Добавить или обновить реакцию на новость"""
+    reaction_type = request.json.get('reaction_type')
+    
+    if reaction_type not in ['positive', 'neutral', 'negative']:
+        return jsonify({'success': False, 'message': 'Неверный тип реакции'}), 400
+    
+    conn = create_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        # Проверяем, есть ли уже реакция от этого пользователя на эту новость
+        cursor.execute("""
+            SELECT id FROM NewsReactions 
+            WHERE news_id = %s AND user_id = %s
+        """, (news_id, current_user.id))
+        
+        existing_reaction = cursor.fetchone()
+        
+        if existing_reaction:
+            # Обновляем существующую реакцию
+            cursor.execute("""
+                UPDATE NewsReactions 
+                SET reaction_type = %s, updated_at = CURRENT_TIMESTAMP 
+                WHERE id = %s
+            """, (reaction_type, existing_reaction[0]))
+        else:
+            # Создаем новую реакцию
+            cursor.execute("""
+                INSERT INTO NewsReactions (news_id, user_id, reaction_type) 
+                VALUES (%s, %s, %s)
+            """, (news_id, current_user.id, reaction_type))
+        
+        conn.commit()
+        
+        # Получаем обновленную статистику реакций
+        cursor.execute("""
+            SELECT reaction_type, COUNT(*) as count 
+            FROM NewsReactions 
+            WHERE news_id = %s 
+            GROUP BY reaction_type
+        """, (news_id,))
+        
+        stats = {row[0]: row[1] for row in cursor.fetchall()}
+        
+        return jsonify({
+            'success': True,
+            'stats': stats,
+            'user_reaction': reaction_type
+        })
+        
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+@news_bp.route('/news/reactions/<int:news_id>')
+@news_bp.route('/reactions/<int:news_id>')
+@login_required
+def get_news_reactions(news_id):
+    """Получить статистику реакций на новость"""
+    conn = create_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        # Получаем статистику реакций
+        cursor.execute("""
+            SELECT reaction_type, COUNT(*) as count 
+            FROM NewsReactions 
+            WHERE news_id = %s 
+            GROUP BY reaction_type
+        """, (news_id,))
+        
+        stats = {row[0]: row[1] for row in cursor.fetchall()}
+        
+        # Получаем реакцию текущего пользователя
+        cursor.execute("""
+            SELECT reaction_type 
+            FROM NewsReactions 
+            WHERE news_id = %s AND user_id = %s
+        """, (news_id, current_user.id))
+        
+        user_reaction = cursor.fetchone()
+        user_reaction = user_reaction[0] if user_reaction else None
+        
+        return jsonify({
+            'stats': stats,
+            'user_reaction': user_reaction
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close() 
+        

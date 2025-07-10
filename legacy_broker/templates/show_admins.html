@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Список администраторов</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: calc(100vh - 70px);
+            padding: 0 20px;
+        }
+
+        .form-container, .admins-list {
+            border: none;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: white;
+            box-shadow: 0 2px 3px #ccc;
+            width: 48%;
+        }
+
+        table {
+            width: 100%;
+            max-width: 800px;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background-color: white;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 6px;
+            border-bottom: 1px solid #ddd;
+            position: relative;
+        }
+
+        th {
+            background-color: #ccc;
+            color: black;
+            cursor: pointer;
+        }
+
+        th .sort-arrow {
+            display: inline-block;
+            width: 0;
+            height: 0;
+            margin-left: 5px;
+            vertical-align: middle;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+        }
+
+        th .sort-arrow.asc {
+            border-bottom: 5px solid #333;
+        }
+
+        th .sort-arrow.desc {
+            border-top: 5px solid #333;
+        }
+
+        td {
+            font-size: 14px;
+        }
+
+        td:hover .edit-icon {
+            visibility: visible;
+        }
+
+        .edit-icon {
+            position: absolute;
+            right: 10px;
+            visibility: hidden;
+            cursor: pointer;
+        }
+
+        .action-btn {
+            background-color: #000;
+            color: white;
+            padding: 6px 10px;
+            margin: 2px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .action-btn:hover {
+            background-color: #333;
+        }
+
+        .delete-button {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .delete-button:hover {
+            background-color: #c82333;
+        }
+
+        .fire-button {
+            background-color: #ffcc00;
+            color: black;
+        }
+
+        .fire-button:hover {
+            background-color: #ff9900;
+        }
+
+        .save-button {
+            background-color: #000;
+            color: white;
+        }
+
+        .save-button:hover {
+            background-color: #333;
+        }
+
+        .button {
+            padding: 10px 5px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            color: white;
+            margin: 10px 5px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .button:hover {
+            background-color: #45a049;
+        }
+
+        .back-button {
+            display: flex;
+            align-items: center;
+            background-color: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        .back-button i {
+            margin-right: 8px;
+        }
+
+        .back-button:hover {
+            background-color: #5a6268;
+        }
+
+        .content {
+            margin-left: 50px;
+            padding: 70px 20px 20px 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            overflow-x: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .actions {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .search-input {
+            width: 100%;
+            max-width: 800px;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+        }
+
+        tr {
+            border-bottom: 1px solid #ddd;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        td + td, th + th {
+            border-left: 1px solid #ddd;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+    const getCellValue = (tr, idx) => tr.children[idx].innerText || tr.children[idx].textContent;
+
+    const comparer = (idx, asc) => (a, b) => ((v1, v2) =>
+        v1 !== '' && v2 !== '' && !isNaN(v1) && !isNaN(v2) ? v1 - v2 : v1.toString().localeCompare(v2)
+    )(getCellValue(asc ? a : b, idx), getCellValue(asc ? b : a, idx));
+
+    document.querySelectorAll('th').forEach(th => th.addEventListener('click', () => {
+        const table = th.closest('table');
+        Array.from(table.querySelectorAll('tr:nth-child(n+2)'))
+            .sort(comparer(Array.from(th.parentNode.children).indexOf(th), this.asc = !this.asc))
+            .forEach(tr => table.appendChild(tr));
+
+        // Обновление стрелочек сортировки
+        document.querySelectorAll('.sort-arrow').forEach(arrow => arrow.classList.remove('asc', 'desc'));
+        const sortArrow = th.querySelector('.sort-arrow');
+        if (sortArrow) {
+            sortArrow.classList.toggle('asc', this.asc);
+            sortArrow.classList.toggle('desc', !this.asc);
+        }
+    }));
+
+    const searchInput = document.getElementById('search-input');
+    searchInput.addEventListener('input', function () {
+        const filter = searchInput.value.toLowerCase();
+        const rows = document.querySelectorAll('table tbody tr'); // убедитесь, что строки находятся в <tbody>
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(filter) ? '' : 'none';
+        });
+    });
+
+    document.querySelectorAll('.edit-icon').forEach(icon => {
+        icon.addEventListener('click', function () {
+            const adminId = this.getAttribute('data-id');
+            console.log(`Admin ID to fetch: ${adminId}`); // Логируем ID, чтобы отследить его значение
+
+            fetch(`/admin/api/get_admin?id=${adminId}`)
+                .then(response => {
+                    if (!response.ok) throw new Error(`Error: ${response.statusText}`);
+                    return response.json();
+                })
+                .then(data => {
+                    if (!data.success) throw new Error(data.message || "Unknown error");
+                    console.log("Fetched admin data:", data); // Логируем полученные данные
+
+                    // Заполнение полей формы
+                    document.getElementById('editAdminId').value = data.id;
+                    document.getElementById('editLogin').value = data.login;
+                    document.getElementById('editFullName').value = data.full_name;
+                    document.getElementById('editPhone').value = data.Phone;
+                    document.getElementById('editDepartment').value = data.department;
+                    document.getElementById('editHireDate').value = data.hire_date;
+                })
+                .catch(error => {
+                    console.error("Error fetching admin data:", error.message);
+                });
+        });
+    });
+
+    document.getElementById('addAdminForm').addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        const login = document.getElementById('addLogin').value;
+        const fullName = document.getElementById('addFullName').value;
+        const phone = document.getElementById('addPhone').value;
+        const department = document.getElementById('addDepartment').value;
+        const hireDate = document.getElementById('addHireDate').value;
+        const password = document.getElementById('addPassword').value;
+
+        fetch('/admin/api/add_admin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                login: login,
+                full_name: fullName,
+                phone: phone,
+                department: department,
+                hire_date: hireDate,
+                password: password
+            })
+        }).then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message);
+                }
+            });
+    });
+
+    document.getElementById('editAdminForm').addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        const adminId = document.getElementById('editAdminId').value;
+        const login = document.getElementById('editLogin').value;
+        const fullName = document.getElementById('editFullName').value;
+        const phone = document.getElementById('editPhone').value;
+        const department = document.getElementById('editDepartment').value;
+        const hireDate = document.getElementById('editHireDate').value;
+
+        fetch('/admin/api/update_admin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id: adminId,
+                login: login,
+                full_name: fullName,
+                Phone: phone,
+                department: department,
+                hire_date: hireDate
+            })
+        }).then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message);
+                }
+            });
+    });
+
+    document.getElementById('deleteButton').addEventListener('click', function () {
+        const adminId = document.getElementById('editAdminId').value;
+        fetch(`/admin/api/delete_admin`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ id: adminId })
+        }).then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message);
+                }
+            });
+    });
+});
+    </script>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">Л</div>
+        <div class="menu">
+            <a href="{{ url_for('personnel') }}">
+                <i class="fas fa-arrow-left icon"></i><span class="text">Назад</span>
+            </a>
+            <a href="#" class="button" data-bs-toggle="modal" data-bs-target="#addAdminModal">
+                <i class="fas fa-user-plus icon"></i><span class="text">Добавить администратора</span>
+            </a>
+        </div>
+    </div>
+    <div class="topbar">
+        <div class="title">Администраторы</div>
+        <div class="right-icons">
+            <div class="profile-icon" tabindex="0">
+                <i class="fas fa-user"></i>
+                <div class="profile-menu">
+                    <div class="profile-info">
+                        <p>Администратор</p>
+                    </div>
+                    <a href="{{ url_for('userlist.logout') }}">Выход</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="content">
+        <h2>Администраторы</h2>
+        <input type="text" id="search-input" class="search-input" placeholder="Поиск...">
+        <table>
+            <tr>
+                <th>Полное имя <span class="sort-arrow"></span></th>
+                <th>Отдел <span class="sort-arrow"></span></th>
+                <th>Телефон <span class="sort-arrow"></span></th>
+                <th>Дата приема <span class="sort-arrow"></span></th>
+            </tr>
+            {% for admin in admins %}
+            <tr>
+                <td>
+                    {{ admin.full_name }}
+                    <i class="fas fa-pencil-alt edit-icon" data-bs-toggle="modal" data-bs-target="#editAdminModal" data-id="{{ admin.id }}"></i>
+                </td>
+                <td>{{ admin.department }}</td>
+                <td>{{ admin.Phone }}</td>
+                <td>{{ admin.hire_date }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <!-- Модальное окно для добавления администратора -->
+    <div class="modal fade" id="addAdminModal" tabindex="-1" aria-labelledby="addAdminModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addAdminModalLabel">Добавить администратора</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addAdminForm">
+                        <div class="mb-3">
+                            <label for="addLogin" class="form-label">Логин</label>
+                            <input type="text" class="form-control" id="addLogin" name="login" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="addFullName" class="form-label">Полное имя</label>
+                            <input type="text" class="form-control" id="addFullName" name="full_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="addPhone" class="form-label">Телефон</label>
+                            <input type="text" class="form-control" id="addPhone" name="phone" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="addDepartment" class="form-label">Отдел</label>
+                            <input type="text" class="form-control" id="addDepartment" name="department" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="addHireDate" class="form-label">Дата приема</label>
+                            <input type="date" class="form-control" id="addHireDate" name="hire_date" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="addPassword" class="form-label">Пароль</label>
+                            <input type="password" class="form-control" id="addPassword" name="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Добавить</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для редактирования администратора -->
+    <div class="modal fade" id="editAdminModal" tabindex="-1" aria-labelledby="editAdminModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editAdminModalLabel">Редактировать администратора</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editAdminForm">
+                        <input type="hidden" id="editAdminId" name="admin_id">
+                        <div class="mb-3">
+                            <label for="editLogin" class="form-label">Логин</label>
+                            <input type="text" class="form-control" id="editLogin" name="login" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editFullName" class="form-label">Полное имя</label>
+                            <input type="text" class="form-control" id="editFullName" name="full_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editPhone" class="form-label">Телефон</label>
+                            <input type="text" class="form-control" id="editPhone" name="phone" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editDepartment" class="form-label">Отдел</label>
+                            <input type="text" class="form-control" id="editDepartment" name="department" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editHireDate" class="form-label">Дата приема</label>
+                            <input type="date" class="form-control" id="editHireDate" name="hire_date" required>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <button type="submit" class="btn save-button">Сохранить</button>
+                            <button type="button" class="btn delete-button" id="deleteButton">Удалить</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

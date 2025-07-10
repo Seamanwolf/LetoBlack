@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>IT-Tech Панель</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+            padding-top: 60px;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 25%;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+            .close:hover,
+            .close:focus {
+                color: black;
+                text-decoration: none;
+                cursor: pointer;
+            }
+
+        .add-button {
+            cursor: pointer;
+            color: black;
+            margin-left: 10px;
+        }
+
+        .table-container {
+            margin-top: 30px;
+        }
+
+        th {
+            cursor: pointer;
+            position: relative;
+        }
+
+            th .add-button {
+                position: absolute;
+                right: 10px;
+                top: 50%;
+                transform: translateY(-50%);
+            }
+
+        #addObjectForm label,
+        #editForm label {
+            display: block;
+            margin-top: 10px;
+        }
+
+        #addObjectForm select,
+        #addObjectForm input[type="text"],
+        #addObjectForm input[type="date"],
+        #addObjectForm input[type="number"],
+        #editForm select,
+        #editForm input[type="text"],
+        #editForm input[type="date"],
+        #editForm input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+
+        #addObjectForm button,
+        #editForm button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: black;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+            #addObjectForm button:hover,
+            #editForm button:hover {
+                background-color: #555;
+            }
+
+        .hidden {
+            display: none;
+        }
+
+        .table-section {
+            margin-bottom: 20px;
+        }
+
+        .collapsed {
+            display: none;
+        }
+
+        .toggle-icon {
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        .settings-button {
+            cursor: pointer;
+            margin-right: 20px;
+            font-size: 20px;
+        }
+
+        .search-icon {
+            cursor: pointer;
+            margin-right: 20px;
+            font-size: 20px; /* Увеличиваем размер значка */
+        }
+
+        .status-cell.active {
+            background-color: lightgreen;
+        }
+
+        .status-cell.in-repair {
+            background-color: orange;
+        }
+
+        .status-cell.storage {
+            background-color: grey;
+        }
+
+        .status-cell.decommissioned {
+            background-color: lightcoral;
+        }
+
+        #searchBar {
+            width: 200px; /* Уменьшаем ширину строки поиска */
+            padding: 5px;
+        }
+
+        .filter-select {
+            width: 150px; /* Фиксированная ширина для выпадающих списков */
+            padding: 5px;
+        }
+
+        #searchContainer {
+            margin-top: 10px;
+            display: none;
+        }
+
+        #applyFilters {
+            padding: 5px 15px;
+            margin-left: 10px;
+            vertical-align: top;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="sidebar">
+        <div class="logo">Л</div>
+        <div class="menu">
+            <a href="{{ url_for('itinvent.it_tech_dashboard', status='active') }}" class="button">
+                <i class="fas fa-desktop icon"></i><span class="text">Активные</span>
+            </a>
+            <a href="{{ url_for('itinvent.it_tech_dashboard', status='in_repair') }}" class="button">
+                <i class="fas fa-tools icon"></i><span class="text">В ремонте</span>
+            </a>
+            <a href="{{ url_for('itinvent.it_tech_dashboard', status='storage') }}" class="button">
+                <i class="fas fa-warehouse icon"></i><span class="text">Склад</span>
+            </a>
+            <a href="{{ url_for('itinvent.it_tech_dashboard', status='decommissioned') }}" class="button">
+                <i class="fas fa-trash icon"></i><span class="text">Списано</span>
+            </a>
+            <a href="{{ url_for('itinvent.it_tech_dashboard', status='archive') }}" class="button">
+                <i class="fas fa-archive icon"></i><span class="text">Архив</span>
+            </a>
+            <a href="{{ url_for('admin.admin_dashboard') }}" class="button">
+                <i class="fas fa-arrow-left icon"></i><span class="text">Назад</span>
+            </a>
+            <a href="#" id="addObjectButton" class="button">
+                <i class="fas fa-plus icon"></i><span class="text">Добавить объект</span>
+            </a>
+        </div>
+    </div>
+    <div class="topbar">
+        <div class="title">
+            {% if status == 'active' %}
+            Активные
+            {% elif status == 'in_repair' %}
+            В ремонте
+            {% elif status == 'storage' %}
+            Склад
+            {% elif status == 'decommissioned' %}
+            Списано
+            {% elif status == 'archive' %}
+            Архив
+            {% else %}
+            IT-Tech Панель
+            {% endif %}
+        </div>
+        <div class="right-icons">
+            <i class="fas fa-search search-icon" id="searchIcon"></i> <!-- Значок поиска -->
+            <i class="fas fa-cog settings-button" onclick="window.location.href='{{ url_for('itinvent.it_tech_edit') }}'"></i>
+            <div class="profile-icon" tabindex="0">
+                <i class="fas fa-user"></i>
+                <div class="profile-menu">
+                    <div class="profile-info">
+                        <p>Администратор</p>
+                    </div>
+                    <a href="{{ url_for('userlist.logout') }}">Выход</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="searchContainer" style="margin-top: 100px; text-align: center; z-index: 1100; position: absolute;">
+        <input type="text" id="searchBar" placeholder="Введите запрос для поиска...">
+        <select id="cityFilter" class="filter-select">
+            <option value="">Город</option>
+        </select>
+        <select id="floorFilter" class="filter-select">
+            <option value="">Этаж</option>
+        </select>
+        <select id="departmentFilter" class="filter-select">
+            <option value="">Отдел</option>
+        </select>
+        <select id="roomFilter" class="filter-select">
+            <option value="">Кабинет</option>
+        </select>
+        <select id="typeFilter" class="filter-select">
+            <option value="">Тип оборудования</option>
+        </select>
+        <select id="brandFilter" class="filter-select">
+            <option value="">Марка</option>
+        </select>
+        <select id="modelFilter" class="filter-select">
+            <option value="">Модель</option>
+        </select>
+        <select id="responsibleFilter" class="filter-select">
+            <option value="">Ответственный</option>
+        </select>
+        <select id="statusFilter" class="filter-select">
+            <option value="">Статус</option>
+            <option value="Активный">Активный</option>
+            <option value="В ремонте">В ремонте</option>
+            <option value="Склад">Склад</option>
+            <option value="Списано">Списано</option>
+        </select>
+        <button id="applyFilters">Поиск</button>
+        <button id="clearFilters">Очистить</button>
+    </div>
+    <div class="content">
+        <div id="table-container">
+            <!-- Таблица будет загружена здесь -->
+        </div>
+    </div>
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <form id="editForm">
+                <input type="hidden" id="editId">
+                <label for="editType">Тип оборудования:</label>
+                <input type="text" id="editType" disabled>
+                <label for="editBrand">Марка:</label>
+                <input type="text" id="editBrand" disabled>
+                <label for="editModel">Модель:</label>
+                <input type="text" id="editModel" disabled>
+                <label for="editSerialNumber">Серийный номер:</label>
+                <input type="text" id="editSerialNumber" disabled>
+                <label for="editInventoryNumber">Инвентарный номер:</label>
+                <input type="text" id="editInventoryNumber" disabled>
+                <label for="editPurchaseDate">Дата приобретения:</label>
+                <input type="date" id="editPurchaseDate" disabled>
+                <label for="editResponsiblePerson">ФИО ответственного:</label>
+                <select id="editResponsiblePerson"></select>
+                <label for="editStatus">Статус:</label>
+                <select id="editStatus">
+                    <option value="Активный">Активный</option>
+                    <option value="В ремонте">В ремонте</option>
+                    <option value="Склад">Склад</option>
+                    <option value="Списано">Списано</option>
+                </select>
+                <div id="repairDateContainer" class="hidden">
+                    <label for="editRepairDate">Дата отправки в ремонт:</label>
+                    <input type="date" id="editRepairDate">
+                </div>
+                <div id="storageDateContainer" class="hidden">
+                    <label for="editStorageDate">Дата перемещения на склад:</label>
+                    <input type="date" id="editStorageDate">
+                </div>
+                <div id="decommissionDateContainer" class="hidden">
+                    <label for="editDecommissionDate">Дата списания:</label>
+                    <input type="date" id="editDecommissionDate">
+                </div>
+                <label for="editQuantity">Количество:</label>
+                <input type="number" id="editQuantity">
+                <button type="submit">Сохранить</button>
+            </form>
+        </div>
+    </div>
+    <div id="addModal" class="modal">
+        <div class="modal-content" style="width: 25%;">
+            <span class="close">&times;</span>
+            <form id="addObjectForm">
+                <label for="addCity">Город:</label>
+                <select id="addCity" name="city_id"></select><br>
+                <label for="addFloor">Этаж:</label>
+                <select id="addFloor" name="floor_id"></select><br>
+                <label for="addDepartment">Отдел:</label>
+                <select id="addDepartment" name="department_id"></select><br>
+                <label for="addRoom">Кабинет:</label>
+                <select id="addRoom" name="room_id"></select><br>
+                <label id="labelType" for="addType">Тип оборудования:</label>
+                <select id="addType" name="type_id"></select><br>
+                <div id="brandFields">
+                    <label id="labelBrand" for="addBrand">Марка:</label>
+                    <select id="addBrand" name="brand_id"></select><br>
+                    <label id="labelModel" for="addModel">Модель:</label>
+                    <select id="addModel" name="model_id"></select><br>
+                    <label id="labelSerialNumber" for="addSerialNumber">Серийный номер:</label>
+                    <input type="text" id="addSerialNumber" name="serial_number"><br>
+                    <label id="labelInventoryNumber" for="addInventoryNumber">Инвентарный номер:</label>
+                    <input type="text" id="addInventoryNumber" name="inventory_number"><br>
+                </div>
+                <label for="addPurchaseDate">Дата приобретения:</label>
+                <input type="date" id="addPurchaseDate" name="purchase_date"><br>
+                <label for="addResponsiblePerson">ФИО ответственного:</label>
+                <select id="addResponsiblePerson" name="responsible_person_id"></select><br>
+                <label for="addStatus">Статус:</label>
+                <select id="addStatus" name="status">
+                    <option value="Активный">Активный</option>
+                    <option value="В ремонте">В ремонте</option>
+                    <option value="Склад">Склад</option>
+                    <option value="Списано">Списано</option>
+                </select><br>
+                <label for="addQuantity">Количество:</label>
+                <input type="number" id="addQuantity" name="quantity"><br>
+                <button type="submit">Добавить</button>
+            </form>
+        </div>
+    </div>
+    <script>document.addEventListener('DOMContentLoaded', function () {
+            const status = new URLSearchParams(window.location.search).get('status') || 'active';
+            fetch(`/itinvent/it/api/it_tech?status=${status}`)
+                .then(response => response.json())
+                .then(data => {
+                    const tableContainer = document.getElementById('table-container');
+                    tableContainer.innerHTML = createTables(data);
+                });
+
+            function createTables(data) {
+                const categories = {
+                    'Компьютерная техника': ['Ноутбук', 'Системный блок', 'Монитор'],
+                    'Организационная техника': ['Принтер', 'МФУ', 'Сканер'],
+                    'Картриджи': ['Картридж'],
+                    'Прочая техника': ['Телевизор', 'Телефон', 'Аудиосистема']
+                };
+
+                let tables = '';
+                for (const [category, types] of Object.entries(categories)) {
+                    tables += `<div class="table-section">
+                                                    <h2><span class="toggle-icon">+</span> ${category}</h2>
+                                                    <table class="collapsed">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>ID</th>
+                                                                <th>Город</th>
+                                                                <th>Этаж</th>
+                                                                <th>Отдел</th>
+                                                                <th>Кабинет</th>
+                                                                <th>Тип оборудования</th>
+                                                                <th>Марка</th>
+                                                                <th>Модель</th>
+                                                                <th>Серийный номер</th>
+                                                                <th>Инвентарный номер</th>
+                                                                <th>Дата приобретения</th>
+                                                                <th>ФИО ответственного</th>
+                                                                <th>Статус</th>
+                                                                <th>Количество</th>
+                                                                ${status === 'in_repair' ? '<th>Дата отправки в ремонт</th>' : ''}
+                                                                ${status === 'storage' ? '<th>Дата перемещения на склад</th>' : ''}
+                                                                ${status === 'decommissioned' ? '<th>Дата списания</th>' : ''}
+                                                                <th>Действия</th>
+                                                           </tr>
+                                                      </thead>
+                                                      <tbody>`;
+
+                    const mergedData = mergeDataByModel(data, types);
+
+                    mergedData.forEach(item => {
+                        tables += `<tr>
+                                                    <td>${item.id}</td>
+                                                    <td>${item.city || 'undefined'}</td>
+                                                    <td>${item.floor || 'undefined'}</td>
+                                                    <td>${item.department || 'undefined'}</td>
+                                                    <td>${item.room || 'undefined'}</td>
+                                                    <td>${item.equipment_type || 'undefined'}</td>
+                                                    <td>${item.brand || 'undefined'}</td>
+                                                    <td>${item.model || 'undefined'}</td>
+                                                    <td>${item.serial_number}</td>
+                                                    <td>${item.inventory_number}</td>
+                                                    <td>${item.purchase_date}</td>
+                                                    <td>${item.responsible_person || 'undefined'}</td>
+                                                    <td class="status-cell ${getStatusClass(item.status)}">${item.status}</td>
+                                                    <td>${item.quantity}</td>
+                                                    ${status === 'in_repair' ? `<td>${item.repair_date || ''}</td>` : ''}
+                                                    ${status === 'storage' ? `<td>${item.storage_date || ''}</td>` : ''}
+                                                    ${status === 'decommissioned' ? `<td>${item.decommission_date || ''}</td>` : ''}
+                                                    <td><i class="fas fa-edit edit-icon" style="cursor:pointer"></i></td>
+                                                </tr>`;
+                    });
+
+                    tables += `</tbody></table></div>`;
+                }
+
+                return tables;
+            }
+
+            function mergeDataByModel(data, types) {
+                const mergedData = [];
+                const modelMap = {};
+
+                data.forEach(item => {
+                    if (types.includes(item.equipment_type)) {
+                        const key = item.model;
+                        if (modelMap[key]) {
+                            modelMap[key].quantity += item.quantity;
+                        } else {
+                            modelMap[key] = { ...item };
+                        }
+                    }
+                });
+
+                for (const key in modelMap) {
+                    mergedData.push(modelMap[key]);
+                }
+
+                return mergedData;
+            }
+
+            function getStatusClass(status) {
+                switch (status) {
+                    case 'Активный':
+                        return 'active';
+                    case 'В ремонте':
+                        return 'in-repair';
+                    case 'Склад':
+                        return 'storage';
+                    case 'Списано':
+                        return 'decommissioned';
+                    default:
+                        return '';
+                }
+            }
+
+            const editModal = document.getElementById('editModal');
+            const addModal = document.getElementById('addModal');
+            const editForm = document.getElementById('editForm');
+            const addObjectForm = document.getElementById('addObjectForm');
+            const closeModal = document.querySelectorAll('.close');
+            const addObjectButton = document.getElementById('addObjectButton');
+            const searchIcon = document.getElementById('searchIcon');
+            const searchContainer = document.getElementById('searchContainer');
+            const applyFiltersButton = document.getElementById('applyFilters');
+
+            closeModal.forEach(span => {
+                span.addEventListener('click', () => {
+                    editModal.style.display = 'none';
+                    addModal.style.display = 'none';
+                });
+            });
+
+            window.onclick = function (event) {
+                if (event.target === editModal) {
+                    editModal.style.display = 'none';
+                }
+                if (event.target === addModal) {
+                    addModal.style.display = 'none';
+                }
+            };
+
+            searchIcon.addEventListener('click', function () {
+                searchContainer.style.display = searchContainer.style.display === 'none' ? 'block' : 'none';
+            });
+
+            editForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+                const status = document.getElementById('editStatus').value;
+                const repairDate = document.getElementById('editRepairDate').value;
+                const storageDate = document.getElementById('editStorageDate').value;
+                const decommissionDate = document.getElementById('editDecommissionDate').value;
+
+                if ((status === 'В ремонте' && !repairDate) ||
+                    (status === 'Склад' && !storageDate) ||
+                    (status === 'Списано' && !decommissionDate)) {
+                    alert('Пожалуйста, заполните соответствующую дату.');
+                    return;
+                }
+
+                const data = {
+                    id: document.getElementById('editId').value,
+                    responsible_person_id: document.getElementById('editResponsiblePerson').value,
+                    status: status,
+                    quantity: parseInt(document.getElementById('editQuantity').value),
+                    repair_date: repairDate || null,
+                    storage_date: storageDate || null,
+                    decommission_date: decommissionDate || null,
+                    type_id: document.getElementById('editType').value,
+                    brand_id: document.getElementById('editBrand').value,
+                    model_id: document.getElementById('editModel').value
+                };
+
+                fetch(`/itinvent/api/update_technic`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                })
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.success) {
+                            alert('Обновлено успешно');
+                            location.reload();
+                        } else {
+                            alert('Ошибка при обновлении: ' + result.message);
+                        }
+                    });
+            });
+
+            addObjectForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+                const formData = new FormData(event.target);
+
+                fetch('/itinvent/api/add_technic', {
+                    method: 'POST',
+                    body: JSON.stringify(Object.fromEntries(formData)),
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.success) {
+                            alert('Объект добавлен успешно');
+                            location.reload();
+                        } else {
+                            alert('Ошибка при добавлении объекта: ' + result.message);
+                        }
+                    });
+            });
+
+            addObjectButton.addEventListener('click', function () {
+                fetch('/itinvent/api/technic_types')
+                    .then(response => response.json())
+                    .then(types => {
+                        const typeSelect = document.getElementById('addType');
+                        typeSelect.innerHTML = types.map(type =>
+                            `<option value="${type.id}">${type.type}</option>`
+                        ).join('');
+                    });
+
+                fetch('/itinvent/api/cities')
+                    .then(response => response.json())
+                    .then(cities => {
+                        const citySelect = document.getElementById('addCity');
+                        citySelect.innerHTML = cities.map(city =>
+                            `<option value="${city.id}">${city.name}</option>`
+                        ).join('');
+                    });
+
+                fetch('/itinvent/api/floors')
+                    .then(response => response.json())
+                    .then(floors => {
+                        const floorSelect = document.getElementById('addFloor');
+                        floorSelect.innerHTML = floors.map(floor =>
+                            `<option value="${floor.id}">${floor.floor}</option>`
+                        ).join('');
+                    });
+
+                fetch('/itinvent/api/departments')
+                    .then(response => response.json())
+                    .then(departments => {
+                        const departmentSelect = document.getElementById('addDepartment');
+                        departmentSelect.innerHTML = departments.map(department =>
+                            `<option value="${department.id}">${department.name}</option>`
+                        ).join('');
+                    });
+
+                fetch('/itinvent/api/rooms')
+                    .then(response => response.json())
+                    .then(rooms => {
+                        const roomSelect = document.getElementById('addRoom');
+                        roomSelect.innerHTML = rooms.map(room =>
+                            `<option value="${room.id}">${room.room}</option>`
+                        ).join('');
+                    });
+
+                fetch('/itinvent/api/users')
+                    .then(response => response.json())
+                    .then(users => {
+                        const responsiblePersonSelect = document.getElementById('addResponsiblePerson');
+                        responsiblePersonSelect.innerHTML = users.map(user =>
+                            `<option value="${user.id}">${user.full_name}</option>`
+                        ).join('');
+                    });
+
+                addModal.style.display = 'block';
+            });
+
+            // Обработчик изменения типа оборудования для загрузки марок
+            document.getElementById('addType').addEventListener('change', function () {
+                const typeId = this.value;
+
+                fetch(`/itinvent/api/brands?type_id=${typeId}`)
+                    .then(response => response.json())
+                    .then(brands => {
+                        const brandSelect = document.getElementById('addBrand');
+                        brandSelect.innerHTML = brands.map(brand =>
+                            `<option value="${brand.id}">${brand.brand}</option>`
+                        ).join('');
+                        brandSelect.dispatchEvent(new Event('change')); // Обновляем список моделей после изменения марки
+                    });
+            });
+
+            // Обработчик изменения марки для загрузки моделей
+            document.getElementById('addBrand').addEventListener('change', function () {
+                const brandId = this.value;
+
+                fetch(`/itinvent/api/models?brand_id=${brandId}`)
+                    .then(response => response.json())
+                    .then(models => {
+                        const modelSelect = document.getElementById('addModel');
+                        modelSelect.innerHTML = models.map(model =>
+                            `<option value="${model.id}">${model.model}</option>`
+                        ).join('');
+                    });
+            });
+
+            document.getElementById('clearFilters').addEventListener('click', function () {
+        // Очистка всех фильтров
+                    document.getElementById('cityFilter').value = '';
+                    document.getElementById('floorFilter').value = '';
+                    document.getElementById('departmentFilter').value = '';
+                    document.getElementById('roomFilter').value = '';
+                    document.getElementById('typeFilter').value = '';
+                    document.getElementById('brandFilter').value = '';
+                    document.getElementById('modelFilter').value = '';
+                    document.getElementById('responsibleFilter').value = '';
+                    document.getElementById('statusFilter').value = '';
+                    document.getElementById('searchBar').value = '';
+
+        // Запуск поиска с пустыми фильтрами
+        applyFiltersButton.click();
+    });
+
+
+            document.addEventListener('click', function (event) {
+                if (event.target.classList.contains('edit-icon')) {
+                    const row = event.target.closest('tr');
+                    const id = row.children[0].textContent;
+                    const city = row.children[1].textContent;
+                    const floor = row.children[2].textContent;
+                    const department = row.children[3].textContent;
+                    const room = row.children[4].textContent;
+                    const type = row.children[5].textContent;
+                    const brand = row.children[6].textContent;
+                    const model = row.children[7].textContent;
+                    const serialNumber = row.children[8].textContent;
+                    const inventoryNumber = row.children[9].textContent;
+                    const purchaseDate = row.children[10].textContent;
+                    const responsiblePerson = row.children[11].textContent;
+                    const status = row.children[12].textContent;
+                    const quantity = row.children[13].textContent;
+
+                    document.getElementById('editId').value = id;
+                    document.getElementById('editType').value = type;
+                    document.getElementById('editBrand').value = brand;
+                    document.getElementById('editModel').value = model;
+                    document.getElementById('editSerialNumber').value = serialNumber;
+                    document.getElementById('editInventoryNumber').value = inventoryNumber;
+                    document.getElementById('editPurchaseDate').value = purchaseDate;
+                    document.getElementById('editResponsiblePerson').value = responsiblePerson;
+                    document.getElementById('editStatus').value = status;
+                    document.getElementById('editQuantity').value = quantity;
+
+                    document.getElementById('editRepairDate').value = '';
+                    document.getElementById('editStorageDate').value = '';
+                    document.getElementById('editDecommissionDate').value = '';
+
+                    document.getElementById('repairDateContainer').classList.add('hidden');
+                    document.getElementById('storageDateContainer').classList.add('hidden');
+                    document.getElementById('decommissionDateContainer').classList.add('hidden');
+
+                    fetch('/itinvent/api/users')
+                        .then(response => response.json())
+                        .then(users => {
+                            const responsiblePersonSelect = document.getElementById('editResponsiblePerson');
+                            responsiblePersonSelect.innerHTML = users.map(user =>
+                                `<option value="${user.id}" ${user.full_name === responsiblePerson ? 'selected' : ''}>${user.full_name}</option>`
+                            ).join('');
+                        });
+
+                    editModal.style.display = 'block';
+                }
+
+                if (event.target.classList.contains('toggle-icon')) {
+                    const icon = event.target;
+                    const table = icon.closest('.table-section').querySelector('table');
+                    if (table.classList.contains('collapsed')) {
+                        table.classList.remove('collapsed');
+                        icon.textContent = '-';
+                    } else {
+                        table.classList.add('collapsed');
+                        icon.textContent = '+';
+                    }
+                }
+            });
+
+            document.getElementById('editStatus').addEventListener('change', function () {
+                const repairDateContainer = document.getElementById('repairDateContainer');
+                const storageDateContainer = document.getElementById('storageDateContainer');
+                const decommissionDateContainer = document.getElementById('decommissionDateContainer');
+
+                if (this.value === 'В ремонте') {
+                    repairDateContainer.classList.remove('hidden');
+                    storageDateContainer.classList.add('hidden');
+                    decommissionDateContainer.classList.add('hidden');
+                } else if (this.value === 'Склад') {
+                    repairDateContainer.classList.add('hidden');
+                    storageDateContainer.classList.remove('hidden');
+                    decommissionDateContainer.classList.add('hidden');
+                } else if (this.value === 'Списано') {
+                    repairDateContainer.classList.add('hidden');
+                    storageDateContainer.classList.add('hidden');
+                    decommissionDateContainer.classList.remove('hidden');
+                } else {
+                    repairDateContainer.classList.add('hidden');
+                    storageDateContainer.classList.add('hidden');
+                    decommissionDateContainer.classList.add('hidden');
+                }
+            });
+
+            // Загрузка данных для выпадающих списков при инициализации
+            function loadFilters() {
+                fetch('/itinvent/api/cities')
+                    .then(response => response.json())
+                    .then(cities => {
+                        const citySelect = document.getElementById('cityFilter');
+                        citySelect.innerHTML += cities.map(city =>
+                            `<option value="${city.id}">${city.name}</option>`
+                        ).join('');
+                    });
+
+                fetch('/itinvent/api/floors')
+                    .then(response => response.json())
+                    .then(floors => {
+                        const floorSelect = document.getElementById('floorFilter');
+                        floorSelect.innerHTML += floors.map(floor =>
+                            `<option value="${floor.id}">${floor.floor}</option>`
+                        ).join('');
+                    });
+
+                fetch('/itinvent/api/departments')
+                    .then(response => response.json())
+                    .then(departments => {
+                        const departmentSelect = document.getElementById('departmentFilter');
+                        departmentSelect.innerHTML += departments.map(department =>
+                            `<option value="${department.id}">${department.name}</option>`
+                        ).join('');
+                    });
+
+                fetch('/itinvent/api/rooms')
+                    .then(response => response.json())
+                    .then(rooms => {
+                        const roomSelect = document.getElementById('roomFilter');
+                        roomSelect.innerHTML += rooms.map(room =>
+                            `<option value="${room.id}">${room.room}</option>`
+                        ).join('');
+                    });
+
+                fetch('/itinvent/api/technic_types')
+                    .then(response => response.json())
+                    .then(types => {
+                        const typeSelect = document.getElementById('typeFilter');
+                        typeSelect.innerHTML += types.map(type =>
+                            `<option value="${type.id}">${type.type}</option>`
+                        ).join('');
+                    });
+
+                fetch('/itinvent/api/brands')
+                    .then(response => response.json())
+                    .then(brands => {
+                        const brandSelect = document.getElementById('brandFilter');
+                        brandSelect.innerHTML += brands.map(brand =>
+                            `<option value="${brand.id}">${brand.brand}</option>`
+                        ).join('');
+                    });
+
+                fetch('/itinvent/api/models')
+                    .then(response => response.json())
+                    .then(models => {
+                        const modelSelect = document.getElementById('modelFilter');
+                        modelSelect.innerHTML += models.map(model =>
+                            `<option value="${model.id}">${model.model}</option>`
+                        ).join('');
+                    });
+
+                fetch('/itinventapi/users')
+                    .then(response => response.json())
+                    .then(users => {
+                        const responsibleSelect = document.getElementById('responsibleFilter');
+                        responsibleSelect.innerHTML += users.map(user =>
+                            `<option value="${user.id}">${user.full_name}</option>`
+                        ).join('');
+                    });
+            }
+
+            loadFilters(); // Загрузить фильтры при загрузке страницы
+
+            applyFiltersButton.addEventListener('click', function () {
+                const filters = {
+                    city: document.getElementById('cityFilter').value,
+                    floor: document.getElementById('floorFilter').value,
+                    department: document.getElementById('departmentFilter').value,
+                    room: document.getElementById('roomFilter').value,
+                    type: document.getElementById('typeFilter').value,
+                    brand: document.getElementById('brandFilter').value,
+                    model: document.getElementById('modelFilter').value,
+                    responsible: document.getElementById('responsibleFilter').value,
+                    status: document.getElementById('statusFilter').value,
+                    searchQuery: document.getElementById('searchBar').value
+                };
+
+                fetch(`/api/filter_technic`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(filters)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        const tableContainer = document.getElementById('table-container');
+                        tableContainer.innerHTML = createTables(data);
+                    });
+
+            });
+        });</script>
+</body>
+</html>

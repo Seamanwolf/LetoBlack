@@ -12,3 +12,4 @@ pandas
 python-dateutil
 pytz
 pymysql
+bleach

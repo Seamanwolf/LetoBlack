@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Статистика по мне</title>
+    <!-- Подключение Bootstrap CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Подключение Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <!-- Подключение вашего файла стилей -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        /* Дополнительные стили */
+        .period-buttons {
+            margin-bottom: 20px;
+        }
+
+            .period-buttons .btn {
+                margin-right: 10px;
+                margin-bottom: 10px;
+            }
+
+        .search-box {
+            margin-bottom: 10px;
+        }
+
+        #period-label {
+            margin-bottom: 20px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .back-button {
+            margin-top: 20px;
+        }
+
+        /* Таблица с идентификатором statistics-table */
+        #statistics-table {
+            border: 2px solid #007bff; /* Синяя обводка для таблицы */
+            background-color: white; /* Белый фон таблицы */
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            cursor: pointer; /* Указатель курсора для столбцов */
+        }
+
+            #statistics-table th, #statistics-table td {
+                text-align: left;
+                padding: 6px 8px; /* Уменьшение высоты строк */
+                border: 1px solid #d9d9d9; /* Обводка ячеек */
+                vertical-align: middle;
+                background-color: white; /* Белый фон для ячеек */
+                color: #343a40;
+            }
+
+            #statistics-table th {
+                background-color: #d3d3d3; /* Светло-серый фон для заголовков */
+                color: #333; /* Тёмный цвет текста */
+                position: sticky;
+                top: 0;
+                cursor: pointer; /* Указатель курсора для столбцов */
+            }
+
+            #statistics-table tr:hover {
+                background-color: #f5f5f5; /* Фон при наведении */
+            }
+
+            /* Стиль для выделенной строки */
+            #statistics-table tr.highlighted {
+                background-color: #e0f0ff !important; /* Светло-голубой фон */
+            }
+
+            /* Дополнительные стили для стрелок сортировки */
+            #statistics-table th .sort-arrow {
+                display: inline-block;
+                width: 0;
+                height: 0;
+                margin-left: 5px;
+                vertical-align: middle;
+                border-left: 5px solid transparent;
+                border-right: 5px solid transparent;
+            }
+
+                #statistics-table th .sort-arrow.asc {
+                    border-bottom: 5px solid #333; /* Треугольник вверх */
+                }
+
+                #statistics-table th .sort-arrow.desc {
+                    border-top: 5px solid #333; /* Треугольник вниз */
+                }
+
+        /* Стили для кнопок */
+        .action-btn {
+            background-color: #000;
+            color: white;
+            padding: 6px 10px;
+            margin: 2px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+            .action-btn:hover {
+                background-color: #333;
+            }
+
+        .button {
+            padding: 10px 5px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            color: white;
+            margin: 10px 5px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+            background-color: #000;
+        }
+
+            .button:hover {
+                background-color: #333;
+                color: #aaa;
+                text-decoration: none;
+            }
+
+        .back-button {
+            display: flex;
+            align-items: center;
+            background-color: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+            .back-button i {
+                margin-right: 8px;
+            }
+
+            .back-button:hover {
+                background-color: #5a6268;
+            }
+
+        /* Адаптивность для мобильных устройств */
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+
+            .topbar {
+                width: 100%;
+                left: 0;
+            }
+
+            .content {
+                margin-left: 0;
+                margin-top: 80px;
+                padding: 20px 10px;
+            }
+
+            #statistics-table {
+                font-size: 12px;
+            }
+
+            .edit-icon {
+                font-size: 14px;
+            }
+
+            /* Дополнительные стили для мобильных */
+            #statistics-table th, #statistics-table td {
+                padding: 4px;
+            }
+        }
+    </style>
+    <!-- Подключение jQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script> <!-- jQuery -->
+    <!-- Подключение Popper.js и Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script> <!-- Popper.js -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script> <!-- Bootstrap JS -->
+</head>
+<body>
+    <!-- Боковая панель -->
+    <div class="sidebar">
+        <div class="logo">Л</div>
+        <div class="menu">
+            <a href="{{ url_for('userlist.dashboard') }}">
+                <i class="fas fa-arrow-left icon"></i><span class="text">Назад</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Основной контент -->
+    <div class="content" style="margin-left: 70px; padding: 20px;">
+        <h1>Статистика по мне</h1>
+
+        <!-- Кнопки выбора периода -->
+        <div class="period-buttons">
+            <button class="btn btn-primary" id="daily-btn">Статистика за день</button>
+            <button class="btn btn-primary" id="monthly-btn">Статистика за месяц</button>
+            <button class="btn btn-primary" id="yearly-btn">Статистика за год</button>
+            <button class="btn btn-primary" id="custom-period-btn">Произвольный период</button> <!-- Новая кнопка -->
+        </div>
+
+        <!-- Подпись для отображения выбранного периода -->
+        <div id="period-label" class="mb-3">
+            <!-- Здесь будет отображаться выбранный период -->
+        </div>
+
+        <!-- Таблица статистики -->
+        <div class="table-responsive">
+            <table id="statistics-table" class="table table-hover table-bordered">
+                <thead>
+                    <tr>
+                        <th>Дата заполнения <span class="sort-arrow"></span></th>
+                        {% for field in fields_to_display %}
+                        <th>{{ field_names.get(field, field) }} <span class="sort-arrow"></span></th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Данные будут загружаться через AJAX -->
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th>Итого</th>
+                        {% for field in fields_to_display %}
+                        <th id="total-{{ field }}">0</th>
+                        {% endfor %}
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- Модальные окна для выбора периода -->
+        <!-- Модальное окно для выбора даты -->
+        <div class="modal fade" id="dateModal" tabindex="-1" role="dialog" aria-labelledby="dateModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <form id="dateForm">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Выберите дату</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="date" class="form-control" id="selected-date" name="selected_date" required>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                            <button type="submit" class="btn btn-primary">Показать</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Модальное окно для выбора месяца -->
+        <div class="modal fade" id="monthModal" tabindex="-1" role="dialog" aria-labelledby="monthModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <form id="monthForm">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Выберите месяц</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="month" class="form-control" id="selected-month" name="selected_month" required>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                            <button type="submit" class="btn btn-primary">Показать</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Модальное окно для выбора года -->
+        <div class="modal fade" id="yearModal" tabindex="-1" role="dialog" aria-labelledby="yearModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <form id="yearForm">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Выберите год</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="number" class="form-control" id="selected-year" name="selected_year" min="2000" max="2100" required placeholder="Введите год">
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                            <button type="submit" class="btn btn-primary">Показать</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Модальное окно для выбора произвольного периода -->
+        <div class="modal fade" id="customPeriodModal" tabindex="-1" role="dialog" aria-labelledby="customPeriodModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <form id="customPeriodForm">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Выберите произвольный период</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label for="start-date">Начальная дата:</label>
+                                <input type="date" class="form-control" id="start-date" name="start_date" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="end-date">Конечная дата:</label>
+                                <input type="date" class="form-control" id="end-date" name="end_date" required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                            <button type="submit" class="btn btn-primary">Показать</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Подключение JavaScript -->
+    <script>
+        $(document).ready(function () {
+            var fieldsToDisplay = {{ fields_to_display | tojson }};
+            var fieldNames = {{ field_names | tojson }};
+            var hiddenFields = {{ hidden_fields | tojson }};
+
+            // Обработчики кнопок
+            $('#daily-btn').click(function () {
+                $('#dateModal').modal('show');
+            });
+
+            $('#monthly-btn').click(function () {
+                $('#monthModal').modal('show');
+            });
+
+            $('#yearly-btn').click(function () {
+                $('#yearModal').modal('show');
+            });
+
+            $('#custom-period-btn').click(function () { // Обработчик новой кнопки
+                $('#customPeriodModal').modal('show');
+            });
+
+            // Обработчики форм
+            $('#dateForm').submit(function (event) {
+                event.preventDefault();
+                var selectedDate = $('#selected-date').val();
+                fetchStatistics('daily', { selected_date: selectedDate });
+                $('#dateModal').modal('hide');
+            });
+
+            $('#monthForm').submit(function (event) {
+                event.preventDefault();
+                var selectedMonth = $('#selected-month').val();
+                fetchStatistics('monthly', { selected_month: selectedMonth });
+                $('#monthModal').modal('hide');
+            });
+
+            $('#yearForm').submit(function (event) {
+                event.preventDefault();
+                var selectedYear = $('#selected-year').val();
+                fetchStatistics('yearly', { selected_year: selectedYear });
+                $('#yearModal').modal('hide');
+            });
+
+            $('#customPeriodForm').submit(function (event) { // Обработчик новой формы
+                event.preventDefault();
+                var startDate = $('#start-date').val();
+                var endDate = $('#end-date').val();
+
+                // Проверка, что начальная дата не позже конечной
+                if (new Date(startDate) > new Date(endDate)) {
+                    alert("Начальная дата не может быть позже конечной.");
+                    return;
+                }
+
+                fetchStatistics('custom', { start_date: startDate, end_date: endDate });
+                $('#customPeriodModal').modal('hide');
+            });
+
+            // Функция для получения статистики
+            function fetchStatistics(periodType, data) {
+                var url = '';
+                var periodLabel = '';
+                if (periodType === 'daily') {
+                    url = '{{ url_for("userlist.my_daily_statistics") }}';
+                    periodLabel = 'Отчет за ' + formatDate(data.selected_date);
+                } else if (periodType === 'monthly') {
+                    url = '{{ url_for("userlist.my_monthly_statistics") }}';
+                    periodLabel = 'Отчет за ' + getMonthYearLabel(data.selected_month);
+                } else if (periodType === 'yearly') {
+                    url = '{{ url_for("userlist.my_yearly_statistics") }}';
+                    periodLabel = 'Отчет за ' + data.selected_year + ' год';
+                } else if (periodType === 'custom') { // Обработка произвольного периода
+                    url = '{{ url_for("userlist.my_custom_statistics") }}';
+                    periodLabel = 'Отчет с ' + formatDate(data.start_date) + ' по ' + formatDate(data.end_date);
+                }
+
+                $.ajax({
+                    type: 'POST',
+                    url: url,
+                    data: data,
+                    success: function (response) {
+                        if (response.error) {
+                            alert(response.error);
+                            return;
+                        }
+                        // Обновляем подпись периода
+                        $('#period-label').text(periodLabel);
+
+                        // Заполняем таблицу данными
+                        $('#statistics-table tbody').html(response.table_rows);
+                        // Обновляем итоговую строку
+                        updateTotals();
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Ошибка при получении статистики:', error);
+                        alert('Произошла ошибка при получении статистики.');
+                    }
+                });
+            }
+
+            // Вспомогательные функции
+            function formatDate(dateString) {
+                var options = { year: 'numeric', month: '2-digit', day: '2-digit' };
+                var date = new Date(dateString);
+                return date.toLocaleDateString('ru-RU', options);
+            }
+
+            function getMonthYearLabel(monthYearString) {
+                var [year, month] = monthYearString.split('-');
+                var monthNames = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
+                    'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
+                return monthNames[parseInt(month, 10) - 1] + ' ' + year;
+            }
+
+            // Функция для обновления итоговой строки
+            function updateTotals() {
+                var totals = {};
+                fieldsToDisplay.forEach(function (field) {
+                    totals[field] = 0;
+                });
+
+                $('#statistics-table tbody tr:visible').each(function () {
+                    var row = $(this);
+                    var indexOffset = 1; // Смещение из-за первого столбца "Дата заполнения"
+                    var colIndex = indexOffset;
+
+                    fieldsToDisplay.forEach(function (field) {
+                        var cellValue = parseFloat(row.find('td').eq(colIndex).text()) || 0;
+                        if (field === 'total_ads_avito' || field === 'total_ads_cian') {
+                            // Для указанных полей берем последнее значение
+                            totals[field] = cellValue;
+                        } else {
+                            // Для остальных суммируем
+                            totals[field] += cellValue;
+                        }
+                        colIndex++;
+                    });
+                });
+
+                // Обновляем итоговые значения в таблице
+                fieldsToDisplay.forEach(function (field) {
+                    $('#total-' + field).text(totals[field]);
+                });
+            }
+
+            // Сортировка таблицы
+            $('#statistics-table').on('click', 'th', function () {
+                var table = $(this).parents('table').eq(0);
+                var rows = table.find('tbody tr').toArray().sort(comparer($(this).index()));
+                this.asc = !this.asc;
+                updateSortArrows(this, this.asc);
+                if (!this.asc) { rows = rows.reverse(); }
+                for (var i = 0; i < rows.length; i++) { table.find('tbody').append(rows[i]); }
+                updateTotals(); // Обновляем итоговую строку после сортировки
+            });
+
+            function comparer(index) {
+                return function (a, b) {
+                    var valA = getCellValue(a, index), valB = getCellValue(b, index);
+                    valA = valA.replace(',', '.');
+                    valB = valB.replace(',', '.');
+                    return $.isNumeric(valA) && $.isNumeric(valB) ? valA - valB : valA.localeCompare(valB);
+                };
+            }
+
+            function getCellValue(row, index) {
+                return $(row).children('td').eq(index).text();
+            }
+
+            function updateSortArrows(header, asc) {
+                $('.sort-arrow').removeClass('asc').removeClass('desc');
+                $(header).find('.sort-arrow').addClass(asc ? 'asc' : 'desc');
+            }
+        });
+    </script>
+</body>
+</html>

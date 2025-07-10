@@ -259,33 +259,33 @@ def get_department_weekly_stats(department):
 
 def get_notifications_count(user_id=None):
     """
-    Получает количество уведомлений для текущего пользователя по роли
-    Параметр user_id в текущей реализации не используется, но может понадобиться в будущем
+    Получает количество уведомлений для текущего пользователя
     """
-    role = session.get('role')
-    
-    if not role:
-        logger.warning("Роль пользователя не установлена в сессии")
+    if not session.get('id'):
+        logger.warning("ID пользователя не установлен в сессии")
         return 0
     
     connection = create_db_connection()
     cursor = connection.cursor(dictionary=True)
-    
-    # Теперь запрос фильтрует по роли из Roles
-    query = f"""
-    SELECT COUNT(*) as count
-    FROM Notifications n
-    JOIN Roles r ON n.role_id = r.id
-    WHERE r.name = %s
-    """
-    
-    cursor.execute(query, (role,))
-    result = cursor.fetchone()
-    
-    cursor.close()
-    connection.close()
-    
-    return result['count'] if result else 0
+
+    try:
+        # Получаем непрочитанные уведомления для пользователя
+        query = """
+            SELECT COUNT(*) AS count 
+            FROM Notifications n
+            JOIN UserNotifications un ON n.id = un.notification_id
+            WHERE un.user_id = %s AND un.is_read = FALSE
+        """
+        
+        cursor.execute(query, (session.get('id'),))
+        result = cursor.fetchone()
+        return result['count'] if result else 0
+    except Exception as err:
+        logger.error(f"Ошибка при подсчёте уведомлений: {err}")
+        return 0
+    finally:
+        cursor.close()
+        connection.close()
 
 def get_user_info(user_id):
     """
@@ -312,7 +312,7 @@ def get_user_info(user_id):
             c.ukc_kc,
             a.status,
             a.last_activity,
-            u.hired_date,
+            u.hire_date,
             u.fire_date,
             u.fired,
             u.position,
@@ -491,31 +491,33 @@ def get_user_accessible_modules(user):
     if not user:
         return []
         
-    # Базовые модули, доступные всем пользователям
-    modules = ['profile', 'news']
-    
-    # Добавляем модули в зависимости от роли пользователя
+    # Базовые модули, доступные всем пользователям (русские названия для sidebar)
+    modules = ['Новости']
+
+    # Добавляем модули в зависимости от роли пользователя (используем русские названия из sidebar)
     if user.is_admin:
-        modules.extend(['admin', 'personnel', 'settings'])
+        modules.extend(['Дашборд', 'Персонал', 'Рейтинг', 'Колл-центр', 'Хелпдеск', 'IT-Tech', 'Авито-Про'])
     elif user.is_hr():
-        modules.extend(['hr', 'personnel'])
+        modules.extend(['Персонал'])
     elif user.is_leader():
-        modules.extend(['leader', 'rating'])
+        modules.extend(['Рейтинг'])
     elif user.is_callcenter():
-        modules.extend(['callcenter'])
+        modules.extend(['Колл-центр'])
     elif user.is_helpdesk():
-        modules.extend(['helpdesk'])
+        modules.extend(['Хелпдеск'])
     elif user.is_itinvent():
-        modules.extend(['itinvent'])
+        modules.extend(['IT-Tech'])
     elif user.is_avito():
-        modules.extend(['avito'])
+        modules.extend(['АВИТО-ПРО'])
     elif user.is_reception():
-        modules.extend(['reception'])
+        modules.extend(['Ресепшн'])
     elif user.is_backoffice():
-        modules.extend(['backoffice'])
+        modules.extend(['Персонал'])
     elif user.is_vats():
-        modules.extend(['vats'])
-        
+        modules.extend(['ВАТС'])
+    elif user.role == 'user':
+        modules.append('Дашборд')
+
     return modules 
 
 def validate_role_form(form_data):
@@ -541,4 +543,79 @@ def validate_update_role_form(form_data):
     display_name = form_data.get('display_name')
     if not role_id or not display_name:
         return False, 'ID роли и отображаемое имя обязательны для заполнения'
-    return True, None 
+    return True, None
+
+def close_all_connections():
+    """Закрывает все активные подключения к базе данных"""
+    try:
+        # В PyMySQL нет глобального пула соединений, поэтому просто логируем
+        logger.info("Функция очистки подключений к базе данных вызвана")
+        # В будущем здесь можно добавить логику для закрытия соединений из пула
+    except Exception as e:
+        logger.error(f"Ошибка при закрытии подключений к базе данных: {e}") 
+
+def show_toast(message, type='info', title=None):
+    """
+    Заменяет flash() для показа toast уведомлений
+    
+    Args:
+        message (str): Текст сообщения
+        type (str): Тип уведомления (success, error, warning, info)
+        title (str): Заголовок уведомления (опционально)
+    """
+    try:
+        from flask import session, has_request_context
+        
+        if not has_request_context():
+            # Если нет контекста запроса, просто логируем
+            print(f"Toast (нет контекста): {type} - {message}")
+            return
+            
+        if 'toasts' not in session:
+            session['toasts'] = []
+        
+        toast = {
+            'message': message,
+            'type': type,
+            'title': title
+        }
+        
+        session['toasts'].append(toast)
+        session.modified = True
+    except Exception as e:
+        # Fallback на обычный print если что-то пошло не так
+        print(f"Toast error: {e} - {type}: {message}")
+
+def get_and_clear_toasts():
+    """
+    Получает toast'ы из сессии и очищает их
+    
+    Returns:
+        list: Список toast уведомлений
+    """
+    try:
+        from flask import session, has_request_context
+        
+        if not has_request_context():
+            return []
+            
+        toasts = session.get('toasts', [])
+        if toasts:
+            session.pop('toasts', None)
+            session.modified = True
+        
+        return toasts
+    except Exception as e:
+        print(f"Error getting toasts: {e}")
+        return []
+
+# Добавляем функцию в контекст шаблонов
+def register_template_functions(app):
+    """
+    Регистрирует функции для использования в шаблонах
+    """
+    @app.context_processor
+    def inject_toast_functions():
+        return {
+            'get_and_clear_toasts': get_and_clear_toasts
+        } 

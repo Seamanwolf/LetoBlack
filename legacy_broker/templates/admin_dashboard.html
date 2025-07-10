@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Администраторская панель</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">Л</div>
+        <div class="menu">
+            <a href="{{ url_for('personnel') }}" class="button">
+                <i class="fas fa-users icon"></i><span class="text">Персонал</span>
+            </a>
+            <a href="{{ url_for('rating.show_rating') }}">
+                <i class="fas fa-chart-line icon"></i><span class="text">Скорринг</span>
+            </a>
+            <a href="{{ url_for('callcenter.call_center_dashboard') }}" class="button">
+                <i class="fas fa-headset icon"></i><span class="text">Колл-центр</span>
+            </a>
+            <a href="{{ url_for('helpdesk.helpdesk_dashboard') }}">
+                <i class="fas fa-life-ring icon"></i><span class="text">Хелпдеск</span>
+            </a>
+            <a href="{{ url_for('itinvent.it_tech_dashboard') }}">
+                <i class="fas fa-desktop icon"></i><span class="text">IT-Tech</span>
+            </a>
+            <a href="{{ url_for('userlist.manage_notifications') }}">
+                <i class="fas fa-bell icon"></i><span class="text">Уведомления</span>
+            </a>
+            <a href="{{ url_for('vats.index') }}">
+                <i class="fas fa-phone-alt icon"></i><span class="text">Ватс</span>
+            </a>
+            <a href="{{ url_for('settings') }}" class="button">
+                <i class="fas fa-cogs icon"></i><span class="text">Настройки</span>
+            </a>
+        </div>
+    </div>
+    <div class="topbar">
+        <div class="title">Администраторская панель</div>
+        <div class="right-icons">
+            <div class="profile-icon" tabindex="0">
+                <i class="fas fa-user"></i>
+                <div class="profile-menu">
+                    <div class="profile-info">
+                        <p>Администратор</p>
+                    </div>
+                    <a href="{{ url_for('userlist.logout') }}">Выход</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="content" style="max-width: 800px; margin: 0 auto;">
+        <h1>Статистика по отделам</h1>
+        <h3>Статистика за месяц по отделам</h3>
+        <div class="chart-container" style="max-width: 600px; height: 300px; margin: 0 auto;">
+            <canvas id="monthlyStatsChart"></canvas>
+        </div>
+        <h3>Статистика за год по отделам</h3>
+        <div class="chart-container" style="max-width: 600px; height: 300px; margin: 0 auto;">
+            <canvas id="yearlyStatsChart"></canvas>
+        </div>
+        <script>document.addEventListener('DOMContentLoaded', function () {
+                fetch('/api/monthly_department_stats')
+                    .then(response => response.json())
+                    .then(data => {
+                        const colors = 'rgba(0, 123, 255, 0.5)';
+                        createChart(data, 'monthlyStatsChart', 'Месячная статистика', colors);
+                    });
+
+                fetch('/api/yearly_department_stats')
+                    .then(response => response.json())
+                    .then(data => {
+                        const colors = 'rgba(0, 123, 255, 0.5)';
+                        createChart(data, 'yearlyStatsChart', 'Годовая статистика', colors);
+                    });
+
+                function createChart(data, canvasId, label, colors) {
+                    const ctx = document.getElementById(canvasId).getContext('2d');
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: data.map(item => `Отдел ${item.department}`),
+                            datasets: [{
+                                label: 'Количество сделок',
+                                data: data.map(item => item.deals_count),
+                                backgroundColor: colors,
+                                borderColor: 'rgba(0, 123, 255, 0.8)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    labels: {
+                                        generateLabels: function (chart) {
+                                            return chart.data.labels.map((label, i) => ({
+                                                text: label,
+                                                fillStyle: colors
+                                            }));
+                                        }
+                                    }
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: label
+                            }
+                        }
+                    });
+                }
+            });</script>
+
+        <script>
+        $(document).ready(function() {
+            console.log("Connecting to WebSocket...");  // Отладочное сообщение
+
+            var socket = io.connect('http://' + document.domain + ':' + location.port + '/notifications');
+
+            socket.on('new_ticket', function(data) {
+                console.log("Received new ticket notification:", data);  // Отладочное сообщение
+                var audio = new Audio('{{ url_for("static", filename="sound/notification.mp3") }}');
+                audio.play();
+
+                $('#notification').fadeIn();
+                setTimeout(function() {
+                    $('#notification').fadeOut();
+                }, 5000);
+            });
+
+            $('#notification').click(function() {
+                console.log("Notification clicked. Redirecting to new tickets page.");  // Отладочное сообщение
+                window.location.href = '/new_tickets';
+            });
+        });
+        </script>
+    </div>
+</body>
+</html>

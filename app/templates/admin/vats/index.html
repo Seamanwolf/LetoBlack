@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Управление VATS{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/personnel_clean.css') }}">
+<style>
+/* Стили аналогично personnel */
+.vats-nav { display: flex; gap: 1rem; margin-bottom: 2rem; }
+.vats-nav a { padding: 0.5rem 1rem; border-radius: var(--border-radius); }
+.vats-nav a.active { background: var(--primary-color); color: white; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+.stat-card { background: white; padding: 1rem; border-radius: var(--border-radius); box-shadow: var(--shadow-light); }
+.search-filters { display: flex; justify-content: space-between; margin-bottom: 1rem; }
+.search-box { position: relative; }
+.search-box input { padding: 0.5rem 2.5rem 0.5rem 1rem; border-radius: var(--border-radius); border: 1px solid var(--border-color); width: 300px; }
+.search-box i { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--muted-color); }
+.filter-buttons button { margin-left: 0.5rem; }
+.vats-table { width: 100%; border-collapse: collapse; }
+.vats-table th, .vats-table td { padding: 0.75rem; border-bottom: 1px solid var(--border-color); }
+.vats-table th { background: var(--light-color); font-weight: 600; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Навигационное меню -->
+    <div class="vats-nav">
+        <a href="{{ url_for('vats.index') }}" class="active">
+            <i class="fas fa-phone"></i>
+            Все номера
+        </a>
+        <a href="{{ url_for('vats.assigned') }}">
+            <i class="fas fa-user-check"></i>
+            Назначенные
+        </a>
+        <a href="{{ url_for('vats.free') }}">
+            <i class="fas fa-phone-slash"></i>
+            Свободные
+        </a>
+        <a href="{{ url_for('vats.logs') }}">
+            <i class="fas fa-file-alt"></i>
+            Логи смены
+        </a>
+    </div>
+
+    <!-- Статистические карточки -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-card-icon"><i class="fas fa-phone"></i></div>
+            <div class="stat-card-content">
+                <div class="stat-card-title">Всего номеров</div>
+                <div class="stat-card-value">{{ total_numbers }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-icon"><i class="fas fa-user-check"></i></div>
+            <div class="stat-card-content">
+                <div class="stat-card-title">Назначенные</div>
+                <div class="stat-card-value">{{ assigned_numbers }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-icon"><i class="fas fa-phone-slash"></i></div>
+            <div class="stat-card-content">
+                <div class="stat-card-title">Свободные</div>
+                <div class="stat-card-value">{{ free_numbers }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-icon"><i class="fas fa-sync"></i></div>
+            <div class="stat-card-content">
+                <div class="stat-card-title">Сменено за неделю</div>
+                <div class="stat-card-value">{{ changed_week }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Поиск и фильтры -->
+    <div class="search-filters">
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Поиск номеров...">
+        </div>
+        <div class="filter-buttons">
+            <button class="filter-btn active" data-filter="all"><i class="fas fa-phone"></i> Все</button>
+            <button class="btn btn-secondary" onclick="openModal('filtersModal')"><i class="fas fa-filter"></i> Фильтры</button>
+            <button class="btn btn-primary" id="changeNumbersBtn"><i class="fas fa-sync"></i> Сменить номера</button>
+        </div>
+    </div>
+
+    <!-- Таблица номеров -->
+    <table class="vats-table">
+        <thead>
+            <tr>
+                <th>Номер</th>
+                <th>Статус</th>
+                <th>Сотрудник</th>
+                <th>Дата назначения</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for number in numbers %}
+            <tr>
+                <td>{{ number.phone }}</td>
+                <td>{{ number.status }}</td>
+                <td>{{ number.employee or 'Свободен' }}</td>
+                <td>{{ number.assigned_at or '—' }}</td>
+                <td>
+                    <i class="fas fa-edit action-icon"></i>
+                    <i class="fas fa-trash action-icon delete"></i>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// JS для поиска, фильтров и действий (аналогично personnel)
+document.getElementById('searchInput').addEventListener('input', function() {
+    // Логика поиска
+});
+
+document.getElementById('changeNumbersBtn').addEventListener('click', function() {
+    // Вызов смены номеров
+});
+</script>
+{% endblock %} 

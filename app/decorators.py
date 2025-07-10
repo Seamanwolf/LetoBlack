@@ -1,6 +1,7 @@
 from functools import wraps
 from flask import flash, redirect, url_for, abort, request
 from flask_login import current_user
+from app.utils import show_toast
 
 def admin_required(f):
     """
@@ -24,7 +25,7 @@ def admin_required(f):
             admin_role = any(role.name == 'admin' for role in current_user.roles)
             
         if not admin_role:
-            flash('У вас недостаточно прав для доступа к этой странице', 'danger')
+            show_toast('У вас недостаточно прав для доступа к этой странице', 'error')
             return redirect(url_for('main.index'))
         
         return f(*args, **kwargs)
@@ -37,7 +38,7 @@ def role_required(role_name):
     В противном случае перенаправляет на главную страницу.
     
     Args:
-        role_name (str): Название роли, которая требуется для доступа
+        role_name (str or list): Название роли или список ролей, одна из которых требуется для доступа
     """
     def decorator(f):
         @wraps(f)
@@ -48,16 +49,19 @@ def role_required(role_name):
             # Проверяем наличие указанной роли у пользователя
             has_role = False
             
+            # Преобразуем аргумент role_name в список, если это строка
+            roles = role_name if isinstance(role_name, list) else [role_name]
+            
             # Поддержка старого способа (через прямой атрибут role)
-            if hasattr(current_user, 'role') and current_user.role == role_name:
+            if hasattr(current_user, 'role') and current_user.role in roles:
                 has_role = True
             
             # Поддержка нового способа (через свойство roles)
             elif hasattr(current_user, 'roles') and current_user.roles:
-                has_role = any(role.name == role_name for role in current_user.roles)
+                has_role = any(role.name in roles for role in current_user.roles)
                 
             if not has_role:
-                flash('У вас недостаточно прав для доступа к этой странице', 'danger')
+                show_toast('У вас недостаточно прав для доступа к этой странице', 'error')
                 return redirect(url_for('main.index'))
             
             return f(*args, **kwargs)
@@ -106,7 +110,7 @@ def permission_required(module_name, action):
                         break
             
             if not has_permission:
-                flash(f'У вас недостаточно прав для {action} в модуле {module_name}', 'danger')
+                show_toast(f'У вас недостаточно прав для {action} в модуле {module_name}', 'error')
                 return redirect(url_for('main.index'))
             
             return f(*args, **kwargs)

@@ -1,0 +1,84 @@
+{% extends 'admin/settings/base.html' %}
+
+{% block extra_css %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/personnel_clean.css') }}">
+{% endblock %}
+
+{% block settings_content %}
+<div class="card mb-4">
+    <div class="card-header bg-light d-flex align-items-center justify-content-between">
+        <h5 class="card-title mb-0"><i class="fas fa-file-alt me-2"></i>Логи действий пользователей</h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3 align-items-end mb-3" id="filtersForm">
+            <div class="col-md-2">
+                <label class="form-label">Пользователь</label>
+                <input type="text" class="form-control" id="fUsername">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Действие</label>
+                <select class="form-select" id="fAction"><option value="">Все</option></select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Статус</label>
+                <select class="form-select" id="fStatus"><option value="">Все</option></select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">С даты</label>
+                <input type="date" class="form-control" id="fFrom">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">По дату</label>
+                <input type="date" class="form-control" id="fTo">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button class="btn btn-primary w-100" id="applyFilters"><i class="fas fa-filter me-1"></i>Применить</button>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered table-hover table-sm align-middle" id="logsTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th><th>Время</th><th>Пользователь</th><th>Действие</th><th>Объект</th><th>Статус</th><th>IP</th><th>Детали</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function fetchLogs() {
+    const params = new URLSearchParams();
+    const u = document.getElementById('fUsername').value.trim(); if(u) params.append('username', u);
+    const a = document.getElementById('fAction').value; if(a) params.append('action', a);
+    const s = document.getElementById('fStatus').value; if(s) params.append('status', s);
+    const df = document.getElementById('fFrom').value; if(df) params.append('date_from', df);
+    const dt = document.getElementById('fTo').value; if(dt) params.append('date_to', dt);
+    fetch(`/admin/settings/logs/data?${params.toString()}`)
+        .then(r=>r.json()).then(d=>{
+            if(!d.success){ showToast(d.message,'error'); return; }
+            const tbody=document.querySelector('#logsTable tbody');
+            tbody.innerHTML='';
+            d.logs.forEach(l=>{
+                const row=`<tr><td>${l.id}</td><td>${l.timestamp}</td><td>${l.username||l.user_id||'—'}</td><td>${l.action}</td><td>${l.object_type||''}${l.object_id?('#'+l.object_id):''}</td><td>${l.status}</td><td>${l.ip||''}</td><td style="max-width:300px;white-space:pre-line;">${l.details||''}</td></tr>`;
+                tbody.insertAdjacentHTML('beforeend',row);
+            });
+            // заполняем селекты при первом вызове
+            fillSelect('fAction', d.actions);
+            fillSelect('fStatus', d.statuses);
+        });
+}
+function fillSelect(id, arr){
+    const sel=document.getElementById(id);
+    if(sel.options.length>1) return; // уже заполнен
+    arr.forEach(v=>{ const opt=document.createElement('option'); opt.value=v; opt.textContent=v; sel.appendChild(opt); });
+}
+document.addEventListener('DOMContentLoaded',()=>{
+    fetchLogs();
+    document.getElementById('applyFilters').addEventListener('click',()=>fetchLogs());
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Редактирование базы</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            padding-top: 60px;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 30%;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+        }
+
+            .close:hover,
+            .close:focus {
+                color: black;
+                text-decoration: none;
+                cursor: pointer;
+            }
+
+        .add-button {
+            cursor: pointer;
+            color: black;
+            margin-left: 10px;
+        }
+
+        .table-container {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+
+        table {
+            width: 200px;
+            margin-bottom: 20px;
+            background-color: white;
+            border-collapse: collapse;
+            box-shadow: 0 2px 3px #ccc;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            position: relative;
+        }
+
+        th {
+            background-color: #ccc;
+            color: black;
+            cursor: pointer;
+        }
+
+            th .add-button {
+                position: absolute;
+                right: 10px;
+                top: 50%;
+                transform: translateY(-50%);
+            }
+
+        td:hover .edit-icon {
+            visibility: visible;
+        }
+
+        .edit-icon {
+            visibility: hidden;
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: green;
+        }
+
+        tr {
+            border-bottom: 1px solid #ddd;
+        }
+
+            tr:hover {
+                background-color: #f5f5f5;
+            }
+
+        button {
+            padding: 4px 8px;
+            font-size: 12px;
+            background-color: black;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+            button:hover {
+                background-color: #555;
+            }
+
+        .hidden {
+            display: none;
+        }
+
+        input[type="text"],
+        select {
+            padding: 4px;
+            font-size: 12px;
+            width: calc(100% - 10px);
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+            input[type="text"]:focus,
+            select:focus {
+                border-color: #555;
+            }
+    </style>
+</head>
+
+<body>
+    <div class="sidebar">
+        <div class="logo">Л</div>
+        <div class="menu">
+            <a href="{{ url_for('it_tech_dashboard') }}" class="button">
+                <i class="fas fa-arrow-left icon"></i><span class="text">Назад</span>
+            </a>
+        </div>
+    </div>
+    <div class="topbar">
+        <div class="title">Редактирование базы</div>
+    </div>
+    <div class="content">
+        <div class="table-container">
+            <div>
+                <table id="city-table">
+                    <thead>
+                        <tr>
+                            <th>Город <i class="fas fa-plus add-button" data-type="city"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody id="city-column"></tbody>
+                </table>
+            </div>
+            <div>
+                <table id="floor-table">
+                    <thead>
+                        <tr>
+                            <th>Этаж <i class="fas fa-plus add-button" data-type="floor"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody id="floor-column"></tbody>
+                </table>
+            </div>
+            <div>
+                <table id="department-table">
+                    <thead>
+                        <tr>
+                            <th>Отдел <i class="fas fa-plus add-button" data-type="department"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody id="department-column"></tbody>
+                </table>
+            </div>
+            <div>
+                <table id="room-table">
+                    <thead>
+                        <tr>
+                            <th>Кабинет <i class="fas fa-plus add-button" data-type="room"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody id="room-column"></tbody>
+                </table>
+            </div>
+            <div>
+                <table id="equipment-type-table">
+                    <thead>
+                        <tr>
+                            <th>Тип оборудования <i class="fas fa-plus add-button" data-type="equipment_type"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody id="equipment_type-column"></tbody>
+                </table>
+            </div>
+            <div>
+                <table id="brand-table">
+                    <thead>
+                        <tr>
+                            <th>Марка <i class="fas fa-plus add-button" data-type="brand"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody id="brand-column"></tbody>
+                </table>
+            </div>
+            <div>
+                <table id="model-table">
+                    <thead>
+                        <tr>
+                            <th>Модель <i class="fas fa-plus add-button" data-type="model"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody id="model-column"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <form id="addForm">
+                <input type="hidden" id="addType" name="type">
+                <label for="addValue">Значение:</label>
+                <input type="text" id="addValue" name="value"><br><br>
+                <label for="addCityId" class="hidden">Город:</label>
+                <select id="addCityId" name="city_id" class="hidden"></select>
+                <label for="addTypeId" class="hidden">Тип оборудования:</label>
+                <select id="addTypeId" name="type_id" class="hidden"></select>
+                <label for="addBrandId" class="hidden">Марка:</label>
+                <select id="addBrandId" name="brand_id" class="hidden"></select>
+                <button type="submit">Добавить</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <form id="editForm">
+                <input type="hidden" id="editType" name="type">
+                <input type="hidden" id="editId" name="id">
+                <label for="editValue">Значение:</label>
+                <input type="text" id="editValue" name="value"><br><br>
+                <button type="submit">Сохранить</button>
+                <button type="button" id="deleteButton" style="background-color: red; color: white;">Удалить</button>
+            </form>
+        </div>
+    </div>
+
+    <script>document.addEventListener('DOMContentLoaded', function () {
+            const tableTypes = ['city', 'floor', 'department', 'room', 'equipment_type', 'brand', 'model'];
+
+            function fetchData(type) {
+                return fetch(`/api/${type}`)
+                    .then(response => response.json())
+                    .then(data => ({ type, data }));
+            }
+
+            Promise.all(tableTypes.map(fetchData))
+                .then(results => {
+                    results.forEach(result => {
+                        const column = document.getElementById(`${result.type}-column`);
+                        result.data.forEach(row => {
+                            let value = '';
+                            if (result.type === 'city') value = row.name;
+                            if (result.type === 'floor') value = row.floor;
+                            if (result.type === 'department') value = row.name;
+                            if (result.type === 'room') value = row.room;
+                            if (result.type === 'equipment_type') value = row.type;
+                            if (result.type === 'brand') value = row.brand;
+                            if (result.type === 'model') value = row.model;
+                            column.innerHTML += `<div class="table-row">
+                                                    <span class="table-cell">${value || ''}</span>
+                                                    <span class="table-cell">
+                                                        <i class="fas fa-pencil-alt edit-button" data-id="${row.id}" data-type="${result.type}"></i>
+                                                    </span>
+                                                </div>`;
+                        });
+                    });
+                });
+
+            const addModal = document.getElementById('addModal');
+            const addForm = document.getElementById('addForm');
+            const editModal = document.getElementById('editModal');
+            const editForm = document.getElementById('editForm');
+            const deleteButton = document.getElementById('deleteButton');
+            const closeModal = document.querySelectorAll('.close');
+
+            closeModal.forEach(span => {
+                span.addEventListener('click', () => {
+                    addModal.style.display = 'none';
+                    editModal.style.display = 'none';
+                });
+            });
+
+            window.onclick = function (event) {
+                if (event.target === addModal) {
+                    addModal.style.display = 'none';
+                }
+                if (event.target === editModal) {
+                    editModal.style.display = 'none';
+                }
+            };
+
+            document.querySelectorAll('.add-button').forEach(button => {
+                button.addEventListener('click', function () {
+                    const type = this.getAttribute('data-type');
+                    document.getElementById('addType').value = type;
+                    addModal.style.display = 'block';
+
+                    if (type === 'floor') {
+                        document.querySelector('label[for="addCityId"]').classList.remove('hidden');
+                        document.querySelector('select[name="city_id"]').classList.remove('hidden');
+                        fetch('/api/cities')
+                            .then(response => response.json())
+                            .then(data => {
+                                console.log("Полученные города:", data);
+                                const citySelect = document.getElementById('addCityId');
+                                citySelect.innerHTML = data.map(city =>
+                                    `<option value="${city.id}">${city.name}</option>`
+                                ).join('');
+                            });
+                    } else {
+                        document.querySelector('label[for="addCityId"]').classList.add('hidden');
+                        document.querySelector('select[name="city_id"]').classList.add('hidden');
+                    }
+
+                    if (type === 'brand' || type === 'model') {
+                        if (type === 'brand') {
+                            document.querySelector('label[for="addTypeId"]').classList.remove('hidden');
+                            document.querySelector('select[name="type_id"]').classList.remove('hidden');
+                            fetch('/api/technic_types')
+                                .then(response => response.json())
+                                .then(data => {
+                                    const typeSelect = document.getElementById('addTypeId');
+                                    typeSelect.innerHTML = data.map(type =>
+                                        `<option value="${type.id}">${type.type}</option>`
+                                    ).join('');
+                                });
+                        } else {
+                            document.querySelector('label[for="addTypeId"]').classList.add('hidden');
+                            document.querySelector('select[name="type_id"]').classList.add('hidden');
+                        }
+
+                        if (type === 'model') {
+                            document.querySelector('label[for="addBrandId"]').classList.remove('hidden');
+                            document.querySelector('select[name="brand_id"]').classList.remove('hidden');
+                            fetch('/api/brands')
+                                .then(response => response.json())
+                                .then(data => {
+                                    const brandSelect = document.getElementById('addBrandId');
+                                    brandSelect.innerHTML = data.map(brand =>
+                                        `<option value="${brand.id}">${brand.brand}</option>`
+                                    ).join('');
+                                });
+                        } else {
+                            document.querySelector('label[for="addBrandId"]').classList.add('hidden');
+                            document.querySelector('select[name="brand_id"]').classList.add('hidden');
+                        }
+                    } else {
+                        document.querySelector('label[for="addTypeId"]').classList.add('hidden');
+                        document.querySelector('select[name="type_id"]').classList.add('hidden');
+                        document.querySelector('label[for="addBrandId"]').classList.add('hidden');
+                        document.querySelector('select[name="brand_id"]').classList.add('hidden');
+                    }
+                });
+            });
+
+            addForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+                const formData = new FormData(addForm);
+                const type = formData.get('type');
+                let apiUrl = '';
+
+                switch (type) {
+                    case 'city':
+                        apiUrl = '/api/add_city';
+                        break;
+                    case 'floor':
+                        apiUrl = '/api/add_floor';
+                        break;
+                    case 'department':
+                        apiUrl = '/api/add_department';
+                        break;
+                    case 'room':
+                        apiUrl = '/api/add_room';
+                        break;
+                    case 'equipment_type':
+                        apiUrl = '/api/add_equipment_type';
+                        break;
+                    case 'brand':
+                        apiUrl = '/api/add_brand';
+                        break;
+                    case 'model':
+                        apiUrl = '/api/add_model';
+                        break;
+                }
+
+                fetch(apiUrl, {
+                    method: 'POST',
+                    body: JSON.stringify(Object.fromEntries(formData)),
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.success) {
+                            alert('Данные успешно добавлены');
+                            location.reload();
+                        } else {
+                            alert('Ошибка при добавлении данных');
+                        }
+                    });
+            });
+
+            document.addEventListener('click', function (event) {
+                if (event.target.classList.contains('edit-button')) {
+                    const id = event.target.getAttribute('data-id');
+                    const type = event.target.getAttribute('data-type');
+                    const value = event.target.closest('.table-row').querySelector('.table-cell:first-child').innerText.trim();
+                    document.getElementById('editType').value = type;
+                    document.getElementById('editId').value = id;
+                    document.getElementById('editValue').value = value;
+                    editModal.style.display = 'block';
+                }
+            });
+
+            editForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+                const formData = new FormData(editForm);
+                const type = formData.get('type');
+                const id = formData.get('id');
+                let apiUrl = '';
+
+                switch (type) {
+                    case 'city':
+                        apiUrl = '/api/edit_city/' + id;
+                        break;
+                    case 'floor':
+                        apiUrl = '/api/edit_floor/' + id;
+                        break;
+                    case 'department':
+                        apiUrl = '/api/edit_department/' + id;
+                        break;
+                    case 'room':
+                        apiUrl = '/api/edit_room/' + id;
+                        break;
+                    case 'equipment_type':
+                        apiUrl = '/api/edit_equipment_type/' + id;
+                        break;
+                    case 'brand':
+                        apiUrl = '/api/edit_brand/' + id;
+                        break;
+                    case 'model':
+                        apiUrl = '/api/edit_model/' + id;
+                        break;
+                }
+
+                fetch(apiUrl, {
+                    method: 'PUT',
+                    body: JSON.stringify(Object.fromEntries(formData)),
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.success) {
+                            alert('Данные успешно обновлены');
+                            location.reload();
+                        } else {
+                            alert('Ошибка при обновлении данных');
+                        }
+                    });
+            });
+
+    deleteButton.addEventListener('click', function () {
+        const id = document.getElementById('editId').value;
+        const type = document.getElementById('editType').value;
+        if (confirm('Вы уверены, что хотите удалить эту запись?')) {
+            let apiUrl = '';
+
+            switch (type) {
+                case 'city':
+                    apiUrl = '/api/delete_city/' + id;
+                    break;
+                case 'floor':
+                    apiUrl = '/api/delete_floor/' + id;
+                    break;
+                case 'department':
+                    apiUrl = '/api/delete_department/' + id;
+                    break;
+                case 'room':
+                    apiUrl = '/api/delete_room/' + id;
+                    break;
+                case 'equipment_type':
+                    apiUrl = '/api/delete_equipment_type/' + id;
+                    break;
+                case 'brand':
+                    apiUrl = '/api/delete_brand/' + id;
+                    break;
+                case 'model':
+                    apiUrl = '/api/delete_model/' + id;
+                    break;
+            }
+
+            fetch(apiUrl, {
+                method: 'DELETE'
+            })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        alert('Данные успешно удалены');
+                        location.reload();
+                    } else if (result.models) {
+                        // Если есть связанные модели, показать список и кнопки
+                        let modelList = result.models.map(model => `<li>${model.model}</li>`).join('');
+                        if (confirm(`Сначала удалите следующие модели:\n${modelList}\nХотите удалить их все?`)) {
+                            // Если пользователь соглашается удалить все связанные модели
+                            deleteAllModels(id);
+                        }
+                    } else {
+                        alert('Ошибка при удалении данных: ' + result.message);
+                    }
+                });
+        }
+    });
+    function deleteAllModels(brandId) {
+        fetch(`/api/delete_models_by_brand/${brandId}`, {
+            method: 'DELETE'
+        })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert('Связанные модели успешно удалены');
+                    // Теперь можно удалить саму марку
+                    fetch(`/api/delete_brand/${brandId}`, {
+                        method: 'DELETE'
+                    })
+                        .then(response => response.json())
+                        .then(result => {
+                            if (result.success) {
+                                alert('Марка успешно удалена');
+                                location.reload();
+                            } else {
+                                alert('Ошибка при удалении марки: ' + result.message);
+                            }
+                        });
+                } else {
+                    alert('Ошибка при удалении моделей: ' + result.message);
+                }
+            });
+    }
+        });</script>
+</body>
+</html>

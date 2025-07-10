@@ -1,0 +1,8 @@
+{% for score in scores %}
+<tr>
+    <td>{{ score['date'].strftime('%Y-%m-%d') if score['date'] else '' }}</td>
+    {% for field in fields_to_display %}
+    <td>{{ score.get(field) | int | default(0) }}</td>
+    {% endfor %}
+</tr>
+{% endfor %}

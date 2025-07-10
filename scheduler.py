@@ -2,12 +2,14 @@ import logging
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from flask import Flask, current_app
+import pytz
 from app.utils import create_db_connection
 from app.vats import change_numbers_periodically
 from app.callcenter import partial_sync_data
 from app.extensions import socketio
 from redis import Redis
 from apscheduler.jobstores.redis import RedisJobStore
+from app.models.news import News
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("Scheduler")
@@ -16,12 +18,12 @@ app = Flask(__name__)
 app.config.from_object("app.config")
 
 # Настраиваем RedisJobStore (например, используем db=1)
-redis_conn = Redis(host='localhost', port=6379, db=1)
 jobstores = {
-    'default': RedisJobStore(connection=redis_conn)
+    'default': RedisJobStore(host='localhost', port=6379, db=1)
 }
 
-scheduler = BackgroundScheduler(jobstores=jobstores)
+moscow_tz = pytz.timezone('Europe/Moscow')
+scheduler = BackgroundScheduler(jobstores=jobstores, timezone=moscow_tz)
 
 def change_numbers_periodically_with_context():
     with app.app_context():
@@ -41,6 +43,15 @@ def auto_sync_data_job():
         except Exception as e:
             logger.error(f"❌ Ошибка при выполнении синхронизации: {e}", exc_info=True)
 
+def publish_scheduled_news_job():
+    with app.app_context():
+        try:
+            logger.debug("Проверка новостей для автоматической публикации...")
+            News.publish_scheduled_news()
+            logger.info("Автоматическая публикация новостей выполнена.")
+        except Exception as e:
+            logger.error(f"Ошибка при автоматической публикации новостей: {e}", exc_info=True)
+
 def initialize_scheduler():
     global scheduler
 
@@ -54,7 +65,7 @@ def initialize_scheduler():
         logger.info("➕ Добавляем задачу автоматической синхронизации.")
         scheduler.add_job(
             func=auto_sync_data_job,
-            trigger=CronTrigger(minute='*/15', hour='9-21'),
+            trigger=CronTrigger(minute='*/15', hour='9-21', timezone=moscow_tz),
             id="auto_sync_data_job",
             replace_existing=True
         )
@@ -65,11 +76,22 @@ def initialize_scheduler():
         logger.info("➕ Добавляем задачу смены номеров.")
         scheduler.add_job(
             func=change_numbers_periodically_with_context,
-            trigger=CronTrigger(minute='59', hour='9-21'),
+            trigger=CronTrigger(minute='59', hour='9-21', timezone=moscow_tz),
             id="change_numbers_periodically_with_context",
             replace_existing=True
         )
         logger.info("✅ Задача change_numbers_periodically_with_context добавлена в планировщик.")
+
+    # Задача: автоматическая публикация новостей каждую минуту
+    if not scheduler.get_job("publish_scheduled_news_job"):
+        logger.info("➕ Добавляем задачу автоматической публикации новостей.")
+        scheduler.add_job(
+            func=publish_scheduled_news_job,
+            trigger=CronTrigger(minute='*', timezone=moscow_tz),
+            id="publish_scheduled_news_job",
+            replace_existing=True
+        )
+        logger.info("✅ Задача publish_scheduled_news_job добавлена в планировщик.")
 
     scheduler.start()
     logger.info("🚀 Планировщик запущен.")

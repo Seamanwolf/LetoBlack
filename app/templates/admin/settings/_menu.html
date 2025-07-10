@@ -1,32 +1,23 @@
-<ul class="nav nav-tabs mb-3 settings-menu-tabs" role="tablist">
-    <li class="nav-item"><a class="nav-link {% if active_tab == 'general' %}active{% endif %}" href="{{ url_for('admin.settings') }}"><i class="fas fa-cog"></i> Общие настройки</a></li>
-    <li class="nav-item"><a class="nav-link {% if active_tab == 'users' %}active{% endif %}" href="#"><i class="fas fa-users"></i> Пользователи</a></li>
-    <li class="nav-item"><a class="nav-link {% if active_tab == 'database' %}active{% endif %}" href="#"><i class="fas fa-database"></i> База данных</a></li>
-    <li class="nav-item"><a class="nav-link {% if active_tab == 'security' %}active{% endif %}" href="#"><i class="fas fa-shield-alt"></i> Безопасность</a></li>
-    <li class="nav-item"><a class="nav-link {% if active_tab == 'roles' %}active{% endif %}" href="{{ url_for('roles.index') }}"><i class="fas fa-user-tag"></i> Роли пользователей</a></li>
-    <li class="nav-item"><a class="nav-link {% if active_tab == 'organization' %}active{% endif %}" href="{{ url_for('admin_organization.index') }}"><i class="fas fa-building"></i> Организация</a></li>
-    <li class="nav-item"><a class="nav-link {% if active_tab == 'notifications' %}active{% endif %}" href="#"><i class="fas fa-bell"></i> Уведомления</a></li>
-    <li class="nav-item"><a class="nav-link {% if active_tab == 'logs' %}active{% endif %}" href="#"><i class="fas fa-file-alt"></i> Логи системы</a></li>
-</ul>
-<style>
-.settings-menu-tabs .nav-link {
-    font-size: 1rem;
-    padding: 0.6rem 1.2rem;
-    border: none;
-    color: #495057;
-    background: none;
-    transition: background 0.2s, color 0.2s;
-}
-.settings-menu-tabs .nav-link.active {
-    background: #f8f9fa;
-    color: #007bff;
-    border-bottom: 2px solid #007bff;
-    font-weight: 500;
-}
-.settings-menu-tabs .nav-link i {
-    margin-right: 6px;
-}
-.settings-menu-tabs .nav-item {
-    margin-right: 2px;
-}
-</style> 
+<div class="settings-nav">
+    <a href="{{ url_for('admin.settings') }}" class="{% if active_tab == 'general' %}active{% endif %}">
+        <i class="fas fa-cog"></i> Общие настройки
+    </a>
+    <a href="{{ url_for('admin_organization.index') }}" class="{% if active_tab == 'organization' %}active{% endif %}">
+        <i class="fas fa-building"></i> Организация
+    </a>
+    <a href="{{ url_for('admin_database.index') }}" class="{% if active_tab == 'database' %}active{% endif %}">
+        <i class="fas fa-database"></i> База данных
+    </a>
+    <a href="#" class="{% if active_tab == 'security' %}active{% endif %}">
+        <i class="fas fa-shield-alt"></i> Безопасность
+    </a>
+    <a href="{{ url_for('roles.index') }}" class="{% if active_tab == 'roles' %}active{% endif %}">
+        <i class="fas fa-user-tag"></i> Роли пользователей
+    </a>
+    <a href="#" class="{% if active_tab == 'notifications' %}active{% endif %}">
+        <i class="fas fa-bell"></i> Уведомления
+    </a>
+    <a href="{{ url_for('admin_logs.index') }}" class="{% if active_tab == 'logs' %}active{% endif %}">
+        <i class="fas fa-file-alt"></i> Логи системы
+    </a>
+</div> 

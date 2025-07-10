@@ -77,7 +77,7 @@ def upload_logo():
     if file and allowed_file(file.filename, {'png', 'jpg', 'jpeg', 'bmp'}):
         try:
             # Создаем нужную директорию
-            upload_dir = 'app/static/images'
+            upload_dir = os.path.join(current_app.static_folder, 'images')
             if not os.path.exists(upload_dir):
                 os.makedirs(upload_dir, exist_ok=True)
                 logger.debug(f"Создана директория: {upload_dir}")
@@ -194,7 +194,7 @@ def upload_background():
     if file and allowed_file(file.filename, {'png', 'jpg', 'jpeg'}):
         try:
             # Создаем нужную директорию
-            upload_dir = 'app/static/images'
+            upload_dir = os.path.join(current_app.static_folder, 'images')
             os.makedirs(upload_dir, exist_ok=True)
             
             # Сохраняем файл
@@ -225,7 +225,7 @@ def delete_logo():
     logger.debug("Начало удаления логотипа")
     
     try:
-        logo_path = 'app/static/images/logo.png'
+        logo_path = os.path.join(current_app.static_folder, 'images', 'logo.png')
         
         if os.path.exists(logo_path):
             os.remove(logo_path)
@@ -248,7 +248,7 @@ def delete_background():
     logger.debug("Начало удаления фонового изображения")
     
     try:
-        bg_path = 'app/static/images/real_estate_bg.jpg'
+        bg_path = os.path.join(current_app.static_folder, 'images', 'real_estate_bg.jpg')
         
         if os.path.exists(bg_path):
             os.remove(bg_path)

@@ -1,5 +1,10 @@
 {% extends "admin/settings/base.html" %}
 
+{% block extra_css %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/personnel_clean.css') }}">
+{% endblock %}
+
 {% block settings_content %}
 <style>
     .toast-container {
@@ -65,11 +70,20 @@
         justify-content: center;
         border-radius: 4px;
         margin: 0 2px;
+        background: none;
+        border: none;
     }
     
     .btn-icon i {
         font-size: 14px;
+        transition: color 0.2s;
     }
+    
+    /* Цвет иконок в зависимости от действия */
+    .btn-outline-primary .btn-icon i { color: var(--primary-color); }
+    .btn-outline-danger .btn-icon i { color: var(--danger-color); }
+    .btn-outline-info .btn-icon i { color: var(--info-color); }
+    .btn-icon:hover i { opacity: 0.8; }
     
     .actions-column {
         width: 120px;
@@ -101,9 +115,8 @@
         opacity: 0.5 !important;
     }
     
-    .modal {
-        background-color: rgba(0, 0, 0, 0.5);
-    }
+    .modal { background: rgba(0, 0, 0, 0.5); }
+    .modal-content { background: #fff; }
     
     .system-role-row {
         background-color: #e3f2fd !important;
@@ -144,11 +157,10 @@
         </button>
     </div>
     
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            showToast('Системные роли (Администратор, Руководитель, Оператор) нельзя изменить или удалить. Вы можете создавать собственные роли и настраивать права доступа.', 'info');
-        });
-    </script>
+    <p class="text-danger small mb-3">
+         <i class="fas fa-info-circle me-1"></i>
+         Системные роли (Администратор, Руководитель, Оператор) нельзя изменить или удалить. Вы можете создавать собственные роли и настраивать права доступа.
+     </p>
     
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -635,6 +647,12 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Клик по кнопке удаления роли');
         var roleId = $(this).data('role-id');
         var roleName = $(this).data('role-name');
+        var isSystem = $(this).closest('.btn-group').data('role-id') && $(this).closest('tr').hasClass('system-role-row');
+        
+        if (isSystem) {
+            showToast('Нельзя удалить системную роль', 'warning');
+            return; // отменяем дальнейшие действия
+        }
         
         // Запрашиваем пароль администратора
         showAdminPasswordModal(function(adminPassword) {

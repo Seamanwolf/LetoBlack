@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% block title %}Редактировать новость{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/personnel_clean.css') }}">
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<style>
+    #editor-container {
+        height: 300px;
+    }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header mb-3">
+    <h1><i class="fas fa-edit me-2"></i>Редактирование новости</h1>
+</div>
+<div class="card">
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data" id="news-form">
+            <input type="hidden" name="content" id="hidden-content">
+            <div class="mb-3">
+                <label for="newsTitle" class="form-label">Заголовок</label>
+                <input type="text" class="form-control" id="newsTitle" name="title" value="{{ news.title }}" required>
+            </div>
+            <div class="mb-3">
+                <label for="newsContent" class="form-label">Содержание</label>
+                <div id="editor-container">{{ news.body | safe }}</div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="image" class="form-label">Изображение</label>
+                    <input type="file" class="form-control" id="image" name="image" accept="image/*">
+                    <div class="form-text">
+                        Рекомендуется использовать широкоформатные изображения (соотношение 16:9), например, 1280x720 пикселей.
+                    </div>
+                    {% if news.image_path %}
+                    <div class="mt-2">
+                        <small>Текущее изображение:</small><br>
+                        <img src="{{ url_for('static', filename=news.image_path) }}" alt="Текущее изображение" style="max-width: 200px; max-height: 100px; border-radius: 4px;">
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="publish_at" class="form-label">Дата отложенной публикации</label>
+                    <input type="datetime-local" class="form-control" id="publish_at" name="publish_at" value="{{ news.publish_at.strftime('%Y-%m-%dT%H:%M') if news.publish_at else '' }}">
+                </div>
+            </div>
+            <div class="mb-3">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="publish_now" name="publish_now" {% if news.is_published %}checked{% endif %}>
+                    <label class="form-check-label" for="publish_now">Опубликовать сейчас</label>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Кому отправить</label>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="all_roles_checkbox" name="all_roles" value="1">
+                    <label class="form-check-label" for="all_roles_checkbox">
+                        <strong>Отправить всем</strong>
+                    </label>
+                </div>
+                <hr>
+                <div id="roles_checkbox_group">
+                {% for role in roles %}
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input role-checkbox" type="checkbox" name="roles" id="role_{{ role.id }}" value="{{ role.id }}"
+                               {% if role.id in news_roles %}checked{% endif %}>
+                        <label class="form-check-label" for="role_{{ role.id }}">{{ role.name }}</label>
+                    </div>
+                {% endfor %}
+                </div>
+            </div>
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Сохранить изменения</button>
+                <a href="{{ url_for('admin_news.list_news') }}" class="btn btn-secondary">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var quill = new Quill('#editor-container', {
+        theme: 'snow',
+        modules: {
+            toolbar: [
+                [{ 'header': [1, 2, 3, false] }],
+                ['bold', 'italic', 'underline'],
+                [{'list': 'ordered'}, {'list': 'bullet'}],
+                ['link'],
+                ['clean']
+            ]
+        }
+    });
+
+    var form = document.getElementById('news-form');
+    var hiddenInput = document.getElementById('hidden-content');
+
+    form.addEventListener('submit', function(e) {
+        hiddenInput.value = quill.root.innerHTML;
+    });
+
+    const allRolesCheckbox = document.getElementById('all_roles_checkbox');
+    const rolesCheckboxes = document.querySelectorAll('.role-checkbox');
+
+    function updateRolesState() {
+        const disable = allRolesCheckbox.checked;
+        rolesCheckboxes.forEach(checkbox => {
+            checkbox.checked = disable;
+            checkbox.disabled = disable;
+        });
+    }
+
+    allRolesCheckbox.addEventListener('change', updateRolesState);
+    
+    // Проверяем, выбраны ли все роли при загрузке
+    const allRolesSelected = [...rolesCheckboxes].every(c => c.checked);
+    if(allRolesSelected && rolesCheckboxes.length > 0) {
+        allRolesCheckbox.checked = true;
+        updateRolesState();
+    }
+
+    document.getElementById('publish_now').addEventListener('change', function() {
+        document.getElementById('publish_at').disabled = this.checked;
+    });
+
+    // Initial state for publish date
+    document.getElementById('publish_at').disabled = document.getElementById('publish_now').checked;
+});
+</script>
+{% endblock %} 

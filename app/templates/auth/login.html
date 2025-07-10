@@ -95,7 +95,7 @@
         }
     </style>
 </head>
-<body>
+<body {% if background_url %}style="background:url('{{ background_url }}?{{ now }}') center/cover no-repeat fixed;"{% endif %}>
     <div class="login-container">
         <div class="login-header">
             {% if logo_url %}

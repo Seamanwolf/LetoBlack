@@ -1,5 +1,6 @@
 from flask_login import current_user
 from app.decorators import has_permission
+from app.utils import get_user_accessible_modules
 
 def inject_permissions():
     """
@@ -49,6 +50,12 @@ def inject_permissions():
         get_user_roles=get_user_roles
     )
 
-def init_app(app):
-    """Регистрирует контекстные процессоры"""
-    app.context_processor(inject_permissions) 
+def inject_accessible_modules():
+    """
+    Добавляет список доступных модулей в контекст шаблонов
+    """
+    if current_user.is_authenticated:
+        accessible_modules = get_user_accessible_modules(current_user)
+    else:
+        accessible_modules = []
+    return dict(accessible_modules=accessible_modules) 

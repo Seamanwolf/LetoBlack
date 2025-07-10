@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Добавление отчета</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Trajan+Pro+3&display=swap">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            color: #333;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+            color: #666;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="date"],
+        button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .back-button {
+            display: flex;
+            align-items: center;
+            background-color: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+            .back-button i {
+                margin-right: 8px;
+            }
+
+            .back-button:hover {
+                background-color: #5a6268;
+            }
+
+        .alert-success {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .error-message {
+            font-size: 0.9em;
+        }
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h2>Заполнить отчет за день</h2>
+        <form id="reportForm">
+            {% for field in mandatory_fields %}
+            <label for="{{ field }}">{{ field_names.get(field, field) }}:</label>
+            <input type="text" id="{{ field }}" name="{{ field }}" required class="numeric" inputmode="numeric">
+            <small class="text-danger error-message" style="display:none;">Введите цифры</small>
+            {% endfor %}
+
+            {% for field in optional_fields %}
+            {% if not hidden_fields.get(field, False) %}
+            <label for="{{ field }}">{{ field_names.get(field, field) }}:</label>
+            <input type="text" id="{{ field }}" name="{{ field }}" class="numeric" inputmode="numeric">
+            <small class="text-danger error-message" style="display:none;">Введите цифры</small>
+            {% endif %}
+            {% endfor %}
+
+            <label for="date">Дата:</label>
+            <input type="date" id="date" name="date" required>
+            <button type="submit">Отправить</button>
+        </form>
+        <a href="{{ url_for('userlist.dashboard') }}" class="back-button"><i class="fas fa-arrow-left"></i> Назад</a>
+        <div class="alert alert-success" id="successMessage">Отчет успешно отправлен</div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            // Обработчик отправки формы
+            $('#reportForm').on('submit', function (event) {
+                event.preventDefault();
+                var formData = $(this).serialize();
+                $.ajax({
+                    type: 'POST',
+                    url: '{{ url_for("userlist.add_report") }}',
+                    data: formData,
+                    success: function (response) {
+                        if (response.success) {
+                            $('#successMessage').show();
+                            setTimeout(function () {
+                                window.location.href = '{{ url_for(userlist.dashboard") }}';
+                            }, 2000);
+                        } else {
+                            alert(response.message);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        alert('Произошла ошибка: ' + error);
+                    }
+                });
+            });
+
+            // Ограничение ввода только чисел для полей с классом 'numeric'
+            $('.numeric').on('input', function () {
+                const originalValue = $(this).val();
+                const numericValue = originalValue.replace(/[^0-9]/g, '');
+                if (originalValue !== numericValue) {
+                    $(this).next('.error-message').show();
+                } else {
+                    $(this).next('.error-message').hide();
+                }
+                this.value = numericValue;
+            });
+        });
+    </script>
+</body>
+</html>
